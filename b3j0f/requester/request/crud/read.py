@@ -58,16 +58,16 @@ class Read(CRUD):
     Result is a Cursor."""
 
     __slots__ = [
-        '_exprs', '_offset', '_limit', '_orderby', '_groupby', '_jointure'
+        '_select', '_offset', '_limit', '_orderby', '_groupby', '_jointure'
     ] + CRUD.__slots__
 
     def __init__(
             self,
-            exprs=None, offset=None, limit=None, orderby=None, groupby=None,
+            select=None, offset=None, limit=None, orderby=None, groupby=None,
             jointure=None, *args, **kwargs
     ):
         """
-        :param tuple exprs: data to select.
+        :param tuple select: data to select.
         :param int offset: data to avoid.
         :param int limit: max number of data to retrieve.
         :param list orderby: data sorting.
@@ -81,7 +81,7 @@ class Read(CRUD):
         self._limit = limit
         self._orderby = orderby
         self._groupby = groupby
-        self._exprs = exprs
+        self._select = select
         self._jointure = jointure.name if isinstance(jointure, Jointure) else jointure
 
     def offset(self, value):
@@ -128,16 +128,16 @@ class Read(CRUD):
 
         return self._groupby
 
-    def exprs(self, value):
+    def select(self, value):
 
-        self._exprs = value
+        self._select = value
 
         return self
 
     @property
-    def getexprs(self):
+    def getselect(self):
 
-        return self._exprs
+        return self._select
 
     def jointure(self, value):
 

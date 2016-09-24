@@ -40,8 +40,9 @@ class UpdateTest(UTCase):
 
         values = {None: None}
 
-        update = Update(values=values)
+        update = Update(name='test', values=values)
 
+        self.assertEqual('test', update.name)
         self.assertEqual(values, update.values)
 
 if __name__ == '__main__':

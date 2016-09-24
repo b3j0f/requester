@@ -25,3 +25,9 @@
 # --------------------------------------------------------------------
 
 """CRUD configuration package."""
+from .base import CRUD
+from .create import Create
+from .read import Read, Cursor
+from .update import Update
+from .delete import Delete
+

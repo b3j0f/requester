@@ -28,7 +28,8 @@
 
 __all__ = ['Request']
 
-from .expr import Expression
+from .expr import Function
+from .crud.base import CRUD
 from .crud.create import Create
 from .crud.read import Read
 from .crud.update import Update
@@ -43,7 +44,7 @@ class Request(object):
     __slots__ = ['driver', 'ctx', '_query', 'cruds']
 
     def __init__(
-            self, driver, ctx=None, query=None, cruds=None,
+            self, driver=None, ctx=None, query=None, cruds=None,
             *args, **kwargs
     ):
         """
@@ -56,11 +57,17 @@ class Request(object):
         super(Request, self).__init__(*args, **kwargs)
 
         self.driver = driver
-        self.ctx = ctx
+        self.ctx = ctx or {}
         self._query = query
-        self.cruds = cruds
+        self.cruds = cruds or []
 
-        for crud in cruds:
+        if query is not None and not isinstance(query, Function):
+            raise TypeError(
+                'Wrong type {0}. {1} expected.'.format(query, Function)
+            )
+
+
+        for crud in self.cruds:
             if not isinstance(crud, CRUD):
                 raise TypeError(
                     'Wrong type {0}. {1} expected.'.format(crud, CRUD)
@@ -88,6 +95,11 @@ class Request(object):
 
         :param Function value: query to set.
         """
+
+        if value is not None and not isinstance(value):
+            raise TypeError(
+                'Wrong type {0}. {1} expected.'.format(value, Function)
+            )
 
         self._query = query
 
@@ -189,7 +201,6 @@ class Request(object):
     def run(self, name, *params):
         """Run input expr.
 
-        :param Expression expr: expr to run. Must contains params.
         :return: expr result.
         """
 

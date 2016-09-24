@@ -33,10 +33,11 @@ from .base import CRUD
 
 class Create(CRUD):
 
-    __slots__ = ['value'] + CRUD.__slots__
+    __slots__ = ['name', 'value'] + CRUD.__slots__
 
-    def __init__(self, value, *args, **kwargs):
+    def __init__(self, name, value, *args, **kwargs):
 
         super(Create, self).__init__(*args, **kwargs)
 
+        self.name = name
         self.value = value

@@ -40,8 +40,9 @@ class CreateTest(UTCase):
 
         value = {None: None}
 
-        create = Create(value=value)
+        create = Create(name='test', value=value)
 
+        self.assertEqual('test', create.name)
         self.assertEqual(value, create.value)
 
 if __name__ == '__main__':

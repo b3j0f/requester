@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -24,20 +25,33 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""update module."""
+"""request.base UTs."""
 
-__all__ = ['Update']
+from b3j0f.utils.ut import UTCase
 
-from .base import CRUD
+from unittest import main
+
+from ..core import Request
 
 
-class Update(CRUD):
+class RequestTest(UTCase):
 
-    __slots__ = ['name', 'values'] + CRUD.__slots__
+    def test_init_default(self):
 
-    def __init__(self, name, values, *args, **kwargs):
+        request = Request()
 
-        super(Update, self).__init__(*args, **kwargs)
+        self.assertIsNone(request.driver)
+        self.assertEqual(request.ctx, {})
+        self.assertIsNone(request.query)
+        self.assertEqual(request.cruds, [])
 
-        self.name = name
-        self.values = values
+    def test_init_errorquery(self):
+
+        self.assertRaises(TypeError, Request, query=1)
+
+    def test_init_errorcruds(self):
+
+        self.assertRaises(TypeError, Request, cruds=[1])
+
+if __name__ == '__main__':
+    main()

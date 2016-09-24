@@ -40,7 +40,7 @@ class ReadTest(UTCase):
 
         read = Read()
 
-        self.assertIsNone(read.getexprs)
+        self.assertIsNone(read.getselect)
         self.assertIsNone(read.getoffset)
         self.assertIsNone(read.getlimit)
         self.assertIsNone(read.getorderby)
@@ -49,14 +49,14 @@ class ReadTest(UTCase):
 
     def test_init(self):
 
-        exprs, offset, limit, orderby, groupby, jointure = (i for i in range(6))
+        select, offset, limit, orderby, groupby, jointure = (i for i in range(6))
 
         read = Read(
-            exprs=exprs, offset=offset, limit=limit, orderby=orderby,
+            select=select, offset=offset, limit=limit, orderby=orderby,
             groupby=groupby, jointure=jointure
         )
 
-        self.assertEqual(exprs, read.getexprs)
+        self.assertEqual(select, read.getselect)
         self.assertEqual(offset, read.getoffset)
         self.assertEqual(limit, read.getlimit)
         self.assertEqual(orderby, read.getorderby)
