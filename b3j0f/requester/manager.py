@@ -30,11 +30,11 @@ __all__ = ['RequestManager']
 
 from .request import Request
 
-from .crud.base import CRUD
-from .crud.create import Create
-from .crud.read import Read
-from .crud.update import Update
-from .crud.delete import delete
+from .request.crud.base import CRUD
+from .request.crud.create import Create
+from .request.crud.read import Read
+from .request.crud.update import Update
+from .request.crud.delete import Delete
 from .driver import Driver
 
 
@@ -43,7 +43,7 @@ class RequestManager(Driver):
 
     All instanciated requests will be associated to this manager."""
 
-    def __init__(self, driver, requests=None *args, **kwargs):
+    def __init__(self, driver, requests=None, *args, **kwargs):
 
         super(RequestManager, self).__init__(*args, **kwargs)
 
