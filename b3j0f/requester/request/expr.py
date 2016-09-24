@@ -26,9 +26,11 @@
 
 """Expression module."""
 
+from __future__ import division
+
 __all__ = ['Expression', 'FuncName', 'Function', 'MetaExpression']
 
-from six import add_metaclass, string_types
+from six import add_metaclass, string_types, PY3
 
 from numbers import Number
 
@@ -198,6 +200,12 @@ class Expression(BaseElement):
 
         return Function(FuncName.DIV)(self, other)
 
+    def __truediv__(self, other):
+
+        self._checktype(other, Number)
+
+        return Function(FuncName.DIV)(self, other)
+
     def __invert__(self):
 
         return Function(FuncName.INVERT)(self)
@@ -240,6 +248,12 @@ class Expression(BaseElement):
 
         return Function(FuncName.DIV)(other, self)
 
+    def __rtruediv__(self, other):
+
+        self._checktype(other, Number)
+
+        return Function(FuncName.DIV)(other, self)
+
     def __rmod__(self, other):
 
         self._checktype(other, string_types)
@@ -252,37 +266,44 @@ class Expression(BaseElement):
 
         return Function(FuncName.POW)(other, self)
 
-    def __getslice__(self, i, j):
+    def __getitem__(self, key):
 
-        if i is not None:
-            self._checktype(i, Number)
+        if isinstance(key, slice):
+            return self.__getslice__(key.start, key.stop, key.step)
 
-        if j is not None:
-            self._checktype(j, Number)
+        return self.__getattr__(key)
 
-        return Function(FuncName.GETSLICE)(self, i, j)
+    def __getslice__(self, start, stop, step):
 
-    def __setslice__(self, i, j, value):
+        if start is not None:
+            self._checktype(start, Number)
 
-        if i is not None:
-            self._checktype(i, Number)
+        if stop is not None:
+            self._checktype(stop, Number)
 
-        if j is not None:
-            self._checktype(j, Number)
+        return Function(FuncName.GETSLICE)(self, start, stop, step)
+
+    def __setslice__(self, start, stop, value):
+
+        if start is not None:
+            self._checktype(start, Number)
+
+        if stop is not None:
+            self._checktype(stop, Number)
 
         self._checktype(value, list, tuple)
 
-        return Function(FuncName.SETSLICE)(self, i, j, value)
+        return Function(FuncName.SETSLICE)(self, start, stop, value)
 
-    def __delslice__(self, i, j):
+    def __delslice__(self, start, step):
 
-        if i is not None:
-            self._checktype(i, Number)
+        if start is not None:
+            self._checktype(start, Number)
 
-        if j is not None:
-            self._checktype(j, Number)
+        if step is not None:
+            self._checktype(step, Number)
 
-        return Function(FuncName.DELSLICE)(self, i, j)
+        return Function(FuncName.DELSLICE)(self, start, step)
 
     def copy(self, **kwargs):
         """Copy this expression with input kwargs.

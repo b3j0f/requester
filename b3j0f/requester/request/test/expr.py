@@ -177,14 +177,14 @@ class ExpressionTest(UTCase):
         self._assertfunc(func, FuncName.MUL, expr, 1)
         self._asserttype(expr, '__mul__')
 
-    def test__div__(self):
+    def test__truediv__(self):
 
         expr = Expression(name='')
 
         func = expr / 1
 
         self._assertfunc(func, FuncName.DIV, expr, 1)
-        self._asserttype(expr, '__div__')
+        self._asserttype(expr, '__truediv__')
 
     def test__invert__(self):
 
@@ -255,14 +255,14 @@ class ExpressionTest(UTCase):
         self._assertfunc(func, FuncName.MUL, 1, expr)
         self._asserttype(expr, '__rmul__')
 
-    def test__rdiv__(self):
+    def test__rtruediv__(self):
 
         expr = Expression(name='')
 
         func = 1 / expr
 
         self._assertfunc(func, FuncName.DIV, 1, expr)
-        self._asserttype(expr, '__rdiv__')
+        self._asserttype(expr, '__rtruediv__')
 
     def test__rmod__(self):
 
@@ -286,9 +286,9 @@ class ExpressionTest(UTCase):
 
         expr = Expression(name='')
 
-        func = expr[1:2]
+        func = expr[1:2:3]
 
-        self._assertfunc(func, FuncName.GETSLICE, expr, 1, 2)
+        self._assertfunc(func, FuncName.GETSLICE, expr, 1, 2, 3)
         self._asserttype(expr, '__getslice__')
 
     def test__setslice__(self):
