@@ -24,13 +24,19 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Main configuration package."""
+"""create module."""
 
-from .version import __version__
-"""
-from .driver import Driver
-from .expr import Expression as E, Function as F
-from .manager import RequestManager
-from .request import Request
-from .crud import Create as C, Read as R, Update as U, Delete as D
-"""
+__all__ = ['Create']
+
+from .base import CRUD
+
+
+class Create(CRUD):
+
+    __slots__ = ['value'] + CRUD.__slots__
+
+    def __init__(self, value, *args, **kwargs):
+
+        super(Create, self).__init__(*args, **kwargs)
+
+        self.value = value

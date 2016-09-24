@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -24,13 +25,43 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Main configuration package."""
+"""conf file driver UTs."""
 
-from .version import __version__
-"""
-from .driver import Driver
-from .expr import Expression as E, Function as F
-from .manager import RequestManager
-from .request import Request
-from .crud import Create as C, Read as R, Update as U, Delete as D
-"""
+from b3j0f.utils.ut import UTCase
+
+from unittest import main
+
+from ..read import Read
+
+
+class ReadTest(UTCase):
+
+    def test_init_default(self):
+
+        read = Read()
+
+        self.assertIsNone(read.getexprs)
+        self.assertIsNone(read.getoffset)
+        self.assertIsNone(read.getlimit)
+        self.assertIsNone(read.getorderby)
+        self.assertIsNone(read.getgroupby)
+        self.assertIsNone(read.getjointure)
+
+    def test_init(self):
+
+        exprs, offset, limit, orderby, groupby, jointure = (i for i in range(6))
+
+        read = Read(
+            exprs=exprs, offset=offset, limit=limit, orderby=orderby,
+            groupby=groupby, jointure=jointure
+        )
+
+        self.assertEqual(exprs, read.getexprs)
+        self.assertEqual(offset, read.getoffset)
+        self.assertEqual(limit, read.getlimit)
+        self.assertEqual(orderby, read.getorderby)
+        self.assertEqual(groupby, read.getgroupby)
+        self.assertEqual(jointure, read.getjointure)
+
+if __name__ == '__main__':
+    main()

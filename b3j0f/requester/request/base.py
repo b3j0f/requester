@@ -24,13 +24,31 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Main configuration package."""
+"""base module."""
 
-from .version import __version__
-"""
-from .driver import Driver
-from .expr import Expression as E, Function as F
-from .manager import RequestManager
-from .request import Request
-from .crud import Create as C, Read as R, Update as U, Delete as D
-"""
+__all__ = ['BaseElement']
+
+
+class BaseElement(object):
+
+    __slots__ = ['alias']
+
+    def __init__(self, alias=None, *args, **kwargs):
+        """
+        :param str alias: alias name. Default is None.
+        """
+
+        super(BaseElement, self).__init__(*args, **kwargs)
+
+        self.alias = alias
+
+    def as_(self, alias):
+        """Set alias value.
+
+        :param str alias: alias to use.
+        :rtype: BaseElement
+        :return: this."""
+
+        self.alias = alias
+
+        return self

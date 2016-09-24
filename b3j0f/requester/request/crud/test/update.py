@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -24,13 +25,24 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Main configuration package."""
+"""conf file driver UTs."""
 
-from .version import __version__
-"""
-from .driver import Driver
-from .expr import Expression as E, Function as F
-from .manager import RequestManager
-from .request import Request
-from .crud import Create as C, Read as R, Update as U, Delete as D
-"""
+from b3j0f.utils.ut import UTCase
+
+from unittest import main
+
+from ..update import Update
+
+
+class UpdateTest(UTCase):
+
+    def test_init(self):
+
+        values = {None: None}
+
+        update = Update(values=values)
+
+        self.assertEqual(values, update.values)
+
+if __name__ == '__main__':
+    main()

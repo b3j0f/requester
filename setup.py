@@ -62,7 +62,7 @@ DEPENDENCIES = []
 with open(join(BASEPATH, 'requirements.txt')) as f:
     DEPENDENCIES = list(line for line in f.readlines())
 
-DESCRIPTION = 'Python object configuration library in reflective and distributed concerns.'
+DESCRIPTION = 'Python abstract data request library.'
 
 URL = 'https://github.com/{0}'.format(_namepath)
 
@@ -76,9 +76,6 @@ setup(
     description=DESCRIPTION,
     long_description=DESC,
     include_package_data=True,
-    package_data={
-        'b3j0f.requester': ['data/*.requester']
-    },
     url=URL,
     license='MIT License',
     classifiers=[

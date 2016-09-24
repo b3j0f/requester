@@ -24,65 +24,76 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Selection module."""
+"""Read module."""
 
-__all__ = ['Selection', 'Cursor', 'Jointure']
+__all__ = ['Read', 'Cursor', 'Jointure']
 
-from enum import IntEnum
+from .base import CRUD
+
+from enum import IntEnum, unique
+
+from collections import Iterable
 
 
+@unique
 class Jointure(IntEnum):
 
-    INNER = 1  #: inner jointure.
-    LEFT = 2  #: left jointure.
-    LEFT_EX = 3  #: left exclusive jointure.
-    RIGHT = 4  #: right exclusive jointure.
-    RIGHT_EX = 5  #: right exclusive jointure.
-    FULL = 6  #: full jointure.
-    FULL_EX = 7  #: full exclusive jointure.
-    CROSS = 8
-    SELF = 9
-    NATURAL = 10
-    UNION = 11
+    INNER = 0  #: inner jointure.
+    LEFT = 1  #: left jointure.
+    LEFT_EX = 2  #: left exclusive jointure.
+    RIGHT = 3  #: right exclusive jointure.
+    RIGHT_EX = 4  #: right exclusive jointure.
+    FULL = 5  #: full jointure.
+    FULL_EX = 6  #: full exclusive jointure.
+    CROSS = 7  #: cross jointure.
+    SELF = 8  #: self jointure.
+    NATURAL = 9  #: natural jointure.
+    UNION = 10  #: union jointure.
 
 
-class Selection(object):
+class Read(CRUD):
     """In charge of parameterize a reading request.
 
     Execution is done in calling it or in using the getslice method.
     Result is a Cursor."""
 
+    __slots__ = [
+        '_exprs', '_offset', '_limit', '_orderby', '_groupby', '_jointure'
+    ] + CRUD.__slots__
+
     def __init__(
-            self, request,
-            skip=None, limit=None, sort=None, groupby=None,
-            select=None, join=None,
-            *args, **kwargs
+            self,
+            exprs=None, offset=None, limit=None, orderby=None, groupby=None,
+            jointure=None, *args, **kwargs
     ):
         """
-        :param Request request: source request.
-        :param int skip: data to avoid.
+        :param tuple exprs: data to select.
+        :param int offset: data to avoid.
         :param int limit: max number of data to retrieve.
-        :param list sort: data sorting.
+        :param list orderby: data sorting.
         :param list groupby: data field group.
-        :param tuple select: data to select.
-        :param Jointure join: jointure type (INNER, LEFT, etc.).
+        :param Jointure jointure: jointure type (INNER, LEFT, etc.).
         """
 
-        super(Selection, self).__init__(*args, **kwargs)
+        super(Read, self).__init__(*args, **kwargs)
 
-        self.request = request
-        self._skip = skip
+        self._offset = offset
         self._limit = limit
-        self._sort = sort
+        self._orderby = orderby
         self._groupby = groupby
-        self._select = select
-        self._join = join
+        self._exprs = exprs
+        self._jointure = jointure.name if isinstance(jointure, Jointure) else jointure
 
-    def skip(self, value):
+    def offset(self, value):
 
-        self._skip = value
+        self._offset = value
 
         return self
+
+    @property
+    def getoffset(self):
+
+        return self._offset
 
     def limit(self, value):
 
@@ -90,11 +101,21 @@ class Selection(object):
 
         return self
 
-    def sort(self, value):
+    @property
+    def getlimit(self):
 
-        self._sort = value
+        return self._limit
+
+    def orderby(self, value):
+
+        self._orderby = value
 
         return self
+
+    @property
+    def getorderby(self):
+
+        return self._orderby
 
     def groupby(self, value):
 
@@ -102,27 +123,46 @@ class Selection(object):
 
         return self
 
-    def select(self, value):
+    @property
+    def getgroupby(self):
 
-        self._select = value
+        return self._groupby
+
+    def exprs(self, value):
+
+        self._exprs = value
 
         return self
 
-    def join(self, value):
+    @property
+    def getexprs(self):
 
-        self._join = value
+        return self._exprs
+
+    def jointure(self, value):
+
+        self._jointure = value
 
         return self
+
+    @property
+    def getjointure(self):
+
+        return self._jointure
 
     def __getslice__(self, i, j):
-        """Set skip and limit and execute the selection.
+        """Set offset and limit and execute the selection.
 
-        :param int i: skip property.
+        :param int i: offset property.
         :param int j: limit property.
         :return: selection execution result.
         :rtype: Cursor"""
 
-        self._skip, self._limit = i, j
+        if i is not None:
+            self._offset = i
+
+        if j is not None:
+            self._limit = j
 
         return self()
 
@@ -132,11 +172,17 @@ class Selection(object):
         :return: this selection result.
         :rtype: Cursor"""
 
-        return self.request.read(selection=self)
+        if self.request is None:
+            raise RuntimeError(
+                'Impossible to execute this without associate it to a request.'
+            )
+
+        else:
+            return self.request.process(self)
 
 
 class Cursor(Iterable):
-    """Selection request result."""
+    """Read request result."""
 
     def __init__(self, cursor, *args, **kwargs):
 

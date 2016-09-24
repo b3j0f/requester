@@ -24,23 +24,22 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Assignment module."""
+"""base crud module."""
 
-__all__ = ['Assignment']
+__all__ = ['CRUD']
 
-from .model import Model
-
-from six import string_types
+from ..expr import BaseElement
 
 
-class Assignment(object):
+class CRUD(BaseElement):
+    """Base crud operation.
 
-    def __init__(self, model, value, *args, **kwargs):
+    Can be associated to a request."""
 
-        super(Assignment, self).__init__(*args, **kwargs)
+    __slots__ = ['request'] + BaseElement.__slots__
 
-        if isinstance(model, string_types):
-            model = Model(name=model)
+    def __init__(self, request=None, *args, **kwargs):
 
-        self.model = model
-        self.value = value
+        super(CRUD, self).__init__(*args, **kwargs)
+
+        self.request = request

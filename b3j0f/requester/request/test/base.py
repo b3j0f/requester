@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -24,13 +25,37 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Main configuration package."""
+"""request.base UTs."""
 
-from .version import __version__
-"""
-from .driver import Driver
-from .expr import Expression as E, Function as F
-from .manager import RequestManager
-from .request import Request
-from .crud import Create as C, Read as R, Update as U, Delete as D
-"""
+from b3j0f.utils.ut import UTCase
+
+from unittest import main
+
+from ..base import BaseElement
+
+
+class BaseElementTest(UTCase):
+
+    def test_init_default(self):
+
+        alias = BaseElement()
+
+        self.assertIsNone(alias.alias)
+
+    def test_init(self):
+
+        alias = BaseElement(alias='alias')
+
+        self.assertEqual(alias.alias, 'alias')
+
+    def test_as_(self):
+
+        alias = BaseElement()
+
+        alias.as_(alias='alias')
+
+        self.assertEqual(alias.alias, 'alias')
+
+
+if __name__ == '__main__':
+    main()
