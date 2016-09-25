@@ -38,17 +38,17 @@ from collections import Iterable
 @unique
 class Jointure(IntEnum):
 
-    INNER = 0  #: inner jointure.
-    LEFT = 1  #: left jointure.
-    LEFT_EX = 2  #: left exclusive jointure.
-    RIGHT = 3  #: right exclusive jointure.
-    RIGHT_EX = 4  #: right exclusive jointure.
-    FULL = 5  #: full jointure.
-    FULL_EX = 6  #: full exclusive jointure.
-    CROSS = 7  #: cross jointure.
-    SELF = 8  #: self jointure.
-    NATURAL = 9  #: natural jointure.
-    UNION = 10  #: union jointure.
+    INNER = 0  #: inner join.
+    LEFT = 1  #: left join.
+    LEFT_EX = 2  #: left exclusive join.
+    RIGHT = 3  #: right exclusive join.
+    RIGHT_EX = 4  #: right exclusive join.
+    FULL = 5  #: full join.
+    FULL_EX = 6  #: full exclusive join.
+    CROSS = 7  #: cross join.
+    SELF = 8  #: self join.
+    NATURAL = 9  #: natural join.
+    UNION = 10  #: union join.
 
 
 class Read(CRUD):
@@ -58,13 +58,13 @@ class Read(CRUD):
     Result is a Cursor."""
 
     __slots__ = [
-        '_select', '_offset', '_limit', '_orderby', '_groupby', '_jointure'
+        '_select', '_offset', '_limit', '_orderby', '_groupby', '_join'
     ] + CRUD.__slots__
 
     def __init__(
             self,
             select=None, offset=None, limit=None, orderby=None, groupby=None,
-            jointure=None, *args, **kwargs
+            join=None, *args, **kwargs
     ):
         """
         :param tuple select: data to select.
@@ -72,7 +72,7 @@ class Read(CRUD):
         :param int limit: max number of data to retrieve.
         :param list orderby: data sorting.
         :param list groupby: data field group.
-        :param Jointure jointure: jointure type (INNER, LEFT, etc.).
+        :param Jointure join: join type (INNER, LEFT, etc.).
         """
 
         super(Read, self).__init__(*args, **kwargs)
@@ -82,7 +82,7 @@ class Read(CRUD):
         self._orderby = orderby
         self._groupby = groupby
         self._select = select
-        self._jointure = jointure.name if isinstance(jointure, Jointure) else jointure
+        self._join = join.name if isinstance(join, Jointure) else join
 
     def offset(self, value):
 
@@ -139,16 +139,16 @@ class Read(CRUD):
 
         return self._select
 
-    def jointure(self, value):
+    def join(self, value):
 
-        self._jointure = value
+        self._join = value
 
         return self
 
     @property
-    def getjointure(self):
+    def getjoin(self):
 
-        return self._jointure
+        return self._join
 
     def __getslice__(self, i, j):
         """Set offset and limit and execute the selection.

@@ -33,6 +33,7 @@ from unittest import main
 
 from ..core import Request
 from ..expr import Expression as E, Function as F, FuncName as FN
+from ..crud.read import Read
 
 
 class RequestTest(UTCase):
@@ -159,6 +160,8 @@ class RequestTest(UTCase):
         self.request.commit()
 
         self.assertEqual(self.requests, [self.request])
+
+
 
 if __name__ == '__main__':
     main()
