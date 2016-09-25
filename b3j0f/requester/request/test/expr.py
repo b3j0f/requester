@@ -74,13 +74,6 @@ class ExpressionTest(UTCase):
 
         self.assertRaises(TypeError, getattr(expr, method), other)
 
-    def test_exists(self):
-
-        expr = Expression(name='')
-        func = expr.exists()
-
-        self._assertfunc(func, FuncName.EXISTS, expr)
-
     def test__and__(self):
 
         expr0, expr1 = Expression(name=''), Expression(name='')

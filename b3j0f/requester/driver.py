@@ -30,6 +30,7 @@ __all__ = ['Driver']
 
 
 from enum import IntEnum
+from .request.core import Request
 
 
 class Driver(object):
@@ -39,14 +40,14 @@ class Driver(object):
     - generic: process
     - specific: create/read/update/delete/run."""
 
-    def process(self, request):
+    def process(self, request, explain=False, **kwargs):
         """Generic method to override in order to crud input data related to
         query, rtype and ctx.
 
-        :param Model query:
-        :param str rtype: request type (CREATE, READ, UPDATE, DELETE, RUN).
-        :param dict ctx: request context execution.
-        :param tuple data: data to process.
+        :param Request request: request to process.
+        :param bool explain: give additional information about the request
+            execution.
+        :param dict kwargs: additional parameters specific to the driver.
         :return: request result.
         """
 

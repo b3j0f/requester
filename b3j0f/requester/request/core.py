@@ -28,7 +28,7 @@
 
 __all__ = ['Request']
 
-from .expr import Function
+from .expr import Expression
 from .crud.base import CRUD
 from .crud.create import Create
 from .crud.read import Read
@@ -50,7 +50,7 @@ class Request(object):
         """
         :param Driver driver: driver able to execute the request.
         :param dict ctx: request execution context.
-        :param Function query: request query.
+        :param Expression query: request query.
         :param tuple ops: cruds.
         """
 
@@ -61,9 +61,9 @@ class Request(object):
         self._query = query
         self.cruds = cruds or []
 
-        if query is not None and not isinstance(query, Function):
+        if query is not None and not isinstance(query, Expression):
             raise TypeError(
-                'Wrong type {0}. {1} expected.'.format(query, Function)
+                'Wrong type {0}. {1} expected.'.format(query, Expression)
             )
 
 
@@ -77,7 +77,7 @@ class Request(object):
     def query(self):
         """Get this query.
 
-        :rtype: Function"""
+        :rtype: Expression"""
 
         return self._query
 
@@ -93,15 +93,15 @@ class Request(object):
         - self.query |= E.user.id == E.owner.id  # apply 'and' on this query and
             new function.
 
-        :param Function value: query to set.
+        :param Expression value: query to set.
         """
 
-        if value is not None and not isinstance(value):
+        if value is not None and not isinstance(value, Expression):
             raise TypeError(
-                'Wrong type {0}. {1} expected.'.format(value, Function)
+                'Wrong type {0}. {1} expected.'.format(value, Expression)
             )
 
-        self._query = query
+        self._query = value
 
     @query.deleter
     def query(self):
@@ -115,7 +115,11 @@ class Request(object):
         :return: self
         :rtype: Request"""
 
-        self.query &= query
+        if self._query is None:
+            self._query = query
+
+        else:
+            self._query &= query
 
         return self
 
@@ -125,17 +129,23 @@ class Request(object):
         :return: self
         :rtype: Request"""
 
-        self.query |= query
+        if self._query is None:
+            self._query = query
+
+        else:
+            self._query |= query
 
         return self
 
-    def commit(self):
+    def commit(self, explain=False):
         """Process this request and return self.
 
+        :param bool explain: if True (default False), give additional
+            informations about the request execution (indexes, etc.).
         :return: self
         :rtype: Request"""
 
-        self.driver.process(self)
+        self.driver.process(self, explain=explain)
 
         return self
 

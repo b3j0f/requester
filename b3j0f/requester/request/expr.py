@@ -41,7 +41,7 @@ from .base import BaseElement
 
 @unique
 class FuncName(Enum):
-    """Default function names"""
+    """Default function names which might be supported by drivers."""
 
     AND = '&'
     OR = '|'
@@ -64,6 +64,72 @@ class FuncName(Enum):
     GETSLICE = 'getslice'
     SETSLICE = 'setslice'
     DELSLICE = 'delslice'
+
+    # remainders functions are not supported by the Expression methods
+    ISNULL = 'isnull'
+    BETWEEN = 'between'
+    IN = 'in'
+
+    # selection operators  TODO: might be migrated to the Read object...
+    HAVING = 'having'
+    UNION = 'union'
+    INTERSECT = 'intersect'
+
+    # request comparison
+    ALL = 'all'
+    ANY = 'any'
+    SOME = 'some'
+
+    # DB operations
+    OPTIMIZE = 'optimize'
+    VERSION = 'version'
+
+    # aggregation operations
+    AVG = 'avg'
+    COUNT = 'count'
+    MEAN = 'mean'
+    MAX = 'max'
+    MIN = 'min'
+    SUM = 'sum'
+
+    # string operations
+    CONCAT = 'concat'
+    LENGTH = 'length'
+    REPLACE = 'replace'
+    SOUNDEX = 'soundex'
+    SUBSTRING = 'substring'
+    LEFT = 'left'
+    RIGHT = 'right'
+    REVERSE = 'reverse'
+    TRIM = 'trim'
+    LTRIM = 'ltrim'
+    RTRIM = 'rtrim'
+    LPAD = 'lpad'
+    UPPER = 'upper'
+    LOWER = 'lower'
+    UCASE = 'ucase'
+    LCASE = 'lcase'
+    LOCATE = 'locate'
+    INSTR = 'instr'
+
+    # mathematical operations
+    RAND = 'rand'
+    ROUND = 'round'
+    LOWER = 'lower'
+    UPPER = 'upper'
+    MD5 = 'md5'
+
+    # datetime operations
+    NOW = 'now'
+    SEC_TO_TIME = 'sec_to_time'
+    DATEDIFF = 'datediff'
+    MONTH = 'month'
+    YEAR = 'year'
+
+    # additional operations
+    CAST = 'cast'
+    CONVERT = 'convert'
+    GROUPCONCAT = 'groupconcat'
 
     @staticmethod
     def contains(value):
@@ -114,13 +180,6 @@ class Expression(BaseElement):
     def __getattr__(self, key):
 
         return type(self)('{0}.{1}'.format(self.name, key))
-
-    def exists(self):
-        """Transform this model to an exist function.
-
-        :rtype: Function"""
-
-        return Function(FuncName.EXISTS)(self)
 
     def __and__(self, other):
 
