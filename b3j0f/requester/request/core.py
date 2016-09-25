@@ -218,17 +218,17 @@ class Request(object):
 
         return self.processcrud(function)
 
-    def groupby(self, *value):
+    def groupby(self, *values):
 
         return Read(request=self, groupby=values)
 
-    def sort(self, *values):
+    def orderby(self, *values):
 
-        return Read(request=self, sort=values)
+        return Read(request=self, orderby=values)
 
     def select(self, *values):
 
-        return Read(request=self, name=values)
+        return Read(request=self, select=values)
 
     def skip(self, value):
 

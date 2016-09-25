@@ -161,6 +161,38 @@ class RequestTest(UTCase):
 
         self.assertEqual(self.requests, [self.request])
 
+    def test_groupby(self):
+
+        value = 'test'
+        read = self.request.groupby(value)
+
+        self.assertIsInstance(read, Read)
+        self.assertEqual(read.getgroupby, (value,))
+
+    def test_orderby(self):
+
+        value = 'test'
+        read = self.request.orderby(value)
+
+        self.assertIsInstance(read, Read)
+        self.assertEqual(read.getorderby, (value,))
+
+    def test_select(self):
+
+        value = 'test'
+        read = self.request.select(value)
+
+        self.assertIsInstance(read, Read)
+        self.assertEqual(read.getselect, (value,))
+
+    def test_offset(self):
+
+        value = 'test'
+        read = self.request.offset(value)
+
+        self.assertIsInstance(read, Read)
+        self.assertEqual(read.getoffset, (value,))
+
 
 
 if __name__ == '__main__':

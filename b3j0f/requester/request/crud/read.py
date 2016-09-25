@@ -26,7 +26,7 @@
 
 """Read module."""
 
-__all__ = ['Read', 'Cursor', 'Jointure']
+__all__ = ['Read', 'Cursor', 'Join']
 
 from .base import CRUD
 
@@ -34,9 +34,11 @@ from enum import IntEnum, unique
 
 from collections import Iterable
 
+from six import string_types
+
 
 @unique
-class Jointure(IntEnum):
+class Join(IntEnum):
 
     INNER = 0  #: inner join.
     LEFT = 1  #: left join.
@@ -67,88 +69,169 @@ class Read(CRUD):
             join=None, *args, **kwargs
     ):
         """
-        :param tuple select: data to select.
+        :param list select: data to select.
         :param int offset: data to avoid.
         :param int limit: max number of data to retrieve.
         :param list orderby: data sorting.
         :param list groupby: data field group.
-        :param Jointure join: join type (INNER, LEFT, etc.).
+        :param join: join type (INNER, LEFT, etc.).
+        :type join: str or Join
         """
 
         super(Read, self).__init__(*args, **kwargs)
 
-        self._offset = offset
-        self._limit = limit
-        self._orderby = orderby
-        self._groupby = groupby
-        self._select = select
-        self._join = join.name if isinstance(join, Jointure) else join
+        # initialize protected properties
+        self._select = None
+        self._offset = None
+        self._limit = None
+        self._orderby = None
+        self._groupby = None
+        self._join = None
 
-    def offset(self, value):
+        # set parameters
+        if select is not None:
+            self.select(select)
 
-        self._offset = value
+        if offset is not None:
+            self.offset(offset)
 
-        return self
+        if limit is not None:
+            self.limit(limit)
 
-    @property
-    def getoffset(self):
+        if orderby is not None:
+            self.orderby(orderby)
 
-        return self._offset
+        if groupby is not None:
+            self.groupby(groupby)
 
-    def limit(self, value):
+        if join is not None:
+            self.join(join)
 
-        self._limit = value
+    def offset(self, value=None):
+        """Get or set offset if value is not None.
 
-        return self
+        :param int value: value to set. Default is None.
+        :return: depending on value. If None, return this offset, otherwise
+            this.
+        :rtype: int or Read
+        """
 
-    @property
-    def getlimit(self):
+        if value is None:
+            result = self._offset
 
-        return self._limit
+        else:
+            if not isinstance(value, int):
+                raise TypeError(
+                    'Wrong value {0}. {1} expected'.format(value, int)
+                )
 
-    def orderby(self, value):
+            result = self
+            self._offset = value
 
-        self._orderby = value
+        return result
 
-        return self
+    def limit(self, value=None):
+        """Get or set limit if value is not None.
 
-    @property
-    def getorderby(self):
+        :param int value: value to set. Default is None.
+        :return: depending on value. If None, return this offset, otherwise
+            this.
+        :rtype: int or Read
+        """
 
-        return self._orderby
+        if value is None:
+            result = self._limit
 
-    def groupby(self, value):
+        else:
+            if not isinstance(value, int):
+                raise TypeError(
+                    'Wrong value {0}. {1} expected'.format(value, int)
+                )
 
-        self._groupby = value
+            result = self
+            self._limit = value
 
-        return self
+        return result
 
-    @property
-    def getgroupby(self):
+    def orderby(self, *values):
+        """Get or set orderby if value is not None.
 
-        return self._groupby
+        :param tuple value: value to set. Default is None.
+        :return: depending on value. If None, return this offset, otherwise
+            this.
+        :rtype: tuple or Read
+        """
 
-    def select(self, value):
+        if values:
+            self._orderby = values
+            result = self
 
-        self._select = value
+        else:
+            result = self._orderby
 
-        return self
+        return result
 
-    @property
-    def getselect(self):
+    def groupby(self, *values):
+        """Get or set groupby if value is not None.
 
-        return self._select
+        :param tuple value: value to set. Default is None.
+        :return: depending on value. If None, return this offset, otherwise
+            this.
+        :rtype: tuple or Read
+        """
 
-    def join(self, value):
+        if values:
+            self._groupby = values
+            result = self
 
-        self._join = value
+        else:
+            result = self._groupby
 
-        return self
+        return result
 
-    @property
-    def getjoin(self):
+    def select(self, *values):
+        """Get or set select if value is not None.
 
-        return self._join
+        :param tuple value: value to set. Default is None.
+        :return: depending on value. If None, return this offset, otherwise
+            this.
+        :rtype: tuple or Read
+        """
+
+        if values:
+            self._select = values
+            result = self
+
+        else:
+            result = self._select
+
+        return result
+
+    def join(self, value=None):
+        """Get or set join if value is not None.
+
+        :param value: value to set. Default is None.
+        :type value: str or Join
+        :return: depending on value. If None, return this offset, otherwise
+            this.
+        :rtype: str or Join or Read
+        """
+
+        if value is None:
+            result = self._join
+
+        else:
+            if not isinstance(value, string_types + (Join,)):
+                raise TypeError(
+                    'Wrong value {0}. {1} expected'.format(
+                        value, string_types + (Join,)
+                    )
+                )
+
+            self._join = value.name if isinstance(value, Join) else value
+            result = self
+
+        return result
 
     def __getslice__(self, i, j):
         """Set offset and limit and execute the selection.
