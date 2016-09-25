@@ -31,44 +31,20 @@ from b3j0f.utils.ut import UTCase
 
 from unittest import main
 
-from ..base import CRUD
-from ...core import Request
+from ..run import Operation
 
 
-class CRUDTest(UTCase):
-
-    def test_init_defaul(self):
-
-        crud = CRUD()
-
-        self.assertIsNone(crud.request)
+class OperationTest(UTCase):
 
     def test_init(self):
 
-        request = Request()
+        name = 'test'
+        params = 1, 2
 
-        crud = CRUD(request=request)
+        run = Operation(name=name, params=params)
 
-        self.assertIs(request, crud.request)
-
-    def test__call__(self):
-
-        requests = []
-
-        class Driver(object):
-
-            def process(self, request, **kwargs):
-
-                requests.append(request)
-
-        request = Request(driver=Driver())
-
-        crud = CRUD(request=request)
-        crud()
-
-        self.assertIn(request, requests)
-
-        self.assertIn(crud, request.cruds)
+        self.assertEqual(name, run.name)
+        self.assertEqual(params, run.params)
 
 if __name__ == '__main__':
     main()

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -25,50 +24,20 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""conf file driver UTs."""
+"""run module."""
 
-from b3j0f.utils.ut import UTCase
+__all__ = ['Operation']
 
-from unittest import main
-
-from ..base import CRUD
-from ...core import Request
+from .base import CRUD
 
 
-class CRUDTest(UTCase):
+class Operation(CRUD):
+    """In charge of executing system service."""
+    __slots__ = ['name', 'params'] + CRUD.__slots__
 
-    def test_init_defaul(self):
+    def __init__(self, name, params, *args, **kwargs):
 
-        crud = CRUD()
+        super(Operation, self).__init__(*args, **kwargs)
 
-        self.assertIsNone(crud.request)
-
-    def test_init(self):
-
-        request = Request()
-
-        crud = CRUD(request=request)
-
-        self.assertIs(request, crud.request)
-
-    def test__call__(self):
-
-        requests = []
-
-        class Driver(object):
-
-            def process(self, request, **kwargs):
-
-                requests.append(request)
-
-        request = Request(driver=Driver())
-
-        crud = CRUD(request=request)
-        crud()
-
-        self.assertIn(request, requests)
-
-        self.assertIn(crud, request.cruds)
-
-if __name__ == '__main__':
-    main()
+        self.name = name
+        self.params = params

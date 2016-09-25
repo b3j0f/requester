@@ -34,6 +34,7 @@ from .crud.create import Create
 from .crud.read import Read
 from .crud.update import Update
 from .crud.delete import Delete
+from .crud.run import Operation
 
 
 class Request(object):
@@ -164,28 +165,25 @@ class Request(object):
     def processcrud(self, *cruds):
         """Process several crud operations."""
 
-        self.cruds += [cruds]
+        self.cruds += list(cruds)
 
         self.driver.process(self)
 
         return self
 
-    def create(self, name, **values):
+    def create(self, name, **value):
 
-        create = Create(name=name, params=[values])
+        return Create(request=self, name=name, value=value)()
 
-        return self.processcrud(create)
-
-    def read(self, name, **kwargs):
+    def read(self, select, **kwargs):
         """Read input expressions.
 
-        :param Read read: read. All filtered data by default.
+        :param tuple select: selection fields.
+        :param dict kwargs: additional selection parameters (limit, etc.).
         :rtype: Cursor
         """
 
-        read = Read(name=name, **kwargs)
-
-        return self.processcrud(read)
+        return Read(request=self, select=select, **kwargs)()
 
     def update(self, name, **values):
         """Apply input updates.
@@ -193,20 +191,16 @@ class Request(object):
         :param tuple updates: updates to apply.
         """
 
-        update = Update(name=name, params=[values])
+        return Update(request=self, name=name, values=values)()
 
-        return self.processcrud(update)
-
-    def delete(self, *names):
+    def delete(self, *exprs):
         """Delete input deletes.
 
-        :param tuple deletes: deletes to delete.
+        :param tuple exprs: model name to delete.
         :return: number of deleted deletes.
         """
 
-        delete = Delete(name=names)
-
-        return self.processcrud(delete)
+        return Delete(request=self, exprs=exprs)()
 
     def run(self, name, *params):
         """Run input expr.
@@ -214,9 +208,19 @@ class Request(object):
         :return: expr result.
         """
 
-        function = CRUD(name=name, params=params)
+        return Operation(request=self, name=name, params=params)()
 
-        return self.processcrud(function)
+    def select(self, *values):
+
+        return Read(request=self, select=values)
+
+    def offset(self, value):
+
+        return Read(request=self, offset=value)
+
+    def limit(self, value):
+
+        return Read(request=self, limit=value)
 
     def groupby(self, *values):
 
@@ -225,18 +229,6 @@ class Request(object):
     def orderby(self, *values):
 
         return Read(request=self, orderby=values)
-
-    def select(self, *values):
-
-        return Read(request=self, select=values)
-
-    def skip(self, value):
-
-        return Read(request=self, skip=value)
-
-    def limit(self, value):
-
-        return Read(request=self, limit=value)
 
     def join(self, value):
 

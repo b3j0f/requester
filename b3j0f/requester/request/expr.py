@@ -115,8 +115,6 @@ class FuncName(Enum):
     # mathematical operations
     RAND = 'rand'
     ROUND = 'round'
-    LOWER = 'lower'
-    UPPER = 'upper'
     MD5 = 'md5'
 
     # datetime operations

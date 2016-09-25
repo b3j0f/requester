@@ -43,3 +43,16 @@ class CRUD(BaseElement):
         super(CRUD, self).__init__(*args, **kwargs)
 
         self.request = request
+
+    def __call__(self):
+        """Execute this CRUD element.
+
+        :return: this execuion result."""
+
+        if self.request is None:
+            raise RuntimeError(
+                'Impossible to execute this without associate it to a request.'
+            )
+
+        else:
+            return self.request.processcrud(self)

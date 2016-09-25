@@ -90,7 +90,7 @@ class Read(CRUD):
 
         # set parameters
         if select is not None:
-            self.select(select)
+            self.select(*select)
 
         if offset is not None:
             self.offset(offset)
@@ -99,10 +99,10 @@ class Read(CRUD):
             self.limit(limit)
 
         if orderby is not None:
-            self.orderby(orderby)
+            self.orderby(*orderby)
 
         if groupby is not None:
-            self.groupby(groupby)
+            self.groupby(*groupby)
 
         if join is not None:
             self.join(join)
@@ -248,20 +248,6 @@ class Read(CRUD):
             self._limit = j
 
         return self()
-
-    def __call__(self):
-        """Execute this selection.
-
-        :return: this selection result.
-        :rtype: Cursor"""
-
-        if self.request is None:
-            raise RuntimeError(
-                'Impossible to execute this without associate it to a request.'
-            )
-
-        else:
-            return self.request.process(self)
 
 
 class Cursor(Iterable):

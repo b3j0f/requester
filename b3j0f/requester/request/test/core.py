@@ -33,7 +33,11 @@ from unittest import main
 
 from ..core import Request
 from ..expr import Expression as E, Function as F, FuncName as FN
+from ..crud.create import Create
 from ..crud.read import Read
+from ..crud.update import Update
+from ..crud.delete import Delete
+from ..crud.run import Operation
 
 
 class RequestTest(UTCase):
@@ -161,13 +165,37 @@ class RequestTest(UTCase):
 
         self.assertEqual(self.requests, [self.request])
 
+    def test_select(self):
+
+        value = 'test'
+        read = self.request.select(value)
+
+        self.assertIsInstance(read, Read)
+        self.assertEqual(read.select(), (value,))
+
+    def test_offset(self):
+
+        value = 1
+        read = self.request.offset(value)
+
+        self.assertIsInstance(read, Read)
+        self.assertEqual(read.offset(), value)
+
+    def test_limit(self):
+
+        value = 1
+        read = self.request.limit(value)
+
+        self.assertIsInstance(read, Read)
+        self.assertEqual(read.limit(), value)
+
     def test_groupby(self):
 
         value = 'test'
         read = self.request.groupby(value)
 
         self.assertIsInstance(read, Read)
-        self.assertEqual(read.getgroupby, (value,))
+        self.assertEqual(read.groupby(), (value,))
 
     def test_orderby(self):
 
@@ -175,25 +203,102 @@ class RequestTest(UTCase):
         read = self.request.orderby(value)
 
         self.assertIsInstance(read, Read)
-        self.assertEqual(read.getorderby, (value,))
+        self.assertEqual(read.orderby(), (value,))
 
-    def test_select(self):
+    def test_join(self):
 
-        value = 'test'
-        read = self.request.select(value)
-
-        self.assertIsInstance(read, Read)
-        self.assertEqual(read.getselect, (value,))
-
-    def test_offset(self):
-
-        value = 'test'
-        read = self.request.offset(value)
+        value = 'full'
+        read = self.request.join(value)
 
         self.assertIsInstance(read, Read)
-        self.assertEqual(read.getoffset, (value,))
+        self.assertEqual(read.join(), value)
 
+    def test_processcrud(self):
 
+        cruds = [
+            Create('create', {}),
+            Read(),
+            Update('update', {}),
+            Delete()
+        ]
+
+        self.request.processcrud(*cruds)
+
+        self.assertIn(self.request, self.requests)
+        self.assertEqual(self.request.cruds, cruds)
+
+    def test_create(self):
+
+        name = 'test'
+        value = {'a': 1, 'b': 2}
+
+        self.request.create(name, **value)
+
+        self.assertIn(self.request, self.requests)
+        crud = self.request.cruds[0]
+
+        self.assertIsInstance(crud, Create)
+        self.assertIs(crud.request, self.request)
+        self.assertEqual(crud.name, name)
+        self.assertEqual(crud.value, value)
+
+    def test_read(self):
+
+        select = ('test',)
+        limit = 1
+
+        self.request.read(select=select, limit=limit)
+
+        self.assertIn(self.request, self.requests)
+        crud = self.request.cruds[0]
+
+        self.assertIsInstance(crud, Read)
+        self.assertIs(crud.request, self.request)
+        self.assertEqual(crud.select(), select)
+        self.assertEqual(crud.limit(), limit)
+
+    def test_update(self):
+
+        name = 'test'
+        values = {'a': 1, 'b': 2}
+
+        self.request.update(name, **values)
+
+        self.assertIn(self.request, self.requests)
+        crud = self.request.cruds[0]
+
+        self.assertIsInstance(crud, Update)
+        self.assertIs(crud.request, self.request)
+        self.assertEqual(crud.name, name)
+        self.assertEqual(crud.values, values)
+
+    def test_delete(self):
+
+        exprs = ('test',)
+
+        self.request.delete(*exprs)
+
+        self.assertIn(self.request, self.requests)
+        crud = self.request.cruds[0]
+
+        self.assertIsInstance(crud, Delete)
+        self.assertIs(crud.request, self.request)
+        self.assertEqual(crud.exprs, exprs)
+
+    def test_run(self):
+
+        name = 'test'
+        params = (1, 2)
+
+        self.request.run(name, *params)
+
+        self.assertIn(self.request, self.requests)
+        crud = self.request.cruds[0]
+
+        self.assertIsInstance(crud, Operation)
+        self.assertIs(crud.request, self.request)
+        self.assertEqual(crud.name, name)
+        self.assertEqual(crud.params, params)
 
 if __name__ == '__main__':
     main()

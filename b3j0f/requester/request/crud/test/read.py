@@ -57,8 +57,8 @@ class ReadTest(UTCase):
         join = 'join'
 
         read = Read(
-            select=select, offset=offset, limit=limit, orderby=orderby,
-            groupby=groupby, join=join
+            select=(select,), offset=offset, limit=limit, orderby=(orderby,),
+            groupby=(groupby,), join=join
         )
 
         self.assertEqual((select,), read.select())
@@ -93,10 +93,12 @@ class ReadTest(UTCase):
         groupby = 'groupby'
         join = 'join'
 
-        read = Read().select(select).offset(offset).limit(limit)
-        read = read.orderby(orderby).groupby(groupby).join(join)
+        read = Read()
 
-        self.assertIsInstance(read, Read)
+        readbis = read.select(select).offset(offset).limit(limit)
+        readbis = readbis.orderby(orderby).groupby(groupby).join(join)
+
+        self.assertIs(read, readbis)
 
         self.assertEqual((select,), read.select())
         self.assertEqual(offset, read.offset())
