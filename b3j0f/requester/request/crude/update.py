@@ -28,12 +28,12 @@
 
 __all__ = ['Update']
 
-from .base import CRUD
+from .base import CRUDE
 
 
-class Update(CRUD):
+class Update(CRUDE):
 
-    __slots__ = ['name', 'values'] + CRUD.__slots__
+    __slots__ = ['name', 'values'] + CRUDE.__slots__
 
     def __init__(self, name, values, *args, **kwargs):
 

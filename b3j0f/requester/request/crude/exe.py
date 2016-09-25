@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -25,26 +24,20 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""conf file driver UTs."""
+"""exe module."""
 
-from b3j0f.utils.ut import UTCase
+__all__ = ['Exe']
 
-from unittest import main
-
-from ..run import Operation
+from .base import CRUDE
 
 
-class OperationTest(UTCase):
+class Exe(CRUDE):
+    """In charge of executing system service."""
+    __slots__ = ['name', 'params'] + CRUDE.__slots__
 
-    def test_init(self):
+    def __init__(self, name, params, *args, **kwargs):
 
-        name = 'test'
-        params = 1, 2
+        super(Exe, self).__init__(*args, **kwargs)
 
-        run = Operation(name=name, params=params)
-
-        self.assertEqual(name, run.name)
-        self.assertEqual(params, run.params)
-
-if __name__ == '__main__':
-    main()
+        self.name = name
+        self.params = params

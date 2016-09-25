@@ -29,30 +29,30 @@
 __all__ = ['Request']
 
 from .expr import Expression
-from .crud.base import CRUD
-from .crud.create import Create
-from .crud.read import Read
-from .crud.update import Update
-from .crud.delete import Delete
-from .crud.run import Operation
+from .crude.base import CRUDE
+from .crude.create import Create
+from .crude.read import Read
+from .crude.update import Update
+from .crude.delete import Delete
+from .crude.exe import Exe
 
 
 class Request(object):
-    """CRUD/runnable object bound to a driver in order to access to data.
+    """CRUDE/exenable object bound to a driver in order to access to data.
 
     Common use is to instanciate it from a RequestManager."""
 
-    __slots__ = ['driver', 'ctx', '_query', 'cruds']
+    __slots__ = ['driver', 'ctx', '_query', 'crudes']
 
     def __init__(
-            self, driver=None, ctx=None, query=None, cruds=None,
+            self, driver=None, ctx=None, query=None, crudes=None,
             *args, **kwargs
     ):
         """
         :param Driver driver: driver able to execute the request.
         :param dict ctx: request execution context.
         :param Expression query: request query.
-        :param tuple ops: cruds.
+        :param tuple ops: crudes.
         """
 
         super(Request, self).__init__(*args, **kwargs)
@@ -60,7 +60,7 @@ class Request(object):
         self.driver = driver
         self.ctx = ctx or {}
         self._query = query
-        self.cruds = cruds or []
+        self.crudes = crudes or []
 
         if query is not None and not isinstance(query, Expression):
             raise TypeError(
@@ -68,10 +68,10 @@ class Request(object):
             )
 
 
-        for crud in self.cruds:
-            if not isinstance(crud, CRUD):
+        for crude in self.crudes:
+            if not isinstance(crude, CRUDE):
                 raise TypeError(
-                    'Wrong type {0}. {1} expected.'.format(crud, CRUD)
+                    'Wrong type {0}. {1} expected.'.format(crude, CRUDE)
                 )
 
     @property
@@ -162,10 +162,10 @@ class Request(object):
 
         return self.delete(key)
 
-    def processcrud(self, *cruds):
-        """Process several crud operations."""
+    def processcrude(self, *crudes):
+        """Process several crude operations."""
 
-        self.cruds += list(cruds)
+        self.crudes += list(crudes)
 
         self.driver.process(self)
 
@@ -202,34 +202,67 @@ class Request(object):
 
         return Delete(request=self, exprs=exprs)()
 
-    def run(self, name, *params):
-        """Run input expr.
+    def exe(self, name, *params):
+        """Execute input operation with params.
 
-        :return: expr result.
+        :param name: operation name.
+        :type name: str or Expression
+        :param tuple params: operation parameters.
+        :return: operation result.
         """
 
-        return Operation(request=self, name=name, params=params)()
+        return Exe(request=self, name=name, params=params)()
 
     def select(self, *values):
+        """Start a read operation in defining values to select.
+
+        See the Read object for more details about how to use it.
+        :return: a read object.
+        :rtype: Read"""
 
         return Read(request=self, select=values)
 
     def offset(self, value):
+        """Start a read operation in defining the offset.
+
+        See the Read object for more details about how to use it.
+        :return: a read object.
+        :rtype: Read"""
 
         return Read(request=self, offset=value)
 
     def limit(self, value):
+        """Start a read operation in defining the limit.
+
+        See the Read object for more details about how to use it.
+        :return: a read object.
+        :rtype: Read"""
 
         return Read(request=self, limit=value)
 
     def groupby(self, *values):
+        """Start a read operation in defining values to groupby.
+
+        See the Read object for more details about how to use it.
+        :return: a read object.
+        :rtype: Read"""
 
         return Read(request=self, groupby=values)
 
     def orderby(self, *values):
+        """Start a read operation in defining values to orderby.
+
+        See the Read object for more details about how to use it.
+        :return: a read object.
+        :rtype: Read"""
 
         return Read(request=self, orderby=values)
 
     def join(self, value):
+        """Start a read operation in defining the join.
+
+        See the Read object for more details about how to use it.
+        :return: a read object.
+        :rtype: Read"""
 
         return Read(request=self, join=value)

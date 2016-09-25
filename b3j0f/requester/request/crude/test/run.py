@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -24,10 +25,26 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""CRUD configuration package."""
-from .base import CRUD
-from .create import Create
-from .read import Read, Cursor
-from .update import Update
-from .delete import Delete
+"""conf file driver UTs."""
 
+from b3j0f.utils.ut import UTCase
+
+from unittest import main
+
+from ..exe import Exe
+
+
+class ExeTest(UTCase):
+
+    def test_init(self):
+
+        name = 'test'
+        params = 1, 2
+
+        exe = Exe(name=name, params=params)
+
+        self.assertEqual(name, exe.name)
+        self.assertEqual(params, exe.params)
+
+if __name__ == '__main__':
+    main()

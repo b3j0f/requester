@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -25,50 +24,10 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""conf file driver UTs."""
+"""CRUDE configuration package."""
+from .base import CRUDE
+from .create import Create
+from .read import Read, Cursor
+from .update import Update
+from .delete import Delete
 
-from b3j0f.utils.ut import UTCase
-
-from unittest import main
-
-from ..base import CRUD
-from ...core import Request
-
-
-class CRUDTest(UTCase):
-
-    def test_init_defaul(self):
-
-        crud = CRUD()
-
-        self.assertIsNone(crud.request)
-
-    def test_init(self):
-
-        request = Request()
-
-        crud = CRUD(request=request)
-
-        self.assertIs(request, crud.request)
-
-    def test__call__(self):
-
-        requests = []
-
-        class Driver(object):
-
-            def process(self, request, **kwargs):
-
-                requests.append(request)
-
-        request = Request(driver=Driver())
-
-        crud = CRUD(request=request)
-        crud()
-
-        self.assertIn(request, requests)
-
-        self.assertIn(crud, request.cruds)
-
-if __name__ == '__main__':
-    main()

@@ -1,7 +1,7 @@
 Description
 -----------
 
-Abstract data request library powered by the python syntax.
+Abstract data request library powered by the python syntax and reflective concerns.
 
 .. image:: https://img.shields.io/pypi/l/b3j0f.requester.svg
    :target: https://pypi.python.org/pypi/b3j0f.requester/
@@ -64,15 +64,17 @@ Features
 
 This library aims to access to system data from a generic and python API.
 
+Reflective concerns permit to not consider only data access with four create/read/update/delete operations but with a more one which is a service execution. Therefore, the main acronym of this library is CRUDE
+
 In a minimal case, there are 6 concepts to know:
 
 - Driver: in charge of access to data.
 - RequestManager: create request and apply them on a driver.
-- Request: in charge of defining CRUD operations.
+- Request: in charge of defining CRUDE operations.
 - Expression: refers to data models.
 - Function: refers to system functions.
 
-Queries and CRUD operations are done with Expression and Function objects.
+Queries and CRUDE operations are done with Expression and Function objects.
 
 Let a data models containing a table 'user' where fields are 'name' and 'age'.
 
@@ -170,7 +172,7 @@ Read data from a system
 
    # read data with a Read object
    read = R(limit=10, groupby=E.A.name, jointure=J.FULL, sort=E.A.name)
-   result = req.processcrud(read).ctx[read.select]  # get context request which contain all data from systems
+   result = req.processcrude(read).ctx[read.select]  # get context request which contain all data from systems
 
    # read data from the request manager with default parameters
    AandB = requestmanager['A', 'B']
@@ -207,19 +209,42 @@ Delete data from a system
 
    from b3j0f.requester import Delete as D
 
-   # delete a user from requestmanager
+   # delete a user from a requestmanager
    requestmanager.delete('user')
    requestmanager.delete(E.user)
    del requestmanager['user']
    del requestmanager[E.user]
 
-   # delete a user from requestmanager
+   # delete a user from a request
    req.delete(D.user)
    req.delete('user')
    del req['user']
    del req[E.user]
    req.process(D('user'))
    req.process(D(E.user))
+
+Run a service with parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   from b3j0f.requester import Exe as E
+
+   # let a system 'Kitchen' providing the service 'cook' with ingredients such as parameters...
+
+   # run this service from a request manager
+   requestmanager.run('Kitchen.cook', 'apple', 'pear')
+   requestmanager.run(E.user.service, *E.Kitchen.fruits)
+   requestmanager('Kitchen.cook', 'apple', 'pear')
+   requestmanager(E.Kitchen.cook, *E.Kitchen.fruits)
+
+   # run this service from a request
+   req.run('Kitchen.cook', 'apple', 'pear')
+   req.run(E.user.service, *E.Kitchen.fruits)
+   req('Kitchen.cook', 'apple', 'pear')
+   req(E.Kitchen.cook, *E.Kitchen.fruits)
+   req.process(Run('Kitchen.fruits', 'apple', 'pear'))
+   req.process(Run(E.Kitchen.fruits, params=['apple', 'pear']))
 
 Perspectives
 ------------

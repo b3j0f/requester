@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -24,19 +25,50 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""delete module."""
+"""conf file driver UTs."""
 
-__all__ = ['Delete']
+from b3j0f.utils.ut import UTCase
 
-from .base import CRUD
+from unittest import main
+
+from ..base import CRUDE
+from ...core import Request
 
 
-class Delete(CRUD):
+class CRUDETest(UTCase):
 
-    __slots__ = ['exprs'] + CRUD.__slots__
+    def test_init_defaul(self):
 
-    def __init__(self, exprs=None, *args, **kwargs):
+        crude = CRUDE()
 
-        super(Delete, self).__init__(*args, **kwargs)
+        self.assertIsNone(crude.request)
 
-        self.exprs = exprs
+    def test_init(self):
+
+        request = Request()
+
+        crude = CRUDE(request=request)
+
+        self.assertIs(request, crude.request)
+
+    def test__call__(self):
+
+        requests = []
+
+        class Driver(object):
+
+            def process(self, request, **kwargs):
+
+                requests.append(request)
+
+        request = Request(driver=Driver())
+
+        crude = CRUDE(request=request)
+        crude()
+
+        self.assertIn(request, requests)
+
+        self.assertIn(crude, request.crudes)
+
+if __name__ == '__main__':
+    main()

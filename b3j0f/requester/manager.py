@@ -30,11 +30,11 @@ __all__ = ['RequestManager']
 
 from .request import Request
 
-from .request.crud.base import CRUD
-from .request.crud.create import Create
-from .request.crud.read import Read
-from .request.crud.update import Update
-from .request.crud.delete import Delete
+from .request.crude.base import CRUDE
+from .request.crude.create import Create
+from .request.crude.read import Read
+from .request.crude.update import Update
+from .request.crude.delete import Delete
 from .driver import Driver
 
 
@@ -58,7 +58,7 @@ class RequestManager(Driver):
         if request is not None:
             result = Request(
                 manager=self,
-                ctx=request.ctx, query=request.query, cruds=request.cruds
+                ctx=request.ctx, query=request.query, crudes=request.crudes
             )
 
         else:
@@ -97,15 +97,15 @@ class RequestManager(Driver):
 
         return self
 
-    def cruds2request(self, *cruds, **kwargs):
-        """Transform input cruds to an input request.
+    def crudes2request(self, *crudes, **kwargs):
+        """Transform input crudes to an input request.
 
-        :param tuple cruds: list of crud operations to run.
+        :param tuple crudes: list of crude operations to exe.
         :param dict kwargs: request parameters such as ctx, query.
         :rtype: Request
         :return: created request"""
 
-        result = Request(driver=self, cruds=cruds, **kwargs)
+        result = Request(driver=self, crudes=crudes, **kwargs)
 
         return result
 
@@ -114,7 +114,7 @@ class RequestManager(Driver):
 
         create = Create(name=name, params=[values])
 
-        result = self.crud2request(create)
+        result = self.crude2request(create)
 
         return result
 
@@ -127,7 +127,7 @@ class RequestManager(Driver):
 
         read = Read(name=names, **kwargs)
 
-        result = self.crud2request(read)
+        result = self.crude2request(read)
 
         return self.ctx[read.name]
 
@@ -135,7 +135,7 @@ class RequestManager(Driver):
 
         update = Update(name=name, params=[values])
 
-        result = self.crud2request(update)
+        result = self.crude2request(update)
 
         return self.ctx[update.name]
 
@@ -143,17 +143,17 @@ class RequestManager(Driver):
 
         delete = Delete(name=names)
 
-        result = self.crud2request(delete)
+        result = self.crude2request(delete)
 
         return self.ctx[delete.name]
 
-    def run(self, name, *params):
+    def exe(self, name, *params):
 
-        crud = CRUD(name, params=params)
+        crude = CRUDE(name, params=params)
 
-        result = self.crud2request(crud)
+        result = self.crude2request(crude)
 
-        return self.ctx[crud.name]
+        return self.ctx[crude.name]
 
     def __getitem__(self, key):
 

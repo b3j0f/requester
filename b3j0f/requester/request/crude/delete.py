@@ -24,20 +24,19 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""create module."""
+"""delete module."""
 
-__all__ = ['Create']
+__all__ = ['Delete']
 
-from .base import CRUD
+from .base import CRUDE
 
 
-class Create(CRUD):
+class Delete(CRUDE):
 
-    __slots__ = ['name', 'value'] + CRUD.__slots__
+    __slots__ = ['exprs'] + CRUDE.__slots__
 
-    def __init__(self, name, value, *args, **kwargs):
+    def __init__(self, exprs=None, *args, **kwargs):
 
-        super(Create, self).__init__(*args, **kwargs)
+        super(Delete, self).__init__(*args, **kwargs)
 
-        self.name = name
-        self.value = value
+        self.exprs = exprs

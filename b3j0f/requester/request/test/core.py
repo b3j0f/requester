@@ -33,11 +33,11 @@ from unittest import main
 
 from ..core import Request
 from ..expr import Expression as E, Function as F, FuncName as FN
-from ..crud.create import Create
-from ..crud.read import Read
-from ..crud.update import Update
-from ..crud.delete import Delete
-from ..crud.run import Operation
+from ..crude.create import Create
+from ..crude.read import Read
+from ..crude.update import Update
+from ..crude.delete import Delete
+from ..crude.exe import Exe
 
 
 class RequestTest(UTCase):
@@ -63,15 +63,15 @@ class RequestTest(UTCase):
         self.assertIsNone(request.driver)
         self.assertEqual(request.ctx, {})
         self.assertIsNone(request.query)
-        self.assertEqual(request.cruds, [])
+        self.assertEqual(request.crudes, [])
 
     def test_init_errorquery(self):
 
         self.assertRaises(TypeError, Request, query=1)
 
-    def test_init_errorcruds(self):
+    def test_init_errorcrudes(self):
 
-        self.assertRaises(TypeError, Request, cruds=[1])
+        self.assertRaises(TypeError, Request, crudes=[1])
 
     def test_and_query(self):
 
@@ -213,19 +213,19 @@ class RequestTest(UTCase):
         self.assertIsInstance(read, Read)
         self.assertEqual(read.join(), value)
 
-    def test_processcrud(self):
+    def test_processcrude(self):
 
-        cruds = [
+        crudes = [
             Create('create', {}),
             Read(),
             Update('update', {}),
             Delete()
         ]
 
-        self.request.processcrud(*cruds)
+        self.request.processcrude(*crudes)
 
         self.assertIn(self.request, self.requests)
-        self.assertEqual(self.request.cruds, cruds)
+        self.assertEqual(self.request.crudes, crudes)
 
     def test_create(self):
 
@@ -235,12 +235,12 @@ class RequestTest(UTCase):
         self.request.create(name, **value)
 
         self.assertIn(self.request, self.requests)
-        crud = self.request.cruds[0]
+        crude = self.request.crudes[0]
 
-        self.assertIsInstance(crud, Create)
-        self.assertIs(crud.request, self.request)
-        self.assertEqual(crud.name, name)
-        self.assertEqual(crud.value, value)
+        self.assertIsInstance(crude, Create)
+        self.assertIs(crude.request, self.request)
+        self.assertEqual(crude.name, name)
+        self.assertEqual(crude.value, value)
 
     def test_read(self):
 
@@ -250,12 +250,12 @@ class RequestTest(UTCase):
         self.request.read(select=select, limit=limit)
 
         self.assertIn(self.request, self.requests)
-        crud = self.request.cruds[0]
+        crude = self.request.crudes[0]
 
-        self.assertIsInstance(crud, Read)
-        self.assertIs(crud.request, self.request)
-        self.assertEqual(crud.select(), select)
-        self.assertEqual(crud.limit(), limit)
+        self.assertIsInstance(crude, Read)
+        self.assertIs(crude.request, self.request)
+        self.assertEqual(crude.select(), select)
+        self.assertEqual(crude.limit(), limit)
 
     def test_update(self):
 
@@ -265,12 +265,12 @@ class RequestTest(UTCase):
         self.request.update(name, **values)
 
         self.assertIn(self.request, self.requests)
-        crud = self.request.cruds[0]
+        crude = self.request.crudes[0]
 
-        self.assertIsInstance(crud, Update)
-        self.assertIs(crud.request, self.request)
-        self.assertEqual(crud.name, name)
-        self.assertEqual(crud.values, values)
+        self.assertIsInstance(crude, Update)
+        self.assertIs(crude.request, self.request)
+        self.assertEqual(crude.name, name)
+        self.assertEqual(crude.values, values)
 
     def test_delete(self):
 
@@ -279,26 +279,26 @@ class RequestTest(UTCase):
         self.request.delete(*exprs)
 
         self.assertIn(self.request, self.requests)
-        crud = self.request.cruds[0]
+        crude = self.request.crudes[0]
 
-        self.assertIsInstance(crud, Delete)
-        self.assertIs(crud.request, self.request)
-        self.assertEqual(crud.exprs, exprs)
+        self.assertIsInstance(crude, Delete)
+        self.assertIs(crude.request, self.request)
+        self.assertEqual(crude.exprs, exprs)
 
-    def test_run(self):
+    def test_exe(self):
 
         name = 'test'
         params = (1, 2)
 
-        self.request.run(name, *params)
+        self.request.exe(name, *params)
 
         self.assertIn(self.request, self.requests)
-        crud = self.request.cruds[0]
+        crude = self.request.crudes[0]
 
-        self.assertIsInstance(crud, Operation)
-        self.assertIs(crud.request, self.request)
-        self.assertEqual(crud.name, name)
-        self.assertEqual(crud.params, params)
+        self.assertIsInstance(crude, Exe)
+        self.assertIs(crude.request, self.request)
+        self.assertEqual(crude.name, name)
+        self.assertEqual(crude.params, params)
 
 if __name__ == '__main__':
     main()

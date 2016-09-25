@@ -24,20 +24,40 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""run module."""
+"""base crude module."""
 
-__all__ = ['Operation']
+__all__ = ['CRUDE']
 
-from .base import CRUD
+from ..expr import BaseElement
 
 
-class Operation(CRUD):
-    """In charge of executing system service."""
-    __slots__ = ['name', 'params'] + CRUD.__slots__
+class CRUDE(BaseElement):
+    """Base crude operation.
 
-    def __init__(self, name, params, *args, **kwargs):
+    Can be associated to a request."""
 
-        super(Operation, self).__init__(*args, **kwargs)
+    __slots__ = ['request', 'result'] + BaseElement.__slots__
 
-        self.name = name
-        self.params = params
+    def __init__(self, request=None, result=None, *args, **kwargs):
+        """
+        :param b3j0f.requester.Request request:
+        :param result: result of this crude processing.
+        """
+
+        super(CRUDE, self).__init__(*args, **kwargs)
+
+        self.request = request
+        self.result = result
+
+    def __call__(self):
+        """Execute this CRUDE element.
+
+        :return: this execuion result."""
+
+        if self.request is None:
+            raise ExetimeError(
+                'Impossible to execute this without associate it to a request.'
+            )
+
+        else:
+            return self.request.processcrude(self)

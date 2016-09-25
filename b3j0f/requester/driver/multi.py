@@ -33,11 +33,11 @@ from .base import Driver
 
 from ..request.core import Request
 from ..request.expr import Expression, Function, FuncName
-from ..request.crud.create import Create
-from ..request.crud.read import Read
-from ..request.crud.update import Update
-from ..request.crud.delete import Delete
-from ..request.crud.run import Operation
+from ..request.cruder.create import Create
+from ..request.cruder.read import Read
+from ..request.cruder.update import Update
+from ..request.cruder.delete import Delete
+from ..request.cruder.exe import Exe
 
 try:
     from threading import Thread
@@ -60,20 +60,20 @@ class MultiDriver(Driver):
 
         result = self._processquery(query=query, ctx=ctx, **kwargs)
 
-        for crud in request.cruds:
+        for cruder in request.cruders:
 
-            if isinstance(crud, (Create, Update, Operation)):
-                if isinstance(crud.name, Expression):
-                    ctx = self._processquery(query=crud.name, ctx=ctx).ctx
-                    names = [crud.name.name]
+            if isinstance(cruder, (Create, Update, Exe)):
+                if isinstance(cruder.name, Expression):
+                    ctx = self._processquery(query=cruder.name, ctx=ctx).ctx
+                    names = [cruder.name.name]
 
                 else:
-                    names = [crud.name]
+                    names = [cruder.name]
 
-            elif isinstance(crud, (Read, Delete)):
+            elif isinstance(cruder, (Read, Delete)):
                 names = []
 
-                items = crud.select() if isinstance(crud, Read) else crud.names
+                items = cruder.select() if isinstance(cruder, Read) else cruder.names
 
                 for item in items:
                     if isinstance(item, Expression):
@@ -97,7 +97,7 @@ class MultiDriver(Driver):
                 else:
                     processingdrivers = [driver]
 
-                request = Request(query=query, ctx=ctx, cruds=crud)
+                request = Request(query=query, ctx=ctx, cruders=cruder)
 
                 for processingdriver in processingdrivers:
 

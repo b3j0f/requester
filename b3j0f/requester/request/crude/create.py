@@ -24,35 +24,20 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""base crud module."""
+"""create module."""
 
-__all__ = ['CRUD']
+__all__ = ['Create']
 
-from ..expr import BaseElement
+from .base import CRUDE
 
 
-class CRUD(BaseElement):
-    """Base crud operation.
+class Create(CRUDE):
 
-    Can be associated to a request."""
+    __slots__ = ['name', 'value'] + CRUDE.__slots__
 
-    __slots__ = ['request'] + BaseElement.__slots__
+    def __init__(self, name, value, *args, **kwargs):
 
-    def __init__(self, request=None, *args, **kwargs):
+        super(Create, self).__init__(*args, **kwargs)
 
-        super(CRUD, self).__init__(*args, **kwargs)
-
-        self.request = request
-
-    def __call__(self):
-        """Execute this CRUD element.
-
-        :return: this execuion result."""
-
-        if self.request is None:
-            raise RuntimeError(
-                'Impossible to execute this without associate it to a request.'
-            )
-
-        else:
-            return self.request.processcrud(self)
+        self.name = name
+        self.value = value

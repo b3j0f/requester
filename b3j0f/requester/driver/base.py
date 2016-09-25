@@ -34,12 +34,12 @@ class Driver(object):
 
     Methods to override are of choice:
     - generic: process
-    - specific: create/read/update/delete/run."""
+    - specific: create/read/update/delete/exe."""
 
     name = None  # driver name
 
     def process(self, request, explain=False, **kwargs):
-        """Generic method to override in order to crud input data related to
+        """Generic method to override in order to cruder input data related to
         query, rtype and ctx.
 
         :param Request request: request to process.
@@ -50,3 +50,50 @@ class Driver(object):
         """
 
         raise NotImplementedError()
+
+
+class CustomDriver(Driver):
+    """Driver with fine grained implementation of cruder functions.
+
+    This driver uses at most five functions for five respective cruder types.
+
+    The processing execute the right function for all request cruder objects.
+
+    Functions must takes in parameters a 'cruder' object, a 'request' object and
+    kwargs for specific driver uses (like explain for example).
+    Function result must be a request."""
+
+    def __init__(
+            self, create=None, read=None, update=None, delete=None, exe=None,
+            *args, **kwargs
+    ):
+        """
+        :param create: creation function.
+        :param read: reading function.
+        :param update: updating function.
+        :param delete: deletion function.
+        :param exe: exening function.
+        """
+
+        super(CustomDriver, self).__init__(*args, **kwargs)
+
+        self.create = create
+        self.read = read
+        self.update = update
+        self.delete = delete
+        self.exe = exe
+
+    def process(self, request, **kwargs):
+
+        result = request
+
+        for cruder in request.crudes:
+
+            crudename = type(cruder).__name__.lower()
+
+            func = getattr(self, crudename)
+
+            if func is not None:
+                result = func(cruder=cruder, request=result, **kwargs)
+
+        return result
