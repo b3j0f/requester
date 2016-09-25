@@ -29,16 +29,14 @@
 __all__ = ['Driver']
 
 
-from enum import IntEnum
-from .request.core import Request
-
-
 class Driver(object):
     """In charge of accessing to data from a request.
 
     Methods to override are of choice:
     - generic: process
     - specific: create/read/update/delete/run."""
+
+    name = None  # driver name
 
     def process(self, request, explain=False, **kwargs):
         """Generic method to override in order to crud input data related to
@@ -48,51 +46,7 @@ class Driver(object):
         :param bool explain: give additional information about the request
             execution.
         :param dict kwargs: additional parameters specific to the driver.
-        :return: request result.
+        :return: request.
         """
 
         raise NotImplementedError()
-
-
-class CompositeDriver(Driver):
-
-    def __init__(self, drivers, *args, **kwargs):
-
-        super(CompositeDriver, self).__init__(*args, **kwargs)
-
-        self.drivers = drivers
-
-    def process(self, request, rtype, data):
-
-        result = None
-
-        self._process_filter(request)
-
-        if rtype == RTYPE.CREATE:
-            pass
-
-        elif rtype == RTYPE.READ:
-            pass
-
-        elif rtype == RTYPE.UPDATE:
-            pass
-
-        elif rtype == RTYPE.DELETE:
-            pass
-
-        elif rtype == RTYPE.RUN:
-            pass
-
-        return result
-
-    def getdriver(self, name):
-
-        mnames = name.split('.')
-
-        return self.drivers.get(mnames[0])
-
-    def _process_filter(expr, ctx, _lexpr=None, _ldriver=None):
-
-        ctx = request._ctx
-
-        driver = self.getdriver(expr.name)

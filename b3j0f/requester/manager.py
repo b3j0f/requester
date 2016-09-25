@@ -68,9 +68,9 @@ class RequestManager(Driver):
 
         return result
 
-    def process(self, request):
+    def process(self, request, **kwargs):
 
-        result = self.driver.process(request)
+        result = self.driver.process(request, **kwargs)
 
         return result
 
