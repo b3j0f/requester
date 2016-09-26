@@ -28,12 +28,12 @@
 
 __all__ = ['Exe']
 
-from .base import CRUDE
+from .base import CRUDEElement
 
 
-class Exe(CRUDE):
+class Exe(CRUDEElement):
     """In charge of executing system service."""
-    __slots__ = ['name', 'params'] + CRUDE.__slots__
+    __slots__ = ['name', 'params'] + CRUDEElement.__slots__
 
     def __init__(self, name, params, *args, **kwargs):
 

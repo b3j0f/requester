@@ -35,7 +35,7 @@ from .request.crude.create import Create
 from .request.crude.read import Read
 from .request.crude.update import Update
 from .request.crude.delete import Delete
-from .driver import Driver
+from .driver.base import Driver
 
 
 class RequestManager(Driver):

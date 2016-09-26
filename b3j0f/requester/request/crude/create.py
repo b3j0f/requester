@@ -28,12 +28,12 @@
 
 __all__ = ['Create']
 
-from .base import CRUDE
+from .base import CRUDEElement
 
 
-class Create(CRUDE):
+class Create(CRUDEElement):
 
-    __slots__ = ['name', 'value'] + CRUDE.__slots__
+    __slots__ = ['name', 'value'] + CRUDEElement.__slots__
 
     def __init__(self, name, value, *args, **kwargs):
 

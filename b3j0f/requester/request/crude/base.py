@@ -30,8 +30,20 @@ __all__ = ['CRUDE']
 
 from ..expr import BaseElement
 
+from enum import IntEnum, unique
 
-class CRUDE(BaseElement):
+
+@unique
+class CRUDE(IntEnum):
+
+    CREATE = 1
+    READ = 2
+    UPDATE = 3
+    DELETE = 4
+    EXE = 5
+
+
+class CRUDEElement(BaseElement):
     """Base crude operation.
 
     Can be associated to a request."""
@@ -44,7 +56,7 @@ class CRUDE(BaseElement):
         :param result: result of this crude processing.
         """
 
-        super(CRUDE, self).__init__(*args, **kwargs)
+        super(CRUDEElement, self).__init__(*args, **kwargs)
 
         self.request = request
         self.result = result

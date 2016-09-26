@@ -28,12 +28,12 @@
 
 __all__ = ['Delete']
 
-from .base import CRUDE
+from .base import CRUDEElement
 
 
-class Delete(CRUDE):
+class Delete(CRUDEElement):
 
-    __slots__ = ['exprs'] + CRUDE.__slots__
+    __slots__ = ['exprs'] + CRUDEElement.__slots__
 
     def __init__(self, exprs=None, *args, **kwargs):
 

@@ -31,7 +31,7 @@ from b3j0f.utils.ut import UTCase
 
 from unittest import main
 
-from ..base import CRUDE
+from ..base import CRUDEElement
 from ...core import Request
 
 
@@ -39,7 +39,7 @@ class CRUDETest(UTCase):
 
     def test_init_defaul(self):
 
-        crude = CRUDE()
+        crude = CRUDEElement()
 
         self.assertIsNone(crude.request)
 
@@ -47,7 +47,7 @@ class CRUDETest(UTCase):
 
         request = Request()
 
-        crude = CRUDE(request=request)
+        crude = CRUDEElement(request=request)
 
         self.assertIs(request, crude.request)
 
@@ -63,7 +63,7 @@ class CRUDETest(UTCase):
 
         request = Request(driver=Driver())
 
-        crude = CRUDE(request=request)
+        crude = CRUDEElement(request=request)
         crude()
 
         self.assertIn(request, requests)

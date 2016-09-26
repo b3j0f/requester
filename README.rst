@@ -228,7 +228,7 @@ Run a service with parameters
 
 .. code-block:: python
 
-   from b3j0f.requester import Exe as E
+   from b3j0f.requester import Exe
 
    # let a system 'Kitchen' providing the service 'cook' with ingredients such as parameters...
 
@@ -243,8 +243,8 @@ Run a service with parameters
    req.run(E.user.service, *E.Kitchen.fruits)
    req('Kitchen.cook', 'apple', 'pear')
    req(E.Kitchen.cook, *E.Kitchen.fruits)
-   req.process(Run('Kitchen.fruits', 'apple', 'pear'))
-   req.process(Run(E.Kitchen.fruits, params=['apple', 'pear']))
+   req.process(Exe('Kitchen.fruits', 'apple', 'pear'))
+   req.process(Exe(E.Kitchen.fruits, params=['apple', 'pear']))
 
 Perspectives
 ------------

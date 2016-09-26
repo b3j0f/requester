@@ -38,6 +38,13 @@ class Driver(object):
 
     name = None  # driver name
 
+    def __init__(self, name=None, *args, **kwargs):
+
+        super(Driver, self).__init__(*args, **kwargs)
+
+        if name is not None:
+            self.name = name
+
     def process(self, request, explain=False, **kwargs):
         """Generic method to override in order to cruder input data related to
         query, rtype and ctx.

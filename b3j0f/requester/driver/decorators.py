@@ -1,22 +1,53 @@
+# -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# --------------------------------------------------------------------
+
+"""Driver decorators module."""
+
 from b3j0f.annotation import Annotation
-from b3j0f.schema import data2schema, FunctionSchema
+from b3j0f.schema import data2schema
+from b3j0f.schema.lang.python import FunctionSchema
 
 from .base import CustomDriver
 
-from ..request.crude.create import Create
-from ..request.crude.read import Read
-from ..request.crude.update import Update
-from ..request.crude.delete import Delete
-from ..request.crude.exe import Exe
+from six import string_types
 
-from inspect import isclass
-
-from enum34 import Enum
+from ..request.crude.base import CRUDE
 
 
-def func2processing(func):
+__all__ = [
+    'object2driver', 'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation',
+    'DeleteAnnotation'
+]
 
-    def _processing(cruder, request, func=func, **kwargs):
+def _func2processing(func, obj=None):
+
+    def _processing(crude, request, func=func, obj=obj, **kwargs):
+
+        if func is None:
+            func = getattr(obj, crude.name)
 
         funckwargs = {}
 
@@ -39,10 +70,15 @@ def func2processing(func):
 
 
 def object2driver(
-        obj, create=None, read=None, update=None, delete=None, exe=None
+        obj, name=None, create=None, read=None, update=None, delete=None, exe=None
 ):
-    """Convert an object to a driver."""
+    """Convert an object to a driver.
 
+    """
+
+    fname = type(obj).__name__ if name is None else name
+
+    # build obj schema if necessary
     if not isinstance(obj, Schema):
         fobj = data2schema(obj)
 
@@ -50,19 +86,46 @@ def object2driver(
         fobj = obj
 
     _locals = locals()
+    # start to get information from annotations
+    crudeannotations = set(
+        _CRUDEAnnotation.get_annotations(obj) +
+        _CRUDEAnnotation.get_annotations(fobj)
+    )
+    for crudeannotation in crudeannotations:
+        for target in crudeannotation.targets:
+            _locals['f{0}'.format(crudeannotation.name)] = target
 
-    for crudr in ('create', 'read', 'update', 'delete', 'exe'):
-        crudrfunc = _locals[crudr]
+    # then parse function parameters
+    for crude in CRUD.__members__:
 
-        finalname = 'f{0}'.format(crudr)
+        fcrude = crude.lower()
 
-        if crudrfunc is not None:
-            _locals[finalname] = func2processing(crudrfunc)
+        crudefunc = _locals[fcrude]
+
+        if isinstance(crudefunc, string_types):
+            crudefunc = getattr(fobj, crudefunc)
+
+        finalname = 'f{0}'.format(fcrude)
+
+        if crudefunc is not None:
+            # ensure crudefunc is a schema
+            if not isinstance(crudefunc, Schema):
+                fcrudefunc = data2schema(crudefunc)
+
+            else:
+                fcrudefunc = crudefunc
+
+            _locals[finalname] = _func2processing(fcrudefunc)
 
         else:
-            _locals[finalname] = None
+            _locals[finalname] = _locals.get(finalname)
+
+    # ensure fexe exist, otherwise, load all obj functions inside
+    if fexe is None:
+        fexe = _func2processing(None, fobj)
 
     return CustomDriver(
+        name=fname,
         create=fcreate,
         read=fread,
         update=fupdate,
@@ -71,160 +134,93 @@ def object2driver(
     )
 
 
-class ObjectDriver(CustomDriver):
-
-    def __init__(self, impl, *args, **kwargs):
-        """
-        :param impl: driver implementation.
-        :param create: create function.
-        :param read: read function.
-        :param update: update function.
-        :param delete: delete function.
-        :param exe: exe function.
-        """
-
-        super(ObjectDriver, self).__init__(*args, **kwargs)
-
-        self.impl = impl
-
-
-
-    def process(self, request, **kwargs):
-
-        result = request
-
-        for crude in request.crudes:
-
-            crudename = type(crude).__name__.lower()
-
-            func = getattr(self, crudename)
-
-            if func is None:
-                if crudename == CRUDE.EXE:
-                    self.impl =
-
-
-            if func is not None:
-                result = self.processing(crude=crude, request=result, **kwargs)
-
-            else:
-                if
-
-        return result
-
-    def processing(self, crude, request, func, **kwargs):
-
-        funckwargs = {}
-
-        for param in func.params():
-
-            if param.name in request.ctx:
-                funckwargs[param.name] = request.ctx[param.name]
-
-        try:
-            crude.result = func(**funckwargs)
-
-        except TypeError:
-            funckwargs.update(kwargs)
-
-            crude.result = func(**funckwargs)
-
-        return request
-
-
 class DriverAnnotation(Annotation):
     """Generate a deriver from class content."""
 
     def __init__(
-            self, create=None, read=None, update=None, delete=None, exe=None,
+            self,
+            name=None,
+            create=None, read=None, update=None, delete=None, exe=None,
             *args, **kwargs
     ):
+        """
+        :param str name: driver name to generate. Default target type name.
+        :param create: create function. If string, target function name.
+        :type create: str or callable
+        :param read: read function. If string, target function name.
+        :type read: str or function
+        :param update: update function. If string, target function name.
+        :type update: str or function
+        :param delete: delete function. If string, target function name.
+        :type delete: str or function
+        :param exe: exe function. If string, target function name.
+        :type exe: str or function
+        """
 
         super(DriverAnnotation, self).__init__(*args, **kwargs)
 
+        self.name = name
         self.create = create
         self.read = read
         self.update = update
         self.delete = delete
         self.exe = exe
 
-        self._drivers = {}
+        self.drivers = []
 
     def _on_bind_target(self, target, ctx=None):
 
-        if not isinstance(target, Schema):
-            ftarget = data2schema(target)
-
-        else:
-            ftarget = target
-
-        driverkwargs = {}
-
-        for crude in CRUDE.__members__:
-
-            if getattr(self, crude) is not None:
-                schemas[crude] = getattr(ftarget, crude)
-
-        crudeannotations = (
-            CRUDEAnnotation.get_annotations(target, mindepth=1) +
-            CRUDEAnnotation.get_annotations(ftarget, mindepth=1)
+        driver = object2driver(
+            target, name=self.name,
+            create=self.create, read=self.read, update=self.update,
+            delete=self.delete, exe=self.exe
         )
 
-        for crudeannotation in crudeannotations:
-            driverkwargs
-
-    def process(self, request, **kwargs):
-
-        for crude in request.crudes:
-
-            if isinstance(crude, Create):
-                for driver in self.drivers:
+        self.drivers.append(driver)
 
 
-
-class CRUDEAnnotation(Annotation):
+class _CRUDEAnnotation(Annotation):
 
     def __init__(self, crude, *args, **kwargs):
         """
-        :param
+        :param str crude: crude name.
         """
 
-        super(CRUDEAnnotation, self).__init__(self)
+        super(_CRUDEAnnotation, self).__init__(self)
 
-        self.crude = crude.name if isinstance(crude, CRUDE) else crude
+        self.crude = crude.name if isinstance(crude, CRUD) else crude
 
 
-class CreateAnnotation(CRUDEAnnotation):
+class CreateAnnotation(_CRUDEAnnotation):
 
     def __init__(self, crude=CRUDE.READ, *args, **kwargs):
 
         super(CreateAnnotation, self).__init__(crude=crude, *args, **kwargs)
 
 
-class ReadAnnotation(CRUDEAnnotation):
+class ReadAnnotation(_CRUDEAnnotation):
 
     def __init__(self, crude=CRUDE.READ, *args, **kwargs):
 
         super(ReadAnnotation, self).__init__(crude=crude, *args, **kwargs)
 
 
-class UpdateAnnotation(CRUDEAnnotation):
+class UpdateAnnotation(_CRUDEAnnotation):
 
     def __init__(self, crude=CRUDE.UPDATE, *args, **kwargs):
 
         super(UpdateAnnotation, self).__init__(crude=crude, *args, **kwargs)
 
 
-class DeleteAnnotation(CRUDEAnnotation):
+class DeleteAnnotation(_CRUDEAnnotation):
 
     def __init__(self, crude=CRUDE.DELETE, *args, **kwargs):
 
         super(DeleteAnnotation, self).__init__(crude=crude, *args, **kwargs)
 
 
-class ExeAnnotation(CRUDEAnnotation):
+class ExeAnnotation(_CRUDEAnnotation):
 
     def __init__(self, crude=CRUDE.EXE, *args, **kwargs):
 
         super(ExeAnnotation, self).__init__(crude=crude, *args, **kwargs)
-

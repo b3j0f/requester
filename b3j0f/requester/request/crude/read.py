@@ -28,7 +28,7 @@
 
 __all__ = ['Read', 'Cursor', 'Join']
 
-from .base import CRUDE
+from .base import CRUDEElement
 
 from enum import IntEnum, unique
 
@@ -53,7 +53,7 @@ class Join(IntEnum):
     UNION = 10  #: union join.
 
 
-class Read(CRUDE):
+class Read(CRUDEElement):
     """In charge of parameterize a reading request.
 
     Execution is done in calling it or in using the getslice method.
@@ -61,7 +61,7 @@ class Read(CRUDE):
 
     __slots__ = [
         '_select', '_offset', '_limit', '_orderby', '_groupby', '_join'
-    ] + CRUDE.__slots__
+    ] + CRUDEElement.__slots__
 
     def __init__(
             self,

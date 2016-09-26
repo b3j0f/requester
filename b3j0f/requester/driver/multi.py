@@ -33,11 +33,11 @@ from .base import Driver
 
 from ..request.core import Request
 from ..request.expr import Expression, Function, FuncName
-from ..request.cruder.create import Create
-from ..request.cruder.read import Read
-from ..request.cruder.update import Update
-from ..request.cruder.delete import Delete
-from ..request.cruder.exe import Exe
+from ..request.crude.create import Create
+from ..request.crude.read import Read
+from ..request.crude.update import Update
+from ..request.crude.delete import Delete
+from ..request.crude.exe import Exe
 
 try:
     from threading import Thread
@@ -60,20 +60,20 @@ class MultiDriver(Driver):
 
         result = self._processquery(query=query, ctx=ctx, **kwargs)
 
-        for cruder in request.cruders:
+        for crude in request.crudes:
 
-            if isinstance(cruder, (Create, Update, Exe)):
-                if isinstance(cruder.name, Expression):
-                    ctx = self._processquery(query=cruder.name, ctx=ctx).ctx
-                    names = [cruder.name.name]
+            if isinstance(crude, (Create, Update, Exe)):
+                if isinstance(crude.name, Expression):
+                    ctx = self._processquery(query=crude.name, ctx=ctx).ctx
+                    names = [crude.name.name]
 
                 else:
-                    names = [cruder.name]
+                    names = [crude.name]
 
-            elif isinstance(cruder, (Read, Delete)):
+            elif isinstance(crude, (Read, Delete)):
                 names = []
 
-                items = cruder.select() if isinstance(cruder, Read) else cruder.names
+                items = crude.select() if isinstance(crude, Read) else crude.names
 
                 for item in items:
                     if isinstance(item, Expression):
@@ -97,7 +97,7 @@ class MultiDriver(Driver):
                 else:
                     processingdrivers = [driver]
 
-                request = Request(query=query, ctx=ctx, cruders=cruder)
+                request = Request(query=query, ctx=ctx, crudes=crude)
 
                 for processingdriver in processingdrivers:
 
@@ -109,7 +109,7 @@ class MultiDriver(Driver):
 
         return result
 
-    def _processquery(self, query, ctx, _lastquery=None)
+    def _processquery(self, query, ctx, _lastquery=None):
 
         if _lastquery is None:
             _lastquery = query
