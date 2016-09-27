@@ -28,13 +28,11 @@
 
 __all__ = ['Driver']
 
+from ..request.core import Request
+
 
 class Driver(object):
-    """In charge of accessing to data from a request.
-
-    Methods to override are of choice:
-    - generic: process
-    - specific: create/read/update/delete/exe."""
+    """In charge of accessing to data from a request."""
 
     name = None  # driver name
 
@@ -46,61 +44,15 @@ class Driver(object):
             self.name = name
 
     def process(self, request, explain=False, **kwargs):
-        """Generic method to override in order to cruder input data related to
-        query, rtype and ctx.
+        """Generic method to override in order to crude input data related to
+        request and kwargs.
 
         :param Request request: request to process.
         :param bool explain: give additional information about the request
             execution.
         :param dict kwargs: additional parameters specific to the driver.
         :return: request.
+        :rtype: Request
         """
 
         raise NotImplementedError()
-
-
-class CustomDriver(Driver):
-    """Driver with fine grained implementation of cruder functions.
-
-    This driver uses at most five functions for five respective cruder types.
-
-    The processing execute the right function for all request cruder objects.
-
-    Functions must takes in parameters a 'cruder' object, a 'request' object and
-    kwargs for specific driver uses (like explain for example).
-    Function result must be a request."""
-
-    def __init__(
-            self, create=None, read=None, update=None, delete=None, exe=None,
-            *args, **kwargs
-    ):
-        """
-        :param create: creation function.
-        :param read: reading function.
-        :param update: updating function.
-        :param delete: deletion function.
-        :param exe: exening function.
-        """
-
-        super(CustomDriver, self).__init__(*args, **kwargs)
-
-        self.create = create
-        self.read = read
-        self.update = update
-        self.delete = delete
-        self.exe = exe
-
-    def process(self, request, **kwargs):
-
-        result = request
-
-        for cruder in request.crudes:
-
-            crudename = type(cruder).__name__.lower()
-
-            func = getattr(self, crudename)
-
-            if func is not None:
-                result = func(cruder=cruder, request=result, **kwargs)
-
-        return result

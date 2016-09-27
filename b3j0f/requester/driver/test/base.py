@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -24,20 +25,52 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""exe module."""
+"""conf file driver UTs."""
 
-__all__ = ['Exe']
+from b3j0f.utils.ut import UTCase
 
-from .base import CRUDEElement
+from unittest import main
+
+from ..base import Driver
 
 
-class Exe(CRUDEElement):
-    """In charge of executing system service."""
-    __slots__ = ['name', 'params'] + CRUDEElement.__slots__
+class DriverTest(UTCase):
 
-    def __init__(self, name, params=None, *args, **kwargs):
+    def setUp(self):
 
-        super(Exe, self).__init__(*args, **kwargs)
+        self.requests = []
+        self.lkwargs = []
 
-        self.name = name
-        self.params = params or []
+        class TestDriver(Driver):
+
+            name = 'test'
+
+            def process(self_, request, **kwargs):
+
+                self.requests.append(request)
+                self.lkwargs.append(kwargs)
+
+                return request
+
+        self.drivercls = TestDriver
+        self.driver = TestDriver()
+
+    def test_class_name(self):
+
+        self.assertEqual(self.drivercls.name, 'test')
+
+    def test_custom_name(self):
+
+        self.assertEqual(self.drivercls(name='example').name, 'example')
+
+    def test_kwargs(self):
+
+        kwargs = {'bar': 'foo'}
+
+        result = self.driver.process(request=True, **kwargs)
+
+        self.assertEqual(self.requests, [True])
+        self.assertEqual(self.lkwargs, [kwargs])
+
+if __name__ == '__main__':
+    main()

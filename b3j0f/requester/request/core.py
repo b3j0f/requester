@@ -29,7 +29,7 @@
 __all__ = ['Request']
 
 from .expr import Expression
-from .crude.base import CRUDE
+from .crude.base import CRUDEElement
 from .crude.create import Create
 from .crude.read import Read
 from .crude.update import Update
@@ -38,7 +38,7 @@ from .crude.exe import Exe
 
 
 class Request(object):
-    """CRUDE/exenable object bound to a driver in order to access to data.
+    """CRUDEElement/exenable object bound to a driver in order to access to data.
 
     Common use is to instanciate it from a RequestManager."""
 
@@ -69,9 +69,9 @@ class Request(object):
 
 
         for crude in self.crudes:
-            if not isinstance(crude, CRUDE):
+            if not isinstance(crude, CRUDEElement):
                 raise TypeError(
-                    'Wrong type {0}. {1} expected.'.format(crude, CRUDE)
+                    'Wrong type {0}. {1} expected.'.format(crude, CRUDEElement)
                 )
 
     @property

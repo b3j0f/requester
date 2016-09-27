@@ -30,7 +30,7 @@ from b3j0f.annotation import Annotation
 from b3j0f.schema import data2schema
 from b3j0f.schema.lang.python import FunctionSchema
 
-from .base import CustomDriver
+from .utils import FunctionalDriver
 
 from six import string_types
 
@@ -70,7 +70,9 @@ def _func2processing(func, obj=None):
 
 
 def object2driver(
-        obj, name=None, create=None, read=None, update=None, delete=None, exe=None
+        obj,
+        name=None,
+        creates=None, reads=None, updates=None, deletes=None, exes=None
 ):
     """Convert an object to a driver.
 
@@ -85,6 +87,12 @@ def object2driver(
     else:
         fobj = obj
 
+    fcreates = []
+    freads = []
+    fupdates = []
+    fdeletes = []
+    fexes = []
+
     _locals = locals()
     # start to get information from annotations
     crudeannotations = set(
@@ -93,44 +101,34 @@ def object2driver(
     )
     for crudeannotation in crudeannotations:
         for target in crudeannotation.targets:
-            _locals['f{0}'.format(crudeannotation.name)] = target
+            targetname = targetname
+            fobjtarget = getattr(fobj, targetname)
+            _locals['f{0}s'.format(crudeannotation.name)].append(fobjtarget)
 
     # then parse function parameters
-    for crude in CRUD.__members__:
+    for crudename in (crudename.lower() for crudename in  CRUD.__members__):
 
-        fcrude = crude.lower()
+        crudes = _locals['{0}s'.format(crudename)]
 
-        crudefunc = _locals[fcrude]
+        for crude in crudes:
 
-        if isinstance(crudefunc, string_types):
-            crudefunc = getattr(fobj, crudefunc)
+            crudefunc = getattr(fobj, crude)
 
-        finalname = 'f{0}'.format(fcrude)
+            fcrudefunc = _func2processing(crudefunc)
 
-        if crudefunc is not None:
-            # ensure crudefunc is a schema
-            if not isinstance(crudefunc, Schema):
-                fcrudefunc = data2schema(crudefunc)
-
-            else:
-                fcrudefunc = crudefunc
-
-            _locals[finalname] = _func2processing(fcrudefunc)
-
-        else:
-            _locals[finalname] = _locals.get(finalname)
+            _locals['f{0}s'.format(crudename)].append(fcrudefunc)
 
     # ensure fexe exist, otherwise, load all obj functions inside
-    if fexe is None:
-        fexe = _func2processing(None, fobj)
+    if not fexes:
+        fexes = [_func2processing(None, fobj)]
 
-    return CustomDriver(
+    return FunctionalDriver(
         name=fname,
-        create=fcreate,
-        read=fread,
-        update=fupdate,
-        delete=fdelete,
-        exe=fexe
+        creates=fcreates,
+        reads=freads,
+        updates=fupdates,
+        deletes=fdeletes,
+        exes=fexes
     )
 
 
@@ -140,43 +138,31 @@ class DriverAnnotation(Annotation):
     def __init__(
             self,
             name=None,
-            create=None, read=None, update=None, delete=None, exe=None,
+            creates=None, reads=None, updates=None, deletes=None, exes=None,
             *args, **kwargs
     ):
         """
         :param str name: driver name to generate. Default target type name.
-        :param create: create function. If string, target function name.
-        :type create: str or callable
-        :param read: read function. If string, target function name.
-        :type read: str or function
-        :param update: update function. If string, target function name.
-        :type update: str or function
-        :param delete: delete function. If string, target function name.
-        :type delete: str or function
-        :param exe: exe function. If string, target function name.
-        :type exe: str or function
+        :param creates: create function names.
+        :type creates: list
+        :param reads: read function names.
+        :type reads: list
+        :param updates: update function names.
+        :type updates: list
+        :param deletes: delete function names.
+        :type deletes: list
+        :param exes: exe function names.
+        :type exes: list
         """
 
         super(DriverAnnotation, self).__init__(*args, **kwargs)
 
         self.name = name
-        self.create = create
-        self.read = read
-        self.update = update
-        self.delete = delete
-        self.exe = exe
-
-        self.drivers = []
-
-    def _on_bind_target(self, target, ctx=None):
-
-        driver = object2driver(
-            target, name=self.name,
-            create=self.create, read=self.read, update=self.update,
-            delete=self.delete, exe=self.exe
-        )
-
-        self.drivers.append(driver)
+        self.creates = creates
+        self.reads = reads
+        self.updates = updates
+        self.deletes = deletes
+        self.exes = exes
 
 
 class _CRUDEAnnotation(Annotation):
