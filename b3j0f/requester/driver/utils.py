@@ -24,7 +24,7 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Request system definition."""
+"""Driver utilities module."""
 
 __all__ = ['FunctionalDriver']
 

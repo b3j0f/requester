@@ -26,6 +26,11 @@
 
 """Driver decorators module."""
 
+__all__ = [
+    'object2driver', 'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation',
+    'DeleteAnnotation'
+]
+
 from b3j0f.annotation import Annotation
 from b3j0f.schema import data2schema
 from b3j0f.schema.lang.python import FunctionSchema
@@ -36,11 +41,6 @@ from six import string_types
 
 from ..request.crude.base import CRUDE
 
-
-__all__ = [
-    'object2driver', 'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation',
-    'DeleteAnnotation'
-]
 
 def _func2processing(func, obj=None):
 

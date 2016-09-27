@@ -91,5 +91,21 @@ class FunctionalDriverTest(UTCase):
 
         self.assertEqual(result.ctx['count'], 543210)
 
+        count = 1
+
+        for crude in CRUDE.__members__:
+
+            self.assertEqual(len(self.processed[crude]), count)
+
+            processedkwargs = self.processed[crude]
+
+            self.assertEqual(len(processedkwargs), count)
+
+            for processedkwarg in processedkwargs:
+
+                self.assertEqual(processedkwarg['foo'], kwargs['foo'])
+            count += 1
+
+
 if __name__ == '__main__':
     main()

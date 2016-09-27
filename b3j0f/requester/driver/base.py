@@ -24,7 +24,7 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Request system definition."""
+"""Driver module."""
 
 __all__ = ['Driver']
 
