@@ -59,7 +59,7 @@ class Func2CrudeProcessingTest(UTCase):
         _request = genfunc(crude=crude, request=request)
 
         self.assertIs(_request, request)
-        self.assertEqual(_request.ctx[crude], [{'a': 1, 'b': 2}, 3])
+        self.assertEqual(_request.ctx[crude], [3])
 
     def test_object(self):
 

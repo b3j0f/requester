@@ -27,60 +27,128 @@
 """Driver generator module."""
 
 __all__ = [
+    'FunctionalDriver',
     'func2crodprocessing', 'obj2driver', 'DriverAnnotation',
     'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation', 'DeleteAnnotation'
 ]
 
 from b3j0f.annotation import Annotation
-from b3j0f.schema import data2schema, Schema
+from b3j0f.schema import data2schema, data2schemacls, Schema
 from b3j0f.schema.lang.python import FunctionSchema
-
-from .utils import FunctionalDriver
 
 from six import string_types
 
+from .base import Driver
+from .py import read
 from ..request.crude.base import CRUDE
 from ..request.crude.create import Create
+from ..request.crude.read import Read
 from ..request.crude.update import Update
+from ..request.crude.delete import Delete
 from ..request.crude.exe import Exe
 
-from .py import processcrude
+
+class FunctionalDriver(Driver):
+    """Driver with fine grained implementation of crude functions.
+
+    This driver uses at most five set of functions for five respective crude
+    types.
+
+    The processing execute the right function for all request crude objects.
+
+    Functions must takes in parameters a 'crude' object, a 'request' object and
+    kwargs for specific driver uses (like explain for example).
+
+    Functions must return a request."""
+
+    def __init__(
+            self,
+            creates=None, reads=None, updates=None, deletes=None, exes=None,
+            *args, **kwargs
+    ):
+        """
+        :param list creates: creation functions. Take in parameters a request,
+            a crude operation and specific kwargs. Return created item
+            with additional fields such as id.
+        :param list reads: reading functions. Take in parameters a request,
+            a crude operation and specific kwargs. Return read items.
+        :param list updates: updating functions. Take in parameters a request,
+            a crude operation and specific kwargs. Return updated items.
+        :param list deletes: deletion functions. Take in parameters a request,
+            a crude operation and specific kwargs. Return deleted items.
+        :param list exes: execution functions. Take in parameters a request,
+            a crude operation and specific kwargs. Return function result.
+        """
+
+        super(FunctionalDriver, self).__init__(*args, **kwargs)
+
+        self.creates = creates or []
+        self.reads = reads or []
+        self.updates = updates or []
+        self.deletes = deletes or []
+        self.exes = exes or []
+
+    def process(self, request, **kwargs):
+
+        result = request
+
+        for crude in request.crudes:
+
+            crudename = type(crude).__name__.lower()
+
+            funcs = getattr(self, '{0}s'.format(crudename))
+
+            if funcs:
+                for func in funcs:
+                    result = func(crude=crude, request=result, **kwargs)
+
+            else:
+                raise NotImplementedError(
+                    'No implementation found for {0}'.format(crudename)
+                )
+
+        return result
 
 
-def func2crudeprocessing(func, obj=None):
+def func2crudeprocessing(func=None, obj=None):
 
     if func is not None and not isinstance(func, Schema):
         func = data2schema(func)
 
     if obj is not None and not isinstance(obj, Schema):
-        obj = data2schema(obj)
+        obj = data2schema(obj, _force=True)
 
-    def _processing(crude, request, func=func, obj=obj, **kwargs):
+    def _processing(crude, request, _func=func, _obj=obj, **kwargs):
 
-        if func is None:
+        if _func is None:
             crudename = crude.name
             funcname = crudename.split('.')[-1]
-            func = getattr(obj, funcname)
+            _func = getattr(_obj, funcname)
+            schemafunc = getattr(type(_obj), funcname)
+
+        else:
+            schemafunc = _func
 
         funckwargs = {}
         funcvarargs = []
 
         if isinstance(crude, Exe):
-            varargs = crude.params
+            funcvarargs = crude.params
 
         elif isinstance(crude, (Create, Update)):
             funckwargs.update(crude.values)
-            # todo : specific func args
+            # todo : specific _func args
 
-        for param in func.params:
+        for param in schemafunc.params:
 
             if param.name in request.ctx:
 
                 funckwargs[param.name] = request.ctx[param.name]
 
-        funcresult = list(func(*funcvarargs, **funckwargs))
+        funcresult = list(_func(*funcvarargs, **funckwargs))
 
-        processcrude(request=request, items=funcresult, crude=crude)
+        if isinstance(crude, Read):
+            read(read=crude, items=funcresult)
 
         request.ctx[crude] = funcresult
 
@@ -96,6 +164,13 @@ def obj2driver(
 ):
     """Convert an object to a driver.
 
+    :param str name: driver name. obj type name by default.
+    :param list creates: create function names to retrieve from the obj.
+    :param list reads: read function names to retrieve from the obj.
+    :param list updates: update function names to retrieve from the obj.
+    :param list deletes: delete function names to retrieve from the obj.
+    :param list exes: exe function names to retrieve from the obj.
+    :rtype: FunctionalDriver
     """
 
     fname = type(obj).__name__ if name is None else name
@@ -163,16 +238,16 @@ class DriverAnnotation(Annotation):
     ):
         """
         :param str name: driver name to generate. Default target type name.
-        :param creates: create function names.
-        :type creates: list
-        :param reads: read function names.
-        :type reads: list
-        :param updates: update function names.
-        :type updates: list
-        :param deletes: delete function names.
-        :type deletes: list
-        :param exes: exe function names.
-        :type exes: list
+        :param list creates: create function names. Related functions must
+            return created objects with additional fields such as the id.
+        :param list reads: read function names. Related functions must return
+            list of read objects.
+        :param list updates: update function names. Related functions must
+            return updated data.
+        :param list deletes: delete function names. Related functions must
+            return deleted objects.
+        :param list exes: exe function names. Related functions must return
+            function result.
         """
 
         super(DriverAnnotation, self).__init__(*args, **kwargs)

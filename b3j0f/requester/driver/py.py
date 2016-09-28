@@ -149,7 +149,7 @@ def create(items, create):
 
 
 def read(items, read):
-    """Returns applicaiton of input Read to items.
+    """Return application of input Read to items.
 
     :param list items: items to read.
     :param Read read: read resource to apply on items.
@@ -157,32 +157,31 @@ def read(items, read):
     :rtype: list
     """
 
-    result = []
+    result = items
 
-    for item in items:
-        if crude.select:
+    if read.select():
+        result = []
+        for item in list(items):
             fitem = {}
-            for select in crude.select:
-                if select in item:
-                    fitem[select] = item[select]
+            for sel in read.select():
+                if sel in item:
+                    fitem[sel] = item[sel]
+            result.append(fitem)
 
-        else:
-            fitem = item
+    if read.offset():
+        result = result[read.offset():]
 
-    if crude.offset:
-        result = result[crude.offset:]
+    if read.limit():
+        result = result[:read.limit()]
 
-    if crude.limit:
-        result = result[:crude.limit]
-
-    if crude.orderby:
-        for orderby in crude.orderby:
+    if read.orderby():
+        for orderby in read.orderby():
             result.sort(key=lambda item: item.get(orderby))
 
-    if crude.groupby:
+    if read.groupby():
         groupbyresult = {}
         _groupbyresult = []
-        for groupby in crude.groupby:
+        for groupby in read.groupby():
             if _groupbyresult:
                 for item in _groupbyresult:
                     pass
@@ -194,12 +193,14 @@ def read(items, read):
 
             #FIX: do the same for sub groupby...
 
-    if crude.join not in ('FULL', None):
+    if read.join() not in ('FULL', None):
         raise NotImplementedError(
             'Driver {0} does not support join {1}'.format(
-                self, crude.join
+                self, read.join()
             )
         )
+
+    items[:] = result
 
     return result
 
@@ -215,8 +216,8 @@ def update(items, update):
     result = []
 
     for item in items:
-        if crude.name in item:
-            item[crude.name] = crude.values
+        if update.name in item:
+            item[update.name] = update.values
             result.append(item)
 
     return result
@@ -232,8 +233,8 @@ def delete(items, delete):
 
     result = []
 
-    if crude.names:
-        for name in crude.names:
+    if delete.names:
+        for name in delete.names:
             for item in items:
                 if name in item:
                     del item[name]
@@ -246,11 +247,11 @@ def delete(items, delete):
     return result
 
 
-def exe(items, crude):
-    """Execute crude on input items.
+def exe(items, exe):
+    """Execute exe on input items.
 
     :param list items: items to process.
-    :param Exe crude: execution rule to process on items. Name must match items
+    :param Exe exe: execution rule to process on items. Name must match items
         key and value must be a function.
     :rtype: list
     :return: list of (item, execution result)."""
@@ -258,8 +259,8 @@ def exe(items, crude):
     result = []
 
     for item in values:
-        if crude.name in item:
-            func = item[crude.name]
+        if exe.name in item:
+            func = item[exe.name]
             funcresult = func(*params)
             result.append([item, result])
 
