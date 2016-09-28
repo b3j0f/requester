@@ -25,46 +25,43 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""request.base UTs."""
+"""conf file driver UTs."""
 
 from b3j0f.utils.ut import UTCase
 
 from unittest import main
 
-from ..base import BaseElement
+from ..base import Driver
+from ..generator import func2crudeprocessing, obj2driver, DriverAnnotation
+from ...request.core import Request
+from ...request.crude.create import Create
+from ...request.crude.exe import Exe
 
 
-class BaseElementTest(UTCase):
+class Func2CrudeProcessingTest(UTCase):
 
-    def test_init_default(self):
+    def test_function(self):
 
-        alias = BaseElement()
+        def func(a, b):
 
-        self.assertIsNone(alias.alias)
+            return a + b
 
-    def test_init(self):
+        result = func2crudeprocessing(func)
 
-        alias = BaseElement(alias='alias')
+        result(
+            crude=Create(None, None),
+            request=Request()
+        )
 
-        self.assertEqual(alias.alias, 'alias')
+    def test_object(self):
 
-    def test_as_(self):
+        class Test(object):
 
-        alias = BaseElement()
+            def test(self, a, b):
 
-        alias.as_(alias='alias')
+                return a + b
 
-        self.assertEqual(alias.alias, 'alias')
-
-    def test_uuid(self):
-
-        base0, base1 = BaseElement(), BaseElement()
-
-        self.assertNotEqual(base0.uuid, base1.uuid)
-
-        base0, base1 = BaseElement(uuid=1), BaseElement(uuid=1)
-
-        self.assertEqual(base0.uuid, base1.uuid)
+        result = func2crudeprocessing(Test)
 
 if __name__ == '__main__':
     main()

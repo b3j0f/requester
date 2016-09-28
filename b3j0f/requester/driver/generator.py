@@ -24,15 +24,15 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Driver decorators module."""
+"""Driver generator module."""
 
 __all__ = [
-    'object2driver', 'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation',
-    'DeleteAnnotation'
+    'func2crodprocessing', 'obj2driver', 'DriverAnnotation',
+    'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation', 'DeleteAnnotation'
 ]
 
 from b3j0f.annotation import Annotation
-from b3j0f.schema import data2schema
+from b3j0f.schema import data2schema, Schema
 from b3j0f.schema.lang.python import FunctionSchema
 
 from .utils import FunctionalDriver
@@ -42,16 +42,24 @@ from six import string_types
 from ..request.crude.base import CRUDE
 
 
-def _func2processing(func, obj=None):
+def func2crudeprocessing(func, obj=None):
+
+    if func is not None and not isinstance(func, Schema):
+        func = data2schema(func)
+
+    if obj is not None and not isinstance(obj, Schema):
+        obj = data2schema(obj)
 
     def _processing(crude, request, func=func, obj=obj, **kwargs):
 
         if func is None:
-            func = getattr(obj, crude.name)
+            crudename = crude.name
+            funcname = crudename.split('.')[-1]
+            func = getattr(obj, funcname)
 
         funckwargs = {}
 
-        for param in func.params():
+        for param in func.params:
 
             if param.name in request.ctx:
                 funckwargs[param.name] = request.ctx[param.name]
@@ -61,15 +69,14 @@ def _func2processing(func, obj=None):
 
         except TypeError:
             funckwargs.update(kwargs)
-
-            crude.result = func(**funckwargs)
+            request.ctx[crude.get_context_name()] = func(**funckwargs)
 
         return request
 
     return _processing
 
 
-def object2driver(
+def obj2driver(
         obj,
         name=None,
         creates=None, reads=None, updates=None, deletes=None, exes=None
@@ -114,13 +121,13 @@ def object2driver(
 
             crudefunc = getattr(fobj, crude)
 
-            fcrudefunc = _func2processing(crudefunc)
+            fcrudefunc = func2crudeprocessing(crudefunc)
 
             _locals['f{0}s'.format(crudename)].append(fcrudefunc)
 
     # ensure fexe exist, otherwise, load all obj functions inside
     if not fexes:
-        fexes = [_func2processing(None, fobj)]
+        fexes = [func2crudeprocessing(None, fobj)]
 
     return FunctionalDriver(
         name=fname,
@@ -163,6 +170,28 @@ class DriverAnnotation(Annotation):
         self.updates = updates
         self.deletes = deletes
         self.exes = exes
+
+    def getdriver(self, obj):
+        """Get a driver corresponding to input target instance related
+        to this attributes.
+
+        :param obj: instance to transform to a functional driver.
+        :rtype: FunctionalDriver"""
+
+        kwargs = {'name': self.name, 'obj': obj}
+
+        for crude in (crude.lower() for crude in CRUDE.__members__):
+
+            fcrude = '{0}s'.format(crude)
+
+            funcnames = getattr(self, fcrude)
+
+            for funcname in funcnames:
+                func = getattr(obj, funcname)
+
+                kwargs.setdefault(fcrude, []).append(func)
+
+        return obj2driver(**kwargs)
 
 
 class _CRUDEAnnotation(Annotation):

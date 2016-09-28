@@ -28,12 +28,14 @@
 
 __all__ = ['BaseElement']
 
+from uuid import uuid4
+
 
 class BaseElement(object):
 
-    __slots__ = ['alias']
+    __slots__ = ['alias', 'uuid']
 
-    def __init__(self, alias=None, *args, **kwargs):
+    def __init__(self, alias=None, uuid=None, *args, **kwargs):
         """
         :param str alias: alias name. Default is None.
         """
@@ -41,6 +43,7 @@ class BaseElement(object):
         super(BaseElement, self).__init__(*args, **kwargs)
 
         self.alias = alias
+        self.uuid = uuid or uuid4()
 
     def as_(self, alias):
         """Set alias value.
@@ -52,3 +55,19 @@ class BaseElement(object):
         self.alias = alias
 
         return self
+
+    @property
+    def ctx_name(self):
+        """Get ctx name to store result execution.
+
+        :rtype: str"""
+
+        return self.alias or getattr(self, 'name', self.uuid)
+
+    def get_value(self, ctx):
+        """Get this processing value from input ctx.
+
+        :param dict ctx: context execution.
+        :return: this value in the input context."""
+
+        return ctx.get(self.ctx_name)

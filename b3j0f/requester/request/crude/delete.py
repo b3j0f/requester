@@ -33,10 +33,10 @@ from .base import CRUDEElement
 
 class Delete(CRUDEElement):
 
-    __slots__ = ['exprs'] + CRUDEElement.__slots__
+    __slots__ = ['names'] + CRUDEElement.__slots__
 
-    def __init__(self, exprs=None, *args, **kwargs):
+    def __init__(self, names=None, *args, **kwargs):
 
         super(Delete, self).__init__(*args, **kwargs)
 
-        self.exprs = exprs
+        self.names = names

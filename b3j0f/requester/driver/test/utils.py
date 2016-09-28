@@ -104,8 +104,8 @@ class FunctionalDriverTest(UTCase):
             for processedkwarg in processedkwargs:
 
                 self.assertEqual(processedkwarg['foo'], kwargs['foo'])
-            count += 1
 
+            count += 1
 
 if __name__ == '__main__':
     main()

@@ -28,7 +28,6 @@
 
 __all__ = ['MultiDriver']
 
-
 from .base import Driver
 
 from ..request.core import Request

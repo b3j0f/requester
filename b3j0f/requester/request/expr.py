@@ -44,7 +44,14 @@ class FuncName(Enum):
     """Default function names which might be supported by drivers."""
 
     AND = '&'
+    IAND = '&='
     OR = '|'
+    IOR = '|='
+    XOR = '^'
+    IXOR = '^='
+    TRUTH = 'truth'
+    IS = 'is'
+    ISNOT = 'isnot'
     EQ = '=='
     NE = '!='
     GT = '>'
@@ -52,11 +59,24 @@ class FuncName(Enum):
     LT = '<'
     LE = '<='
     ADD = '+'
+    IADD = '+='
     SUB = '-'
+    ISUB = '-='
     DIV = '/'
+    IDIV = '/='
+    FLOORDIV = '//'
+    IFLOORDIV = '//='
     MUL = '*'
+    IMUL = '*='
     POW = '**'
-    LIKE = '%'
+    IPOW = '**='
+    LIKE = '%%'
+    RSHIFT = '>>'
+    IRSHIFT = '>>='
+    LSHIFT = '<<'
+    ILSHIFT = '<<='
+    MOD = '%'
+    IMOD = '%='
     NEG = 'neg'
     ABS = 'abs'
     INVERT = '~'
@@ -64,6 +84,9 @@ class FuncName(Enum):
     GETSLICE = 'getslice'
     SETSLICE = 'setslice'
     DELSLICE = 'delslice'
+    GETITEM = 'getitem'
+    SETITEM = 'setitem'
+    DELITEM = 'delitem'
 
     # remainders functions are not supported by the Expression methods
     ISNULL = 'isnull'
@@ -94,6 +117,7 @@ class FuncName(Enum):
 
     # string operations
     CONCAT = 'concat'
+    ICONCAT = 'iconcat'
     LENGTH = 'length'
     REPLACE = 'replace'
     SOUNDEX = 'soundex'
@@ -116,6 +140,7 @@ class FuncName(Enum):
     RAND = 'rand'
     ROUND = 'round'
     MD5 = 'md5'
+    FLOOR = 'floor'
 
     # datetime operations
     NOW = 'now'
@@ -128,6 +153,11 @@ class FuncName(Enum):
     CAST = 'cast'
     CONVERT = 'convert'
     GROUPCONCAT = 'groupconcat'
+    INDEX = 'index'
+
+    # update
+    IRSHIFT = '<<='
+    ILSHIFT = '>>='
 
     @staticmethod
     def contains(value):
@@ -183,9 +213,25 @@ class Expression(BaseElement):
 
         return Function(FuncName.AND)(self, other)
 
+    def __iand__(self, other):
+
+        return Function(FuncName.IAND)(self, other)
+
     def __or__(self, other):
 
         return Function(FuncName.OR)(self, other)
+
+    def __ior__(self, other):
+
+        return Function(FuncName.IOR)(self, other)
+
+    def __xor__(self, other):
+
+        return Function(FuncName.XOR)(self, other)
+
+    def __ixor__(self, other):
+
+        return Function(FuncName.IXOR)(self, other)
 
     def _checktype(self, other, *types):
 
@@ -235,9 +281,25 @@ class Expression(BaseElement):
 
     def __add__(self, other):
 
-        self._checktype(other, Number)
+        if isinstance(other, string_types):
+            funcname = FuncName.CONCAT
 
-        return Function(FuncName.ADD)(self, other)
+        else:
+            self._checktype(other, Number)
+            funcname = FuncName.ADD
+
+        return Function(funcname)(self, other)
+
+    def __iadd__(self, other):
+
+        if isinstance(other, string_types):
+            funcname = FuncName.ICONCAT
+
+        else:
+            self._checktype(other, Number)
+            funcname = FuncName.IADD
+
+        return Function(funcname)(self, other)
 
     def __sub__(self, other):
 
@@ -245,11 +307,35 @@ class Expression(BaseElement):
 
         return Function(FuncName.SUB)(self, other)
 
+    def __isub__(self, other):
+
+        self._checktype(other, Number)
+
+        return Function(FuncName.ISUB)(self, other)
+
     def __mul__(self, other):
 
         self._checktype(other, Number)
 
         return Function(FuncName.MUL)(self, other)
+
+    def __imul__(self, other):
+
+        self._checktype(other, Number)
+
+        return Function(FuncName.IMUL)(self, other)
+
+    def __floordiv__(self, other):
+
+        self._checktype(other, Number)
+
+        return Function(FuncName.FLOORDIV)(self, other)
+
+    def __ifloordiv__(self, other):
+
+        self._checktype(other, Number)
+
+        return Function(FuncName.IFLOORDIV)(self, other)
 
     def __div__(self, other):
 
@@ -257,11 +343,23 @@ class Expression(BaseElement):
 
         return Function(FuncName.DIV)(self, other)
 
+    def __idiv__(self, other):
+
+        self._checktype(other, Number)
+
+        return Function(FuncName.IDIV)(self, other)
+
     def __truediv__(self, other):
 
         self._checktype(other, Number)
 
         return Function(FuncName.DIV)(self, other)
+
+    def __itruediv__(self, other):
+
+        self._checktype(other, Number)
+
+        return Function(FuncName.IDIV)(self, other)
 
     def __invert__(self):
 
@@ -280,6 +378,24 @@ class Expression(BaseElement):
         self._checktype(other, Number)
 
         return Function(FuncName.POW)(self, other)
+
+    def __ipow__(self, other):
+
+        self._checktype(other, Number)
+
+        return Function(FuncName.IPOW)(self, other)
+
+    def __rand__(self, other):
+
+        return Function(FuncName.AND)(other, self)
+
+    def __ror__(self, other):
+
+        return Function(FuncName.OR)(other, self)
+
+    def __rxor__(self, other):
+
+        return Function(FuncName.XOR)(other, self)
 
     def __radd__(self, other):
 
@@ -305,6 +421,12 @@ class Expression(BaseElement):
 
         return Function(FuncName.DIV)(other, self)
 
+    def __rfloordiv__(self, other):
+
+        self._checktype(other, Number)
+
+        return Function(FuncName.FLOORDIV)(other, self)
+
     def __rtruediv__(self, other):
 
         self._checktype(other, Number)
@@ -328,12 +450,15 @@ class Expression(BaseElement):
         if isinstance(key, slice):
             return self.__getslice__(key.start, key.stop, key.step)
 
-        return self.__getattr__(key)
+        return Function(FuncName.GETITEM)(self, key)
 
     def __getslice__(self, start, stop, step):
 
         if start is not None:
             self._checktype(start, Number)
+
+        if stop is not None:
+            self._checktype(stop, Number)
 
         if stop is not None:
             self._checktype(stop, Number)
@@ -361,6 +486,38 @@ class Expression(BaseElement):
             self._checktype(step, Number)
 
         return Function(FuncName.DELSLICE)(self, start, step)
+
+    def __setitem__(self, key, value):
+
+        return Function(FuncName.SETITEM)(self, key, value)
+
+    def __delitem__(self, key):
+
+        return Function(FuncName.DELITEM)(self, key)
+
+    def __rshift__(self, value):
+
+        return Function(FuncName.RSHIFT)(self, value)
+
+    def __irshift__(self, value):
+
+        return Function(FuncName.IRSHIFT)(self, value)
+
+    def __rrshift__(self, value):
+
+        return Function(FuncName.RSHIFT)(value, self)
+
+    def __lshift__(self, value):
+
+        return Function(FuncName.LSHIFT)(self, value)
+
+    def __ilshift__(self, value):
+
+        return Function(FuncName.ILSHIFT)(self, value)
+
+    def __rlshift__(self, value):
+
+        return Function(FuncName.LSHIFT)(value, self)
 
     def copy(self, **kwargs):
         """Copy this expression with input kwargs.
@@ -402,6 +559,11 @@ class Expression(BaseElement):
             type(self).__name__, self.name,
             ':{0}'.format(self.alias) if self.alias else ''
         )
+
+    def __call__(self, *params):
+        """Return a function where name is self name and params are varargs."""
+
+        return Function(name=self.name, params=params)
 
 
 class Function(Expression):

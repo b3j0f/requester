@@ -274,16 +274,16 @@ class RequestTest(UTCase):
 
     def test_delete(self):
 
-        exprs = ('test',)
+        names = ('test',)
 
-        self.request.delete(*exprs)
+        self.request.delete(*names)
 
         self.assertIn(self.request, self.requests)
         crude = self.request.crudes[0]
 
         self.assertIsInstance(crude, Delete)
         self.assertIs(crude.request, self.request)
-        self.assertEqual(crude.exprs, exprs)
+        self.assertEqual(crude.names, names)
 
     def test_exe(self):
 

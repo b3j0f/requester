@@ -193,14 +193,14 @@ class Request(object):
 
         return Update(request=self, name=name, values=values)()
 
-    def delete(self, *exprs):
+    def delete(self, *names):
         """Delete input deletes.
 
-        :param tuple exprs: model name to delete.
+        :param tuple names: model name to delete.
         :return: number of deleted deletes.
         """
 
-        return Delete(request=self, exprs=exprs)()
+        return Delete(request=self, names=names)()
 
     def exe(self, name, *params):
         """Execute input operation with params.

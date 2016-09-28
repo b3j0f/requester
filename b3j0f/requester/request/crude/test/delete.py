@@ -40,15 +40,15 @@ class DeleteTest(UTCase):
 
         delete = Delete()
 
-        self.assertIsNone(delete.exprs)
+        self.assertIsNone(delete.names)
 
     def test_init(self):
 
-        exprs = 1
+        names = 1
 
-        delete = Delete(exprs=exprs)
+        delete = Delete(names=names)
 
-        self.assertEqual(exprs, delete.exprs)
+        self.assertEqual(names, delete.names)
 
 if __name__ == '__main__':
     main()
