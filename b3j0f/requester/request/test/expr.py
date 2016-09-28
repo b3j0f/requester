@@ -82,14 +82,6 @@ class ExpressionTest(UTCase):
 
         self._assertfunc(func, FuncName.AND, expr0, expr1)
 
-    def test__iand__(self):
-
-        expr0, expr1 = Expression(name=''), Expression(name='')
-
-        func = expr0.__iand__(expr1)
-
-        self._assertfunc(func, FuncName.IAND, expr0, expr1)
-
     def test__rand__(self):
 
         expr0, expr1 = True, Expression(name='')
@@ -106,14 +98,6 @@ class ExpressionTest(UTCase):
 
         self._assertfunc(func, FuncName.OR, expr0, expr1)
 
-    def test__ior__(self):
-
-        expr0, expr1 = Expression(name=''), Expression(name='')
-
-        func = expr0.__ior__(expr1)
-
-        self._assertfunc(func, FuncName.IOR, expr0, expr1)
-
     def test__ror__(self):
 
         expr0, expr1 = True, Expression(name='')
@@ -129,14 +113,6 @@ class ExpressionTest(UTCase):
         func = expr0 ^ expr1
 
         self._assertfunc(func, FuncName.XOR, expr0, expr1)
-
-    def test__ixor__(self):
-
-        expr0, expr1 = Expression(name=''), Expression(name='')
-
-        func = expr0.__ixor__(expr1)
-
-        self._assertfunc(func, FuncName.IXOR, expr0, expr1)
 
     def test__rxor__(self):
 

@@ -59,6 +59,9 @@ def func2crudeprocessing(func, obj=None):
 
         funckwargs = {}
 
+        if isinstance(crude, (Create, Update)):
+            funckwargs = crude.value
+
         for param in func.params:
 
             if param.name in request.ctx:

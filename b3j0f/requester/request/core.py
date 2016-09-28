@@ -43,23 +43,47 @@ class Context(dict):
     def __getitem__(self, key):
 
         if isinstance(key, CRUDEElement):
-            key = key.ctx_name
+            key = key.ctxname
 
         return super(Context, self).__getitem__(key)
 
     def __setitem__(self, key, value):
 
         if isinstance(key, CRUDEElement):
-            key = key.ctx_name
+            key = key.ctxname
 
         return super(Context, self).__setitem__(key, value)
 
     def __delitem__(self, key):
 
         if isinstance(key, CRUDEElement):
-            key = key.ctx_name
+            key = key.ctxname
 
         return super(Context, self).__delitem__(key)
+
+    def fill(self, other):
+        """Fill this content with other data not in this data.
+
+        :param Context other: other context from where get items."""
+
+        if isinstance(other, Context):
+            for key, value in iteritems(other):
+
+                if key in self:
+                    self[key] += [
+                        item for item in value if item not in self[key]
+                    ]
+
+                dotkey = '.{0}'.format(key)
+
+                for key in list(self):
+                    if key.endswith(dotkey):
+                        self[key] += [
+                            item for item in value if item not in self[key]
+                        ]
+
+
+        return self
 
 
 class Request(object):
@@ -75,7 +99,7 @@ class Request(object):
     ):
         """
         :param Driver driver: driver able to execute the request.
-        :param dict ctx: request execution context.
+        :param Context ctx: request execution context.
         :param Expression query: request query.
         :param tuple ops: crudes.
         """
@@ -83,7 +107,7 @@ class Request(object):
         super(Request, self).__init__(*args, **kwargs)
 
         self.driver = driver
-        self.ctx = ctx or {}
+        self.ctx = ctx or Context()
         self._query = query
         self.crudes = crudes or []
 
@@ -196,9 +220,9 @@ class Request(object):
 
         return self
 
-    def create(self, name, **value):
+    def create(self, name, **values):
 
-        return Create(request=self, name=name, value=value)()
+        return Create(request=self, name=name, values=values)()
 
     def read(self, select, **kwargs):
         """Read input expressions.

@@ -230,9 +230,9 @@ class RequestTest(UTCase):
     def test_create(self):
 
         name = 'test'
-        value = {'a': 1, 'b': 2}
+        values = {'a': 1, 'b': 2}
 
-        self.request.create(name, **value)
+        self.request.create(name, **values)
 
         self.assertIn(self.request, self.requests)
         crude = self.request.crudes[0]
@@ -240,7 +240,7 @@ class RequestTest(UTCase):
         self.assertIsInstance(crude, Create)
         self.assertIs(crude.request, self.request)
         self.assertEqual(crude.name, name)
-        self.assertEqual(crude.value, value)
+        self.assertEqual(crude.values, values)
 
     def test_read(self):
 

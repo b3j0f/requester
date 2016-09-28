@@ -52,6 +52,7 @@ class FuncName(Enum):
     TRUTH = 'truth'
     IS = 'is'
     ISNOT = 'isnot'
+    NOT = '!'
     EQ = '=='
     NE = '!='
     GT = '>'
@@ -140,7 +141,6 @@ class FuncName(Enum):
     RAND = 'rand'
     ROUND = 'round'
     MD5 = 'md5'
-    FLOOR = 'floor'
 
     # datetime operations
     NOW = 'now'
@@ -154,6 +154,8 @@ class FuncName(Enum):
     CONVERT = 'convert'
     GROUPCONCAT = 'groupconcat'
     INDEX = 'index'
+    REPEAT = 'repeat'
+    IREPEAT = 'irepeat'
 
     # update
     IRSHIFT = '<<='
@@ -213,25 +215,13 @@ class Expression(BaseElement):
 
         return Function(FuncName.AND)(self, other)
 
-    def __iand__(self, other):
-
-        return Function(FuncName.IAND)(self, other)
-
     def __or__(self, other):
 
         return Function(FuncName.OR)(self, other)
 
-    def __ior__(self, other):
-
-        return Function(FuncName.IOR)(self, other)
-
     def __xor__(self, other):
 
         return Function(FuncName.XOR)(self, other)
-
-    def __ixor__(self, other):
-
-        return Function(FuncName.IXOR)(self, other)
 
     def _checktype(self, other, *types):
 

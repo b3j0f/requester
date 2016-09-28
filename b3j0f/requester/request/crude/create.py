@@ -33,11 +33,11 @@ from .base import CRUDEElement
 
 class Create(CRUDEElement):
 
-    __slots__ = ['name', 'value'] + CRUDEElement.__slots__
+    __slots__ = ['name', 'values'] + CRUDEElement.__slots__
 
-    def __init__(self, name, value, *args, **kwargs):
+    def __init__(self, name, values, *args, **kwargs):
 
         super(Create, self).__init__(*args, **kwargs)
 
         self.name = name
-        self.value = value
+        self.values = values

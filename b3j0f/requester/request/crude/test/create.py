@@ -38,12 +38,12 @@ class CreateTest(UTCase):
 
     def test_init(self):
 
-        value = {None: None}
+        values = {None: None}
 
-        create = Create(name='test', value=value)
+        create = Create(name='test', values=values)
 
         self.assertEqual('test', create.name)
-        self.assertEqual(value, create.value)
+        self.assertEqual(values, create.values)
 
 if __name__ == '__main__':
     main()

@@ -41,7 +41,7 @@ from operator import (
 
 from re import match
 
-from ..requester.expr import FuncName
+from ..request.expr import FuncName
 
 
 _OPERTORS_BY_NAME = {
@@ -52,13 +52,12 @@ _OPERTORS_BY_NAME = {
     FuncName.GT.value: gt,
     FuncName.GE.value: ge,
     FuncName.NOT.value: not_,
-    FuncName.Truth.value: truth,
+    FuncName.TRUTH.value: truth,
     FuncName.IS.value: is_,
     FuncName.ISNOT.value: is_not,
     FuncName.ABS.value: abs,
     FuncName.ADD.value: add,
-    FuncName.DIV.value: div,
-    FuncName.FLOOR.value: floor,
+    FuncName.DIV.value: truediv,
     FuncName.INDEX.value: index,
     FuncName.INVERT.value: invert,
     FuncName.MOD.value: mod,
@@ -70,8 +69,7 @@ _OPERTORS_BY_NAME = {
     FuncName.RSHIFT.value: rshift,
     FuncName.LSHIFT.value: lshift,
     FuncName.SUB.value: sub,
-    FuncName.TRUTH.value: truth,
-    FuncName.XOR.value: xor
+    FuncName.XOR.value: xor,
     FuncName.CONCAT.value: concat,
     FuncName.GETITEM.value: getitem,
     FuncName.SETITEM.value: setitem,
@@ -79,8 +77,8 @@ _OPERTORS_BY_NAME = {
     FuncName.GETSLICE.value: getslice,
     FuncName.SETSLICE.value: setslice,
     FuncName.DELSLICE.value: delslice,
-    FuncName.ICONCAT.value: iconcat
-    FuncName.IDIV.value: idiv,
+    FuncName.ICONCAT.value: iconcat,
+    FuncName.IDIV.value: itruediv,
     FuncName.IFLOORDIV.value: ifloordiv,
     FuncName.ILSHIFT.value: ilshift,
     FuncName.IMOD.value: imod,
@@ -90,7 +88,6 @@ _OPERTORS_BY_NAME = {
     FuncName.IREPEAT.value: irepeat,
     FuncName.IRSHIFT.value: irshift,
     FuncName.ISUB.value: isub,
-    FuncName.ITRUEDIV.value: itruediv,
     FuncName.IXOR.value: ixor
 }
 
@@ -147,7 +144,7 @@ class PyDriver(Driver):
                             if select in item:
                                 fitem[select] = item[select]
 
-                    elif:
+                    else:
                         fitem = item
 
                 if crude.offset:
