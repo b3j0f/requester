@@ -37,6 +37,31 @@ from .crude.delete import Delete
 from .crude.exe import Exe
 
 
+class Context(dict):
+    """Request execution context."""
+
+    def __getitem__(self, key):
+
+        if isinstance(key, CRUDEElement):
+            key = key.ctx_name
+
+        return super(Context, self).__getitem__(key)
+
+    def __setitem__(self, key, value):
+
+        if isinstance(key, CRUDEElement):
+            key = key.ctx_name
+
+        return super(Context, self).__setitem__(key, value)
+
+    def __delitem__(self, key):
+
+        if isinstance(key, CRUDEElement):
+            key = key.ctx_name
+
+        return super(Context, self).__delitem__(key)
+
+
 class Request(object):
     """CRUDEElement/exenable object bound to a driver in order to access to data.
 

@@ -46,11 +46,13 @@ class Func2CrudeProcessingTest(UTCase):
 
             return a + b
 
-        result = func2crudeprocessing(func)
+        genfunc = func2crudeprocessing(func)
 
-        result(
+        crude = Create(None, None)
+
+        genfunc(
             crude=Create(None, None),
-            request=Request()
+            request=Request(ctx={'a': 1, 'b': 2})
         )
 
     def test_object(self):

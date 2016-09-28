@@ -57,17 +57,13 @@ class BaseElement(object):
         return self
 
     @property
-    def ctx_name(self):
+    def ctxname(self):
         """Get ctx name to store result execution.
 
         :rtype: str"""
 
         return self.alias or getattr(self, 'name', self.uuid)
 
-    def get_value(self, ctx):
-        """Get this processing value from input ctx.
+    def __eq__(self, other):
 
-        :param dict ctx: context execution.
-        :return: this value in the input context."""
-
-        return ctx.get(self.ctx_name)
+        return isinstance(other, BaseElement) and other.ctxname == self.ctxname

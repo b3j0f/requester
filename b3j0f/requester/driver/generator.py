@@ -65,11 +65,11 @@ def func2crudeprocessing(func, obj=None):
                 funckwargs[param.name] = request.ctx[param.name]
 
         try:
-            crude.result = func(**funckwargs)
+            request.ctx[crude.context_name] = func(**funckwargs)
 
         except TypeError:
             funckwargs.update(kwargs)
-            request.ctx[crude.get_context_name()] = func(**funckwargs)
+            request.ctx[crude.context_name] = func(**funckwargs)
 
         return request
 
