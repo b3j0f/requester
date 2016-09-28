@@ -26,7 +26,7 @@
 
 """Python driver module."""
 
-__all__ = ['PyDriver']
+__all__ = ['PyDriver', 'processcrude', 'create', 'read', 'update', 'delete', 'exe']
 
 from .base import Driver
 
@@ -42,6 +42,11 @@ from operator import (
 from re import match
 
 from ..request.expr import FuncName
+from ..request.crude.create import Create
+from ..request.crude.read import Read
+from ..request.crude.update import Update
+from ..request.crude.delete import Delete
+from ..request.crude.exe import Exe
 
 
 _OPERTORS_BY_NAME = {
@@ -124,81 +129,165 @@ class PyDriver(Driver):
                 )
             )
 
-        result = request
-
-        values = self.values
-
-        # apply request query before
-
         for crude in request.crudes:
+            processcrude(request=request, items=self.values, crude=crude)
 
-            if isinstance(crude, Create):
-                values.append(crude.value)
+        return request
 
-            elif isinstance(crude, Read):
-                cruderesult = []
-                for item in self.values:
-                    if crude.select:
-                        fitem = {}
-                        for select in crude.select:
-                            if select in item:
-                                fitem[select] = item[select]
 
-                    else:
-                        fitem = item
+def create(items, create):
+    """Apply input Create element to items.
 
-                if crude.offset:
-                    cruderesult = cruderesult[crude.offset:]
+    :param list items: items to process with input Create.
+    :param Create create: data to add to input items.
+    :return: created item.
+    :rtype: list"""
 
-                if crude.limit:
-                    cruderesult = cruderesult[:crude.limit]
+    items.append(create.values)
 
-                if crude.orderby:
-                    for orderby in crude.orderby:
-                        cruderesult.sort(key=lambda item: item.get(orderby))
+    return items
 
-                if crude.groupby:
-                    groupbyresult = {}
-                    _groupbyresult = []
-                    for groupby in crude.groupby:
-                        if _groupbyresult:
-                            for item in _groupbyresult:
-                                pass
-                        _groupbyresult = {groupby: []}
 
-                        for res in cruderesult:
-                            if groupby in res:
-                                groupbyresult[groupby] = res.pop(groupby)
+def read(items, read):
+    """Returns applicaiton of input Read to items.
 
-                        # do the same for sub groupby
+    :param list items: items to read.
+    :param Read read: read resource to apply on items.
+    :return: read list.
+    :rtype: list
+    """
 
-                if crude.join not in ('FULL', None):
-                    raise NotImplementedError(
-                        'Driver {0} does not support join {1}'.format(
-                            self, crude.join
-                        )
-                    )
+    result = []
 
-            elif isinstance(crude, Update):
-                for item in values:
-                    if crude.name in item:
-                        item[crude.name] = crude.values
+    for item in items:
+        if crude.select:
+            fitem = {}
+            for select in crude.select:
+                if select in item:
+                    fitem[select] = item[select]
 
-            elif isinstance(crude, Delete):
-                if not crude.names:
-                    self.values = [
-                        item for item in self.valus if item not in values
-                    ]
+        else:
+            fitem = item
 
-                else:
-                    for name in crude.names:
-                        for item in values:
-                            if name in item:
-                                del item[name]
+    if crude.offset:
+        result = result[crude.offset:]
 
-            elif isinstance(crude, Exe):
-                for item in values:
-                    if crude.name in item:
-                        item[crude.name](*crude.params)
+    if crude.limit:
+        result = result[:crude.limit]
 
-        return result
+    if crude.orderby:
+        for orderby in crude.orderby:
+            result.sort(key=lambda item: item.get(orderby))
+
+    if crude.groupby:
+        groupbyresult = {}
+        _groupbyresult = []
+        for groupby in crude.groupby:
+            if _groupbyresult:
+                for item in _groupbyresult:
+                    pass
+            _groupbyresult = {groupby: []}
+
+            for res in result:
+                if groupby in res:
+                    groupbyresult[groupby] = res.pop(groupby)
+
+            #FIX: do the same for sub groupby...
+
+    if crude.join not in ('FULL', None):
+        raise NotImplementedError(
+            'Driver {0} does not support join {1}'.format(
+                self, crude.join
+            )
+        )
+
+    return result
+
+
+def update(items, update):
+    """Apply update to items.
+
+    :param list items: items to update.
+    :param Update update: update rule.
+    :return: updated items.
+    :rtype: list"""
+
+    result = []
+
+    for item in items:
+        if crude.name in item:
+            item[crude.name] = crude.values
+            result.append(item)
+
+    return result
+
+
+def delete(items, delete):
+    """Apply deletion rule to items.
+
+    :param list items: items to modify.
+    :param Delete delete: deletion rule.
+    :rtype: list
+    :return: modified/deleted items."""
+
+    result = []
+
+    if crude.names:
+        for name in crude.names:
+            for item in items:
+                if name in item:
+                    del item[name]
+                    result.append(item)
+
+    else:
+        result = items
+        items[:] = []
+
+    return result
+
+
+def exe(items, crude):
+    """Execute crude on input items.
+
+    :param list items: items to process.
+    :param Exe crude: execution rule to process on items. Name must match items
+        key and value must be a function.
+    :rtype: list
+    :return: list of (item, execution result)."""
+
+    result = []
+
+    for item in values:
+        if crude.name in item:
+            func = item[crude.name]
+            funcresult = func(*params)
+            result.append([item, result])
+
+    return result
+
+def processcrude(request, items, crude):
+    """Apply the right rule on input items.
+
+    :param list items: items to process.
+    :param CRUDEElement crude: crude rule to apply.
+    :rtype: list
+    :return: list"""
+
+    if isinstance(crude, Create):
+        processresult = create(items=items, create=crude)
+
+    elif isinstance(crude, Read):
+        processresult = read(items=items, read=crude)
+
+    elif isinstance(crude, Update):
+        processresult = update(items=items, update=crude)
+
+    elif isinstance(crude, Delete):
+        processresult = delete(items=items, delete=crude)
+
+    elif isinstance(crude, Exe):
+        processresult = exe(items=items, exe=crude)
+
+    request.ctx[crude] = processresult
+
+    return items

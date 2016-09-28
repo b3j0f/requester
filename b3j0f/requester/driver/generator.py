@@ -40,6 +40,11 @@ from .utils import FunctionalDriver
 from six import string_types
 
 from ..request.crude.base import CRUDE
+from ..request.crude.create import Create
+from ..request.crude.update import Update
+from ..request.crude.exe import Exe
+
+from .py import processcrude
 
 
 def func2crudeprocessing(func, obj=None):
@@ -58,21 +63,26 @@ def func2crudeprocessing(func, obj=None):
             func = getattr(obj, funcname)
 
         funckwargs = {}
+        funcvarargs = []
 
-        if isinstance(crude, (Create, Update)):
-            funckwargs = crude.value
+        if isinstance(crude, Exe):
+            varargs = crude.params
+
+        elif isinstance(crude, (Create, Update)):
+            funckwargs.update(crude.values)
+            # todo : specific func args
 
         for param in func.params:
 
             if param.name in request.ctx:
+
                 funckwargs[param.name] = request.ctx[param.name]
 
-        try:
-            request.ctx[crude.context_name] = func(**funckwargs)
+        funcresult = list(func(*funcvarargs, **funckwargs))
 
-        except TypeError:
-            funckwargs.update(kwargs)
-            request.ctx[crude.context_name] = func(**funckwargs)
+        processcrude(request=request, items=funcresult, crude=crude)
+
+        request.ctx[crude] = funcresult
 
         return request
 
@@ -116,7 +126,7 @@ def obj2driver(
             _locals['f{0}s'.format(crudeannotation.name)].append(fobjtarget)
 
     # then parse function parameters
-    for crudename in (crudename.lower() for crudename in  CRUD.__members__):
+    for crudename in (crudename.lower() for crudename in  CRUDE.__members__):
 
         crudes = _locals['{0}s'.format(crudename)]
 
@@ -206,7 +216,7 @@ class _CRUDEAnnotation(Annotation):
 
         super(_CRUDEAnnotation, self).__init__(self)
 
-        self.crude = crude.name if isinstance(crude, CRUD) else crude
+        self.crude = crude.name if isinstance(crude, CRUDEElement) else crude
 
 
 class CreateAnnotation(_CRUDEAnnotation):
