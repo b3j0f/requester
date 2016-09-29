@@ -61,13 +61,13 @@ class Context(dict):
 
         return super(Context, self).__delitem__(key)
 
-    def fill(self, other):
-        """Fill this content with other data not in this data.
+    def fill(self, ctx):
+        """Fill this content with ctx data not in this data.
 
-        :param Context other: other context from where get items."""
+        :param Context ctx: ctx context from where get items."""
 
-        if isinstance(other, Context):
-            for key, value in iteritems(other):
+        if isinstance(ctx, Context):
+            for key, value in iteritems(ctx):
 
                 if key in self:
                     self[key] += [
@@ -122,6 +122,26 @@ class Request(object):
                 raise TypeError(
                     'Wrong type {0}. {1} expected.'.format(crude, CRUDEElement)
                 )
+
+    def __repr__(self):
+
+        result = 'Request('
+
+        if self.driver:
+            result += 'driver: {0},'.format(self.driver)
+
+        if self.ctx:
+            result += 'ctx: {0},'.format(self.ctx)
+
+        if self._query:
+            result += 'query: {0},'.format(self._query)
+
+        if self.crudes:
+            result += 'crudes: {0}'.format(self.crudes)
+
+        result += ')'
+
+        return result
 
     @property
     def query(self):

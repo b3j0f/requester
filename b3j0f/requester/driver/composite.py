@@ -24,9 +24,9 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Request system definition."""
+"""Module which specifices a composite of drivers."""
 
-__all__ = ['MultiDriver']
+__all__ = ['DriverComposite']
 
 from .base import Driver
 
@@ -38,6 +38,8 @@ from ..request.crude.update import Update
 from ..request.crude.delete import Delete
 from ..request.crude.exe import Exe
 
+from b3j0f.schema import data2schema, Schema
+
 try:
     from threading import Thread
 
@@ -45,15 +47,22 @@ except ImportError:
     from dummy_threading import Thread
 
 
-class MultiDriver(Driver):
+class DriverComposite(Driver):
 
     __LAST_DRIVER__ = '__last_driver__'
 
     def __init__(self, drivers, *args, **kwargs):
+        """
+        :param list drivers: drivers to use.
+        """
 
-        super(MultiDriver, self).__init__(*args, **kwargs)
+        super(DriverComposite, self).__init__(*args, **kwargs)
 
-        self.drivers = drivers
+        self.drivers = {}
+        for driver in drivers:
+            if not isinstance(driver, Schema):
+                driver = data2schema(driver, _force=True)
+            self.drivers[driver.name] = driver
 
     def process(self, request, **kwargs):
 
@@ -108,40 +117,60 @@ class MultiDriver(Driver):
 
         return result
 
-    def _processquery(self, query, ctx, _lastquery=None):
+    def _processquery(self, query, ctx, _lastquery=None, **kwargs):
+        """Parse deeply the query from the left to the right and aggregates
+        queries which refers to the same system without any intermediary system.
+
+        :param Expression query: query to process.
+        :param Context ctx: context execution.
+        :param Expression _lastquery: private parameter which save the last
+            query to process.
+        """
 
         if _lastquery is None:
             _lastquery = query
 
+        print('start', query, ctx, _lastquery, kwargs)
+
         names = query.name.split('.')
+        print('names', names)
 
         driver = self.drivers.get(names[0])
-        lastdriver = ctx.get(__LAST_DRIVER__, driver)
+        lastdriver = ctx.get(DriverComposite.__LAST_DRIVER__, driver)
+        print('driver', driver, 'lastdriver', lastdriver)
 
         if driver is None:
             driver = lastdriver
 
         else:
             if driver != lastdriver:
-                ctx[__LAST_DRIVER__] = driver
+                ctx[DriverComposite.__LAST_DRIVER__] = driver
+
+        print('driver', driver)
 
         if isinstance(query, Function):
 
             isor = query.name == FuncName.OR.value
 
             for param in query.params:
+                print('param', param)
+                if isinstance(param, Expression):
 
-                pctx = deepcopy(ctx) if isor else ctx
+                    pctx = deepcopy(ctx) if isor else ctx
 
-                self._processquery(param, pctx, _lastquery=_lastquery or query)
+                    self._processquery(
+                        query=param, ctx=pctx, _lastquery=_lastquery or query,
+                        **kwargs
+                    )
 
-                if isor:
-                    self._updatectx(ctx, pctx)
+                    if isor:
+                        ctx.fill(pctx)
 
         if query == _lastquery:
+            print('process', query)
 
             if lastdriver is None:
-                lastdriver = ctx.get(__LAST_DRIVER__, driver)
+                lastdriver = ctx.get(DriverComposite.__LAST_DRIVER__, driver)
 
             if lastdriver is None:
 
@@ -153,16 +182,12 @@ class MultiDriver(Driver):
             else:
                 processingdrivers = [lastdriver]
 
-            request = Request(query=query, ctx=ctx)
+            request = Request(
+                query=query, ctx=ctx, crudes=[Read(select=[query.ctxname])]
+            )
 
             for processingdriver in processingdrivers:
 
-                processingdriver.process(request=request)
+                processingdriver.process(request=request, **kwargs)
 
         return request
-
-    def _updatectx(ctx, newctx):
-
-        for key, dataset in iteritems(pctx):
-
-            ctx[key] = ctx.get(key, set()) + set(dataset)

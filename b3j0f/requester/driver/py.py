@@ -31,12 +31,12 @@ __all__ = ['PyDriver', 'processcrude', 'create', 'read', 'update', 'delete', 'ex
 from .base import Driver
 
 from operator import (
-    lt, le, eq, ne, ge, gt, not_, truth, is_, is_not, abs, add, div, floordiv,
-    index, inv, invert, mod, mul, neg, or_, pow, rshift, lshift, sub, truediv,
+    lt, le, eq, ne, ge, gt, not_, truth, is_, is_not, abs, add, floordiv,
+    truediv, invert, mod, mul, neg, or_, pow, rshift, lshift, sub,
     xor, concat, countOf, indexOf, repeat, sequenceIncludes, iadd, iand,
     getitem, setitem, delitem, getslice, setslice, delslice, iconcat,
-    idiv, ifloordiv, ilshift, imod, imul, ior, ipow, irepeat, irshift, isub,
-    itruediv, ixor
+    ifloordiv, ilshift, imod, imul, ior, ipow, irepeat, irshift, isub,
+    itruediv, ixor, contains
 )
 
 from re import match
@@ -48,67 +48,34 @@ from ..request.crude.update import Update
 from ..request.crude.delete import Delete
 from ..request.crude.exe import Exe
 
+from random import random
 
-_OPERTORS_BY_NAME = {
-    FuncName.LT.value: lt,
-    FuncName.LE.value: le,
-    FuncName.EQ.value: eq,
-    FuncName.NE.value: ne,
-    FuncName.GT.value: gt,
-    FuncName.GE.value: ge,
-    FuncName.NOT.value: not_,
-    FuncName.TRUTH.value: truth,
-    FuncName.IS.value: is_,
-    FuncName.ISNOT.value: is_not,
-    FuncName.ABS.value: abs,
-    FuncName.ADD.value: add,
-    FuncName.DIV.value: truediv,
-    FuncName.INDEX.value: index,
-    FuncName.INVERT.value: invert,
-    FuncName.MOD.value: mod,
-    FuncName.LIKE.value: match,
-    FuncName.MUL.value: mul,
-    FuncName.NEG.value: neg,
-    FuncName.OR.value: or_,
-    FuncName.POW.value: pow,
-    FuncName.RSHIFT.value: rshift,
-    FuncName.LSHIFT.value: lshift,
-    FuncName.SUB.value: sub,
-    FuncName.XOR.value: xor,
-    FuncName.CONCAT.value: concat,
-    FuncName.GETITEM.value: getitem,
-    FuncName.SETITEM.value: setitem,
-    FuncName.DELITEM.value: delitem,
-    FuncName.GETSLICE.value: getslice,
-    FuncName.SETSLICE.value: setslice,
-    FuncName.DELSLICE.value: delslice,
-    FuncName.ICONCAT.value: iconcat,
-    FuncName.IDIV.value: itruediv,
-    FuncName.IFLOORDIV.value: ifloordiv,
-    FuncName.ILSHIFT.value: ilshift,
-    FuncName.IMOD.value: imod,
-    FuncName.IMUL.value: imul,
-    FuncName.IOR.value: ior,
-    FuncName.IPOW.value: ipow,
-    FuncName.IREPEAT.value: irepeat,
-    FuncName.IRSHIFT.value: irshift,
-    FuncName.ISUB.value: isub,
-    FuncName.IXOR.value: ixor
-}
+from soundex import getInstance
+
+from md5 import md5
+
+from time import time
+from datetime import datetime
+
+soundex = getInstance().soundex
+
+DATETIMEFORMAT = '%Y-%m-%d %H:%M:%S'
+
 
 class PyDriver(Driver):
     """In charge of accessing to data from a list of dictionaries or objects."""
 
+    version = '0.1'
     name = 'py'  # driver name
 
-    def __init__(self, values, *args, **kwargs):
+    def __init__(self, values=None, *args, **kwargs):
         """
-        :param list values: list of data. Data are dictionaries.
+        :param list values: list of data. Data are dictionaries. Default is [].
         """
 
         super(PyDriver, self).__init__(*args, **kwargs)
 
-        self.values = values
+        self.values = values or []
 
     def process(self, request, **kwargs):
         """Generic method to override in order to crude input data related to
@@ -292,3 +259,105 @@ def processcrude(request, items, crude):
     request.ctx[crude] = processresult
 
     return items
+
+
+_OPERTORS_BY_NAME = {
+    FuncName.LT.value: lt,
+    FuncName.LE.value: le,
+    FuncName.EQ.value: eq,
+    FuncName.NE.value: ne,
+    FuncName.GE.value: ge,
+    FuncName.GT.value: gt,
+    FuncName.NOT.value: not_,
+    FuncName.TRUTH.value: truth,
+    FuncName.IS.value: is_,
+    FuncName.ISNOT.value: is_not,
+    FuncName.ABS.value: abs,
+    FuncName.ADD.value: add,
+    FuncName.FLOORDIV.value: floordiv,
+    FuncName.DIV.value: truediv,
+    FuncName.INDEX.value: indexOf,
+    FuncName.INVERT.value: invert,
+    FuncName.MOD.value: mod,
+    FuncName.LIKE.value: match,
+    FuncName.MUL.value: mul,
+    FuncName.NEG.value: neg,
+    FuncName.OR.value: or_,
+    FuncName.POW.value: pow,
+    FuncName.RSHIFT.value: rshift,
+    FuncName.LSHIFT.value: lshift,
+    FuncName.SUB.value: sub,
+    FuncName.XOR.value: xor,
+    FuncName.CONCAT.value: concat,
+    FuncName.COUNTOF.value: countOf,
+    FuncName.REPEAT.value: repeat,
+    FuncName.INCLUDE.value: sequenceIncludes,
+    FuncName.IADD.value: iadd,
+    FuncName.IAND.value: iand,
+    FuncName.IOR.value: ior,
+    FuncName.IXOR.value: ixor,
+    FuncName.GETITEM.value: getitem,
+    FuncName.SETITEM.value: setitem,
+    FuncName.DELITEM.value: delitem,
+    FuncName.GETSLICE.value: getslice,
+    FuncName.SETSLICE.value: setslice,
+    FuncName.DELSLICE.value: delslice,
+    FuncName.ICONCAT.value: iconcat,
+    FuncName.IDIV.value: itruediv,
+    FuncName.IFLOORDIV.value: ifloordiv,
+    FuncName.ILSHIFT.value: ilshift,
+    FuncName.IMOD.value: imod,
+    FuncName.IMUL.value: imul,
+    FuncName.IPOW.value: ipow,
+    FuncName.IREPEAT.value: irepeat,
+    FuncName.IRSHIFT.value: irshift,
+    FuncName.ISUB.value: isub,
+    FuncName.COUNT.value: len,
+    FuncName.LENGTH.value: len,
+    FuncName.AVG.value: lambda v: sum(v) / (len(v) or 1),
+    FuncName.MEAN.value: lambda v: sum(v) / (len(v) or 1),
+    FuncName.MAX.value: max,
+    FuncName.MIN.value: min,
+    FuncName.SUM.value: sum,
+    FuncName.EXISTS.value: contains,
+    FuncName.ISNULL.value: lambda data: data is None,
+    FuncName.BETWEEN.value: lambda data, inf, sup: inf <= data <= sup,
+    FuncName.IN.value: contains,
+    FuncName.HAVING.value: contains,
+    FuncName.UNION.value: lambda seq1, seq2: set(seq1) + set(seq2),
+    FuncName.INTERSECT.value: lambda seq1, seq2: set(seq1) & set(seq2),
+    FuncName.ALL.value: all,
+    FuncName.ANY.value: any,
+    FuncName.VERSION.value: PyDriver.version,
+    FuncName.CONCAT.value: str.__add__,
+    FuncName.ICONCAT.value: str.__add__,
+    FuncName.REPLACE.value: str.replace,
+    FuncName.SOUNDEX.value: soundex,
+    FuncName.SUBSTRING.value: lambda data, start, end=None: data[start:end],
+    FuncName.LEFT.value: lambda data, count: str[:-count],
+    FuncName.RIGHT.value: lambda data, count: str[count:],
+    FuncName.REVERSE.value: reversed,
+    FuncName.TRIM.value: str.strip,
+    FuncName.LTRIM.value: str.lstrip,
+    FuncName.RTRIM.value: str.rstrip,
+    FuncName.LPAD.value: str.ljust,
+    FuncName.RPAD.value: str.rjust,
+    FuncName.UPPER.value: str.upper,
+    FuncName.LOWER.value: str.lower,
+    FuncName.UCASE.value: str.upper,
+    FuncName.LCASE.value: str.lower,
+    FuncName.LOCATE.value: lambda val, data, *args: str.find(
+        data, val, *args
+    ) + 1,
+    FuncName.INSTR.value: lambda val, data, *args: str.find(
+        data, val, *args
+    ) + 1,
+    FuncName.RAND.value: random,
+    FuncName.ROUND.value: round,
+    FuncName.MD5.value: lambda data: md5(data).digest(),
+    FuncName.NOW.value: lambda: datetime.now().strftime(DATETIMEFORMAT),
+    FuncName.SEC_TO_TIME.value: lambda date: datetime.fromtimestamp(date).strftime(DATETIMEFORMAT),
+    FuncName.DATEDIFF.value: lambda date1, date2: datetime.strpformat(date1, DATETIMEFORMAT) - datetime.strpformat(date2, DATETIMEFORMAT),
+    FuncName.MONTH.value: lambda date=None: datetime.strpformat(date, DATETIMEFORMAT).month,
+    FuncName.YEAR.value: lambda date=None: datetime.strpformat(date, DATETIMEFORMAT).year,
+}

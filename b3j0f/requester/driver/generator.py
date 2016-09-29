@@ -215,7 +215,7 @@ def obj2driver(
 
     # ensure fexe exist, otherwise, load all obj functions inside
     if not fexes:
-        fexes = [func2crudeprocessing(None, fobj)]
+        fexes = [func2crudeprocessing(obj=fobj)]
 
     return FunctionalDriver(
         name=fname,

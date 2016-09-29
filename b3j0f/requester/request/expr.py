@@ -122,6 +122,7 @@ class FuncName(Enum):
     LENGTH = 'length'
     REPLACE = 'replace'
     SOUNDEX = 'soundex'
+    SUBSTR = 'substr'
     SUBSTRING = 'substring'
     LEFT = 'left'
     RIGHT = 'right'
@@ -130,6 +131,7 @@ class FuncName(Enum):
     LTRIM = 'ltrim'
     RTRIM = 'rtrim'
     LPAD = 'lpad'
+    RPAD = 'rpad'
     UPPER = 'upper'
     LOWER = 'lower'
     UCASE = 'ucase'
@@ -149,13 +151,17 @@ class FuncName(Enum):
     MONTH = 'month'
     YEAR = 'year'
 
+    # array operations
+    INDEX = 'index'
+    REPEAT = 'repeat'
+    IREPEAT = 'irepeat'
+    COUNTOF = 'countof'
+    INCLUDE = 'include'
+
     # additional operations
     CAST = 'cast'
     CONVERT = 'convert'
     GROUPCONCAT = 'groupconcat'
-    INDEX = 'index'
-    REPEAT = 'repeat'
-    IREPEAT = 'irepeat'
 
     # update
     IRSHIFT = '<<='

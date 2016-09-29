@@ -3,3 +3,4 @@ b3j0f.annotation
 b3j0f.schema
 six
 enum34
+soundex

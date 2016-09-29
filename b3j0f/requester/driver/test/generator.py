@@ -219,5 +219,9 @@ class Func2CrudeProcessingTest(UTCase):
 
         self.assertEqual(request.ctx[exe], [1, 2, 3])
 
+
+class Obj2DriverTest(UTCase):
+    pass
+
 if __name__ == '__main__':
     main()
