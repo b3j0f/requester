@@ -81,6 +81,8 @@ class DriverCompositeTest(UTCase):
 
         req = self.driver._processquery(query, ctx=self.request.ctx)
 
+        self.assertIn(query)
+
     def test__processquery_s0(self):
 
         query = (E.s0.a == 2)

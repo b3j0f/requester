@@ -31,13 +31,69 @@ from b3j0f.utils.ut import UTCase
 
 from unittest import main
 
-from ..core import Request
+from ..base import BaseElement
+from ..core import Request, Context
 from ..expr import Expression as E, Function as F, FuncName as FN
 from ..crude.create import Create
 from ..crude.read import Read
 from ..crude.update import Update
 from ..crude.delete import Delete
 from ..crude.exe import Exe
+
+
+class ContextTest(UTCase):
+
+    def test_init(self):
+
+        self.assertFalse(Context())
+
+    def test_init_params(self):
+
+        context = Context({'a': 1})
+
+        self.assertTrue(context)
+
+        self.assertIn('a', context)
+
+    def test_crude(self):
+
+        context = Context()
+        crude = BaseElement()
+
+        self.assertNotIn(crude, context)
+
+        context[crude] = 1
+
+        self.assertIn(crude, context)
+        self.assertIn(crude.ctxname, context)
+
+        self.assertEqual(context[crude], 1)
+        self.assertEqual(context[crude.ctxname], 1)
+
+        del context[crude]
+
+        self.assertNotIn(crude, context)
+        self.assertNotIn(crude.ctxname, context)
+
+    def test_fill(self):
+
+        context = Context({
+            'a.b': [1, 2, 4],
+            'c': [5]
+        })
+
+        _context = Context({
+            'b': [3],
+            'c': [4],
+            'a': [5]
+        })
+
+        context.fill(_context)
+
+        self.assertEqual(context['a'], [5])
+        self.assertEqual(context['b'], [3])
+        self.assertEqual(context['c'], [5, 4])
+        self.assertEqual(context['a.b'], [1, 2, 4, 3])
 
 
 class RequestTest(UTCase):

@@ -28,6 +28,7 @@
 
 __all__ = ['Request']
 
+from .base import BaseElement
 from .expr import Expression
 from .crude.base import CRUDEElement
 from .crude.create import Create
@@ -36,30 +37,39 @@ from .crude.update import Update
 from .crude.delete import Delete
 from .crude.exe import Exe
 
+from six import iteritems
+
 
 class Context(dict):
     """Request execution context."""
 
     def __getitem__(self, key):
 
-        if isinstance(key, CRUDEElement):
+        if isinstance(key, BaseElement):
             key = key.ctxname
 
         return super(Context, self).__getitem__(key)
 
     def __setitem__(self, key, value):
 
-        if isinstance(key, CRUDEElement):
+        if isinstance(key, BaseElement):
             key = key.ctxname
 
         return super(Context, self).__setitem__(key, value)
 
     def __delitem__(self, key):
 
-        if isinstance(key, CRUDEElement):
+        if isinstance(key, BaseElement):
             key = key.ctxname
 
         return super(Context, self).__delitem__(key)
+
+    def __contains__(self, key):
+
+        if isinstance(key, BaseElement):
+            key = key.ctxname
+
+        return super(Context, self).__contains__(key)
 
     def fill(self, ctx):
         """Fill this content with ctx data not in this data.
@@ -73,6 +83,9 @@ class Context(dict):
                     self[key] += [
                         item for item in value if item not in self[key]
                     ]
+
+                else:
+                    self[key] = ctx[key]
 
                 dotkey = '.{0}'.format(key)
 

@@ -43,7 +43,7 @@ class BaseElement(object):
         super(BaseElement, self).__init__(*args, **kwargs)
 
         self.alias = alias
-        self.uuid = uuid or uuid4()
+        self.uuid = str(uuid or uuid4())
 
     def as_(self, alias):
         """Set alias value.
@@ -62,7 +62,7 @@ class BaseElement(object):
 
         :rtype: str"""
 
-        return self.alias or getattr(self, 'name', self.uuid)
+        return self.alias or getattr(self, 'name', str(self.uuid))
 
     def __eq__(self, other):
 
