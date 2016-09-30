@@ -64,6 +64,12 @@ class ExpressionTest(UTCase):
 
         self.assertEqual(expr.name, 'A.B.C')
 
+    def test_getattr_(self):
+
+        expr = Expression.A.name_
+
+        self.assertEqual(expr.name, 'A.name')
+
     def _assertfunc(self, func, funcname, *params):
 
         self.assertIsInstance(func, Function)
