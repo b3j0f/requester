@@ -56,3 +56,7 @@ class Driver(object):
         """
 
         raise NotImplementedError()
+
+    def __repr__(self):
+
+        return 'Driver({0})'.format(self.name)

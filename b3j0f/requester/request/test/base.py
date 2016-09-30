@@ -56,6 +56,22 @@ class BaseElementTest(UTCase):
 
         self.assertEqual(alias.alias, 'alias')
 
+    def test_refers(self):
+
+        alias = BaseElement.refers('test')
+
+        self.assertIsInstance(alias, BaseElement)
+        self.assertEqual(alias.ctxname, 'test')
+
+    def test_refers_elt(self):
+
+        elt = BaseElement()
+
+        alias = BaseElement.refers(elt)
+
+        self.assertIsInstance(alias, BaseElement)
+        self.assertEqual(alias.ctxname, elt.ctxname)
+
     def test_uuid(self):
 
         base0, base1 = BaseElement(), BaseElement()

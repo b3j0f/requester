@@ -48,7 +48,7 @@ class RequestManager(Driver):
         super(RequestManager, self).__init__(*args, **kwargs)
 
         self.driver = driver
-        self._requests = requests or []
+        self._requests = [] if requests is None else requests
         self._rindex = 0
 
     def request(request=None):

@@ -53,7 +53,7 @@ class TestDriver(PyDriver):
         self.requests = []
 
         for i in range(10):
-            value = {'name': self.name, 'id': i, 'even': i & 1}
+            value = {'name': self.name, 'id': i, 'even': (i & 1) is 0}
             self.values.append(value)
 
     def process(self, request, **kwargs):
@@ -73,27 +73,39 @@ class DriverCompositeTest(UTCase):
 
         self.driver = DriverComposite(drivers=self.drivers)
 
-        self.request = Request()
+        self.ctx = Context()
 
-    def test__processquery(self):
+        self.request = Request(ctx=self.ctx)
+
+    def test__processquery_no_system(self):
 
         query = E.a
 
-        req = self.driver._processquery(query, ctx=self.request.ctx)
+        self.driver._processquery(query, ctx=self.request.ctx)
 
-        self.assertIn(query)
+        self.assertFalse(self.request.ctx)
 
     def test__processquery_s0(self):
 
-        query = (E.s0.a == 2)
+        query = E.s0
 
-        req = self.driver._processquery(query, ctx=self.request.ctx)
+        self.driver._processquery(query, ctx=self.request.ctx)
 
-        self.assertIsNot(req, self.request)
+        self.assertIn(query, self.request.ctx)
+        self.assertEqual(
+            self.driver.drivers['s0'].values,
+            self.request.ctx[query]
+        )
 
-        self.assertIs(req, self.drivers[0].requests[0][0])
+    def test__processquery_s0_property(self):
 
-        print(self.drivers[0].requests)
+        query = E(name='s0.name')
+
+        self.driver._processquery(query, ctx=self.request.ctx)
+
+        self.assertIn(query, self.request.ctx)
+        values = [{'name': 's0'}] * 10
+        self.assertEqual(self.request.ctx[query], values)
 
 if __name__ == '__main__':
     main()

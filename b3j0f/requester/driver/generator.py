@@ -82,11 +82,11 @@ class FunctionalDriver(Driver):
 
         super(FunctionalDriver, self).__init__(*args, **kwargs)
 
-        self.creates = creates or []
-        self.reads = reads or []
-        self.updates = updates or []
-        self.deletes = deletes or []
-        self.exes = exes or []
+        self.creates = [] if creates is None else creates
+        self.reads = [] if reads is None else reads
+        self.updates = [] if updates is None else updates
+        self.deletes = [] if deletes is None else deletes
+        self.exes = [] if exes is None else exes
 
     def process(self, request, **kwargs):
 

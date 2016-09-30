@@ -186,7 +186,7 @@ class MetaExpression(type):
     def __getattr__(cls, key):
         """Instanciate a new cls expression for not existing attribute."""
 
-        return cls(key)
+        return cls(name=key)
 
 
 @add_metaclass(MetaExpression)
@@ -215,7 +215,7 @@ class Expression(BaseElement):
 
     def __getattr__(self, key):
 
-        return type(self)('{0}.{1}'.format(self.name, key))
+        return type(self)(name='{0}.{1}'.format(self.name, key))
 
     def __and__(self, other):
 
@@ -549,13 +549,6 @@ class Expression(BaseElement):
 
         return result
 
-    def __repr__(self):
-
-        return '{0}[{1}]{2}'.format(
-            type(self).__name__, self.name,
-            ':{0}'.format(self.alias) if self.alias else ''
-        )
-
     def __call__(self, *params):
         """Return a function where name is self name and params are varargs."""
 
@@ -585,7 +578,7 @@ class Function(Expression):
 
         super(Function, self).__init__(name=name, *args, **kwargs)
 
-        self.params = params or []
+        self.params = [] if params is None else params
 
     def __call__(self, *params):
         """Transform this model into a function with parameters.

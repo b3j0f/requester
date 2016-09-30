@@ -120,9 +120,9 @@ class Request(object):
         super(Request, self).__init__(*args, **kwargs)
 
         self.driver = driver
-        self.ctx = ctx or Context()
+        self.ctx = Context() if ctx is None else ctx
         self._query = query
-        self.crudes = crudes or []
+        self.crudes = [] if crudes is None else []
 
         if query is not None and not isinstance(query, Expression):
             raise TypeError(

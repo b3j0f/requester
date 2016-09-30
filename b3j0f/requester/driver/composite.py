@@ -61,12 +61,13 @@ class DriverComposite(Driver):
         self.drivers = {}
         for driver in drivers:
             if not isinstance(driver, Schema):
-                driver = data2schema(driver, _force=True)
+                driver = data2schema(driver, name=driver.name, _force=True)
+
             self.drivers[driver.name] = driver
 
     def process(self, request, **kwargs):
 
-        result = self._processquery(query=query, ctx=ctx, **kwargs)
+        result = self._processquery(query=query, ctx=request.ctx, **kwargs)
 
         for crude in request.crudes:
 
@@ -85,8 +86,7 @@ class DriverComposite(Driver):
 
                 for item in items:
                     if isinstance(item, Expression):
-                        ctx = self._processquery(query=item, ctx=ctx).ctx
-                        ctx = request.ctx
+                        ctx = self._processquery(query=item, ctx=ctx)
                         names.append(item.name)
 
                     else:
@@ -109,13 +109,11 @@ class DriverComposite(Driver):
 
                 for processingdriver in processingdrivers:
 
-                    request = processingdriver.process(request=request)
+                    pctx = processingdriver.process(request=request)
 
-                    self._updatectx(ctx, request.ctx)
+                    ctx.fill(pctx)
 
         request.ctx = ctx
-
-        return result
 
     def _processquery(self, query, ctx, _lastquery=None, **kwargs):
         """Parse deeply the query from the left to the right and aggregates
@@ -125,19 +123,17 @@ class DriverComposite(Driver):
         :param Context ctx: context execution.
         :param Expression _lastquery: private parameter which save the last
             query to process.
+        :return: ctx
+        :rtype: ctx
         """
 
         if _lastquery is None:
             _lastquery = query
 
-        print('start', query, ctx, _lastquery, kwargs)
-
         names = query.name.split('.')
-        print('names', names)
 
         driver = self.drivers.get(names[0])
         lastdriver = ctx.get(DriverComposite.__LAST_DRIVER__, driver)
-        print('driver', driver, 'lastdriver', lastdriver)
 
         if driver is None:
             driver = lastdriver
@@ -146,20 +142,18 @@ class DriverComposite(Driver):
             if driver != lastdriver:
                 ctx[DriverComposite.__LAST_DRIVER__] = driver
 
-        print('driver', driver)
-
         if isinstance(query, Function):
 
             isor = query.name == FuncName.OR.value
 
             for param in query.params:
-                print('param', param)
                 if isinstance(param, Expression):
 
                     pctx = deepcopy(ctx) if isor else ctx
 
                     self._processquery(
-                        query=param, ctx=pctx, _lastquery=_lastquery or query,
+                        query=param, ctx=pctx,
+                        _lastquery=query if _lastquery is None else _lastquery,
                         **kwargs
                     )
 
@@ -167,7 +161,6 @@ class DriverComposite(Driver):
                         ctx.fill(pctx)
 
         if query == _lastquery:
-            print('process', query)
 
             if lastdriver is None:
                 lastdriver = ctx.get(DriverComposite.__LAST_DRIVER__, driver)
@@ -182,12 +175,28 @@ class DriverComposite(Driver):
             else:
                 processingdrivers = [lastdriver]
 
-            request = Request(
-                query=query, ctx=ctx, crudes=[Read(select=[query.ctxname])]
-            )
+            request = Request(query=query, ctx=ctx)
 
             for processingdriver in processingdrivers:
 
-                processingdriver.process(request=request, **kwargs)
+                # prepare a read operation for the inner driver
+                crudename = query.ctxname  # prepare crude name
+                if crudename.startswith(processingdriver.name):
+                    crudename = crudename[len(processingdriver.name) + 1:]
 
-        return request
+                crude = Read(
+                    select=[crudename] if crudename else None,
+                    alias=query.ctxname  # set alias equals query ctxname
+                )
+
+                request.crudes = [crude]
+
+                request = processingdriver.process(request=request, **kwargs)
+
+                ctx = request.ctx
+
+        return ctx
+
+    def __repr__(self):
+
+        return 'CompositeDriver({0}, {1})'.format(self.name, self.drivers)

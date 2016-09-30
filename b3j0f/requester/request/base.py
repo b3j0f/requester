@@ -45,6 +45,19 @@ class BaseElement(object):
         self.alias = alias
         self.uuid = str(uuid or uuid4())
 
+    @staticmethod
+    def refers(alias):
+        """Create a reference base element which refers to another element or
+        alias.
+
+        :param alias: alias to use.
+        :type alias: str or BaseElement."""
+
+        if isinstance(alias, BaseElement):
+            alias = alias.ctxname
+
+        return BaseElement(alias=alias)
+
     def as_(self, alias):
         """Set alias value.
 
@@ -67,3 +80,18 @@ class BaseElement(object):
     def __eq__(self, other):
 
         return isinstance(other, BaseElement) and other.ctxname == self.ctxname
+
+    def __repr__(self):
+
+        result = '{0}('.format(type(self).__name__)
+
+        for slot in self.__slots__:
+            attr = getattr(self, slot)
+            if attr is not None:
+                result += '{0}: {1}, '.format(
+                    slot[1:] if slot[0] == '_' else slot, getattr(self, slot)
+                )
+
+        result += ')'
+
+        return result

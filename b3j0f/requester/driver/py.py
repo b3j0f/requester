@@ -26,7 +26,9 @@
 
 """Python driver module."""
 
-__all__ = ['PyDriver', 'processcrude', 'create', 'read', 'update', 'delete', 'exe']
+__all__ = [
+    'PyDriver', 'processcrude', 'create', 'read', 'update', 'delete', 'exe'
+]
 
 from .base import Driver
 
@@ -75,7 +77,7 @@ class PyDriver(Driver):
 
         super(PyDriver, self).__init__(*args, **kwargs)
 
-        self.values = values or []
+        self.values = [] if values is None else values
 
     def process(self, request, **kwargs):
         """Generic method to override in order to crude input data related to
@@ -97,6 +99,7 @@ class PyDriver(Driver):
             )
 
         for crude in request.crudes:
+
             processcrude(request=request, items=self.values, crude=crude)
 
         return request

@@ -40,4 +40,4 @@ class Exe(CRUDEElement):
         super(Exe, self).__init__(*args, **kwargs)
 
         self.name = name
-        self.params = params or []
+        self.params = [] if params is None else params
