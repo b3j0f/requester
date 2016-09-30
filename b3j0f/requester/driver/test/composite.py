@@ -99,7 +99,7 @@ class DriverCompositeTest(UTCase):
 
     def test__processquery_s0_property(self):
 
-        query = E(name='s0.name')
+        query = E.s0.name_
 
         self.driver._processquery(query, ctx=self.request.ctx)
 
@@ -109,7 +109,13 @@ class DriverCompositeTest(UTCase):
 
     def test__processquery_none_s0(self):
 
-        query = F.A()
+        expr = E.s0
+        query = F.A(expr)
+
+        self.driver._processquery(query=query, ctx=self.request.ctx)
+        print(query)
+        self.assertIn(expr, self.request.ctx)
+        self.assertIn(query, self.request.ctx)
 
 if __name__ == '__main__':
     main()

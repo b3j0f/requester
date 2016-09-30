@@ -589,6 +589,8 @@ class Function(Expression):
     - func = Function('A')(2, 3) => function A from S1 and params 2 and 3.
     """
 
+    __slots__ = ['params'] + Expression.__slots__
+
     def __init__(self, name, params=None, *args, **kwargs):
         """
         :param list params: model params in case of function.
