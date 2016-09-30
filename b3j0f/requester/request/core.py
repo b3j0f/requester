@@ -122,13 +122,12 @@ class Request(object):
         self.driver = driver
         self.ctx = Context() if ctx is None else ctx
         self._query = query
-        self.crudes = [] if crudes is None else []
+        self.crudes = [] if crudes is None else crudes
 
         if query is not None and not isinstance(query, Expression):
             raise TypeError(
                 'Wrong type {0}. {1} expected.'.format(query, Expression)
             )
-
 
         for crude in self.crudes:
             if not isinstance(crude, CRUDEElement):

@@ -107,5 +107,9 @@ class DriverCompositeTest(UTCase):
         values = [{'name': 's0'}] * 10
         self.assertEqual(self.request.ctx[query], values)
 
+    def test__processquery_none_s0(self):
+
+        query = F.A()
+
 if __name__ == '__main__':
     main()
