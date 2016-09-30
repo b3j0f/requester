@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -25,26 +24,19 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""conf file driver UTs."""
+"""delete module."""
 
-from b3j0f.utils.ut import UTCase
+__all__ = ['Delete']
 
-from unittest import main
-
-from ..exe import Exe
+from .base import CRUDElement
 
 
-class ExeTest(UTCase):
+class Delete(CRUDElement):
 
-    def test_init(self):
+    __slots__ = ['names'] + CRUDElement.__slots__
 
-        name = 'test'
-        params = 1, 2
+    def __init__(self, names=None, *args, **kwargs):
 
-        exe = Exe(name=name, params=params)
+        super(Delete, self).__init__(*args, **kwargs)
 
-        self.assertEqual(name, exe.name)
-        self.assertEqual(params, exe.params)
-
-if __name__ == '__main__':
-    main()
+        self.names = names

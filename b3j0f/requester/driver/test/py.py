@@ -32,14 +32,13 @@ from b3j0f.utils.ut import UTCase
 from unittest import main
 
 from ..base import Driver
-from ..py import PyDriver, processcrude, create, read, update, delete, exe
-from ..generator import func2crudeprocessing, obj2driver, DriverAnnotation
+from ..py import PyDriver, processcrud, create, read, update, delete
+from ..generator import func2crudprocessing, obj2driver, DriverAnnotation
 from ...request.core import Request, Context
-from ...request.crude.create import Create
-from ...request.crude.read import Read
-from ...request.crude.update import Update
-from ...request.crude.delete import Delete
-from ...request.crude.exe import Exe
+from ...request.crud.create import Create
+from ...request.crud.read import Read
+from ...request.crud.update import Update
+from ...request.crud.delete import Delete
 
 
 class Func2CrudeProcessingTest(UTCase):
@@ -50,16 +49,16 @@ class Func2CrudeProcessingTest(UTCase):
 
             return [a + b]
 
-        genfunc = func2crudeprocessing(func)
+        genfunc = func2crudprocessing(func)
 
-        crude = Create(None, {'a': 1})
+        crud = Create(None, {'a': 1})
 
         request = Request(ctx=Context({'b': 2}))
 
-        _request = genfunc(crude=crude, request=request)
+        _request = genfunc(crud=crud, request=request)
 
         self.assertIs(_request, request)
-        self.assertEqual(_request.ctx[crude], [3])
+        self.assertEqual(_request.ctx[crud], [3])
 
     def test_object(self):
 
@@ -69,7 +68,7 @@ class Func2CrudeProcessingTest(UTCase):
 
                 return a + b
 
-        result = func2crudeprocessing(Test)
+        result = func2crudprocessing(Test)
 
 if __name__ == '__main__':
     main()

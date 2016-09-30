@@ -44,7 +44,7 @@ class Driver(object):
             self.name = name
 
     def process(self, request, explain=False, **kwargs):
-        """Generic method to override in order to crude input data related to
+        """Generic method to override in order to crud input data related to
         request and kwargs.
 
         :param Request request: request to process.

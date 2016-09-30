@@ -40,44 +40,40 @@ from six import string_types
 
 from .base import Driver
 from .py import read
-from ..request.crude.base import CRUDE
-from ..request.crude.create import Create
-from ..request.crude.read import Read
-from ..request.crude.update import Update
-from ..request.crude.delete import Delete
-from ..request.crude.exe import Exe
+from ..request.crud.base import CRUD
+from ..request.crud.create import Create
+from ..request.crud.read import Read
+from ..request.crud.update import Update
+from ..request.crud.delete import Delete
 
 
 class FunctionalDriver(Driver):
-    """Driver with fine grained implementation of crude functions.
+    """Driver with fine grained implementation of crud functions.
 
-    This driver uses at most five set of functions for five respective crude
+    This driver uses at most five set of functions for five respective crud
     types.
 
-    The processing execute the right function for all request crude objects.
+    The processing execute the right function for all request crud objects.
 
-    Functions must takes in parameters a 'crude' object, a 'request' object and
+    Functions must takes in parameters a 'crud' object, a 'request' object and
     kwargs for specific driver uses (like explain for example).
 
     Functions must return a request."""
 
     def __init__(
-            self,
-            creates=None, reads=None, updates=None, deletes=None, exes=None,
+            self, creates=None, reads=None, updates=None, deletes=None,
             *args, **kwargs
     ):
         """
         :param list creates: creation functions. Take in parameters a request,
-            a crude operation and specific kwargs. Return created item
+            a crud operation and specific kwargs. Return created item
             with additional fields such as id.
         :param list reads: reading functions. Take in parameters a request,
-            a crude operation and specific kwargs. Return read items.
+            a crud operation and specific kwargs. Return read items.
         :param list updates: updating functions. Take in parameters a request,
-            a crude operation and specific kwargs. Return updated items.
+            a crud operation and specific kwargs. Return updated items.
         :param list deletes: deletion functions. Take in parameters a request,
-            a crude operation and specific kwargs. Return deleted items.
-        :param list exes: execution functions. Take in parameters a request,
-            a crude operation and specific kwargs. Return function result.
+            a crud operation and specific kwargs. Return deleted items.
         """
 
         super(FunctionalDriver, self).__init__(*args, **kwargs)
@@ -86,31 +82,30 @@ class FunctionalDriver(Driver):
         self.reads = [] if reads is None else reads
         self.updates = [] if updates is None else updates
         self.deletes = [] if deletes is None else deletes
-        self.exes = [] if exes is None else exes
 
     def process(self, request, **kwargs):
 
         result = request
 
-        for crude in request.crudes:
+        for crud in request.cruds:
 
-            crudename = type(crude).__name__.lower()
+            crudname = type(crud).__name__.lower()
 
-            funcs = getattr(self, '{0}s'.format(crudename))
+            funcs = getattr(self, '{0}s'.format(crudname))
 
             if funcs:
                 for func in funcs:
-                    result = func(crude=crude, request=result, **kwargs)
+                    result = func(crud=crud, request=result, **kwargs)
 
             else:
                 raise NotImplementedError(
-                    'No implementation found for {0}'.format(crudename)
+                    'No implementation found for {0}'.format(crudname)
                 )
 
         return result
 
 
-def func2crudeprocessing(func=None, obj=None):
+def func2crudprocessing(func=None, obj=None):
 
     if func is not None and not isinstance(func, Schema):
         func = data2schema(func)
@@ -118,11 +113,11 @@ def func2crudeprocessing(func=None, obj=None):
     if obj is not None and not isinstance(obj, Schema):
         obj = data2schema(obj, _force=True)
 
-    def _processing(crude, request, _func=func, _obj=obj, **kwargs):
+    def _processing(crud, request, _func=func, _obj=obj, **kwargs):
 
         if _func is None:
-            crudename = crude.name
-            funcname = crudename.split('.')[-1]
+            crudname = crud.name
+            funcname = crudname.split('.')[-1]
             _func = getattr(_obj, funcname)
             schemafunc = getattr(type(_obj), funcname)
 
@@ -132,11 +127,8 @@ def func2crudeprocessing(func=None, obj=None):
         funckwargs = {}
         funcvarargs = []
 
-        if isinstance(crude, Exe):
-            funcvarargs = crude.params
-
-        elif isinstance(crude, (Create, Update)):
-            funckwargs.update(crude.values)
+        if isinstance(crud, (Create, Update)):
+            funckwargs.update(crud.values)
             # todo : specific _func args
 
         for param in schemafunc.params:
@@ -147,10 +139,10 @@ def func2crudeprocessing(func=None, obj=None):
 
         funcresult = list(_func(*funcvarargs, **funckwargs))
 
-        if isinstance(crude, Read):
-            read(read=crude, items=funcresult)
+        if isinstance(crud, Read):
+            read(read=crud, items=funcresult)
 
-        request.ctx[crude] = funcresult
+        request.ctx[crud] = funcresult
 
         return request
 
@@ -158,9 +150,7 @@ def func2crudeprocessing(func=None, obj=None):
 
 
 def obj2driver(
-        obj,
-        name=None,
-        creates=None, reads=None, updates=None, deletes=None, exes=None
+        obj, name=None, creates=None, reads=None, updates=None, deletes=None,
 ):
     """Convert an object to a driver.
 
@@ -169,7 +159,6 @@ def obj2driver(
     :param list reads: read function names to retrieve from the obj.
     :param list updates: update function names to retrieve from the obj.
     :param list deletes: delete function names to retrieve from the obj.
-    :param list exes: exe function names to retrieve from the obj.
     :rtype: FunctionalDriver
     """
 
@@ -186,44 +175,38 @@ def obj2driver(
     freads = []
     fupdates = []
     fdeletes = []
-    fexes = []
 
     _locals = locals()
     # start to get information from annotations
-    crudeannotations = set(
-        _CRUDEAnnotation.get_annotations(obj) +
-        _CRUDEAnnotation.get_annotations(fobj)
+    crudannotations = set(
+        _CRUDAnnotation.get_annotations(obj) +
+        _CRUDAnnotation.get_annotations(fobj)
     )
-    for crudeannotation in crudeannotations:
-        for target in crudeannotation.targets:
+    for crudannotation in crudannotations:
+        for target in crudannotation.targets:
             targetname = targetname
             fobjtarget = getattr(fobj, targetname)
-            _locals['f{0}s'.format(crudeannotation.name)].append(fobjtarget)
+            _locals['f{0}s'.format(crudannotation.name)].append(fobjtarget)
 
     # then parse function parameters
-    for crudename in (crudename.lower() for crudename in  CRUDE.__members__):
+    for crudname in (crudname.lower() for crudname in  CRUD.__members__):
 
-        crudes = _locals['{0}s'.format(crudename)]
+        cruds = _locals['{0}s'.format(crudname)]
 
-        for crude in crudes:
+        for crud in cruds:
 
-            crudefunc = getattr(fobj, crude)
+            crudfunc = getattr(fobj, crud)
 
-            fcrudefunc = func2crudeprocessing(crudefunc)
+            fcrudfunc = func2crudprocessing(crudfunc)
 
-            _locals['f{0}s'.format(crudename)].append(fcrudefunc)
-
-    # ensure fexe exist, otherwise, load all obj functions inside
-    if not fexes:
-        fexes = [func2crudeprocessing(obj=fobj)]
+            _locals['f{0}s'.format(crudname)].append(fcrudfunc)
 
     return FunctionalDriver(
         name=fname,
         creates=fcreates,
         reads=freads,
         updates=fupdates,
-        deletes=fdeletes,
-        exes=fexes
+        deletes=fdeletes
     )
 
 
@@ -232,8 +215,7 @@ class DriverAnnotation(Annotation):
 
     def __init__(
             self,
-            name=None,
-            creates=None, reads=None, updates=None, deletes=None, exes=None,
+            name=None, creates=None, reads=None, updates=None, deletes=None,
             *args, **kwargs
     ):
         """
@@ -245,10 +227,7 @@ class DriverAnnotation(Annotation):
         :param list updates: update function names. Related functions must
             return updated data.
         :param list deletes: delete function names. Related functions must
-            return deleted objects.
-        :param list exes: exe function names. Related functions must return
-            function result.
-        """
+            return deleted objects."""
 
         super(DriverAnnotation, self).__init__(*args, **kwargs)
 
@@ -257,7 +236,6 @@ class DriverAnnotation(Annotation):
         self.reads = reads
         self.updates = updates
         self.deletes = deletes
-        self.exes = exes
 
     def getdriver(self, obj):
         """Get a driver corresponding to input target instance related
@@ -268,62 +246,55 @@ class DriverAnnotation(Annotation):
 
         kwargs = {'name': self.name, 'obj': obj}
 
-        for crude in (crude.lower() for crude in CRUDE.__members__):
+        for crud in (crud.lower() for crud in CRUD.__members__):
 
-            fcrude = '{0}s'.format(crude)
+            fcrud = '{0}s'.format(crud)
 
-            funcnames = getattr(self, fcrude)
+            funcnames = getattr(self, fcrud)
 
             for funcname in funcnames:
                 func = getattr(obj, funcname)
 
-                kwargs.setdefault(fcrude, []).append(func)
+                kwargs.setdefault(fcrud, []).append(func)
 
         return obj2driver(**kwargs)
 
 
-class _CRUDEAnnotation(Annotation):
+class _CRUDAnnotation(Annotation):
 
-    def __init__(self, crude, *args, **kwargs):
+    def __init__(self, crud, *args, **kwargs):
         """
-        :param str crude: crude name.
+        :param str crud: crud name.
         """
 
-        super(_CRUDEAnnotation, self).__init__(self)
+        super(_CRUDAnnotation, self).__init__(self)
 
-        self.crude = crude.name if isinstance(crude, CRUDEElement) else crude
-
-
-class CreateAnnotation(_CRUDEAnnotation):
-
-    def __init__(self, crude=CRUDE.READ, *args, **kwargs):
-
-        super(CreateAnnotation, self).__init__(crude=crude, *args, **kwargs)
+        self.crud = crud.name if isinstance(crud, CRUDElement) else crud
 
 
-class ReadAnnotation(_CRUDEAnnotation):
+class CreateAnnotation(_CRUDAnnotation):
 
-    def __init__(self, crude=CRUDE.READ, *args, **kwargs):
+    def __init__(self, crud=CRUD.READ, *args, **kwargs):
 
-        super(ReadAnnotation, self).__init__(crude=crude, *args, **kwargs)
-
-
-class UpdateAnnotation(_CRUDEAnnotation):
-
-    def __init__(self, crude=CRUDE.UPDATE, *args, **kwargs):
-
-        super(UpdateAnnotation, self).__init__(crude=crude, *args, **kwargs)
+        super(CreateAnnotation, self).__init__(crud=crud, *args, **kwargs)
 
 
-class DeleteAnnotation(_CRUDEAnnotation):
+class ReadAnnotation(_CRUDAnnotation):
 
-    def __init__(self, crude=CRUDE.DELETE, *args, **kwargs):
+    def __init__(self, crud=CRUD.READ, *args, **kwargs):
 
-        super(DeleteAnnotation, self).__init__(crude=crude, *args, **kwargs)
+        super(ReadAnnotation, self).__init__(crud=crud, *args, **kwargs)
 
 
-class ExeAnnotation(_CRUDEAnnotation):
+class UpdateAnnotation(_CRUDAnnotation):
 
-    def __init__(self, crude=CRUDE.EXE, *args, **kwargs):
+    def __init__(self, crud=CRUD.UPDATE, *args, **kwargs):
 
-        super(ExeAnnotation, self).__init__(crude=crude, *args, **kwargs)
+        super(UpdateAnnotation, self).__init__(crud=crud, *args, **kwargs)
+
+
+class DeleteAnnotation(_CRUDAnnotation):
+
+    def __init__(self, crud=CRUD.DELETE, *args, **kwargs):
+
+        super(DeleteAnnotation, self).__init__(crud=crud, *args, **kwargs)

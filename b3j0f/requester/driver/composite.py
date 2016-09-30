@@ -32,11 +32,10 @@ from .base import Driver
 
 from ..request.core import Request
 from ..request.expr import Expression, Function, FuncName
-from ..request.crude.create import Create
-from ..request.crude.read import Read
-from ..request.crude.update import Update
-from ..request.crude.delete import Delete
-from ..request.crude.exe import Exe
+from ..request.crud.create import Create
+from ..request.crud.read import Read
+from ..request.crud.update import Update
+from ..request.crud.delete import Delete
 
 from b3j0f.schema import data2schema, Schema
 
@@ -69,20 +68,20 @@ class DriverComposite(Driver):
 
         result = self._processquery(query=query, ctx=request.ctx, **kwargs)
 
-        for crude in request.crudes:
+        for crud in request.cruds:
 
-            if isinstance(crude, (Create, Update, Exe)):
-                if isinstance(crude.name, Expression):
-                    ctx = self._processquery(query=crude.name, ctx=ctx).ctx
-                    names = [crude.name.name]
+            if isinstance(crud, (Create, Update)):
+                if isinstance(crud.name, Expression):
+                    ctx = self._processquery(query=crud.name, ctx=ctx).ctx
+                    names = [crud.name.name]
 
                 else:
-                    names = [crude.name]
+                    names = [crud.name]
 
-            elif isinstance(crude, (Read, Delete)):
+            elif isinstance(crud, (Read, Delete)):
                 names = []
 
-                items = crude.select() if isinstance(crude, Read) else crude.names
+                items = crud.select() if isinstance(crud, Read) else crud.names
 
                 for item in items:
                     if isinstance(item, Expression):
@@ -105,7 +104,7 @@ class DriverComposite(Driver):
                 else:
                     processingdrivers = [driver]
 
-                request = Request(query=query, ctx=ctx, crudes=crude)
+                request = Request(query=query, ctx=ctx, cruds=crud)
 
                 for processingdriver in processingdrivers:
 
@@ -180,16 +179,16 @@ class DriverComposite(Driver):
             for processingdriver in processingdrivers:
 
                 # prepare a read operation for the inner driver
-                crudename = query.ctxname  # prepare crude name
-                if crudename.startswith(processingdriver.name):
-                    crudename = crudename[len(processingdriver.name) + 1:]
+                crudname = query.ctxname  # prepare crud name
+                if crudname.startswith(processingdriver.name):
+                    crudname = crudname[len(processingdriver.name) + 1:]
 
-                crude = Read(
-                    select=[crudename] if crudename else None,
+                crud = Read(
+                    select=[crudname] if crudname else None,
                     alias=query.ctxname  # set alias equals query ctxname
                 )
 
-                request.crudes = [crude]
+                request.cruds = [crud]
 
                 request = processingdriver.process(request=request, **kwargs)
 

@@ -24,52 +24,10 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""base crude module."""
+"""CRUD configuration package."""
+from .base import CRUD
+from .create import Create
+from .read import Read, Cursor
+from .update import Update
+from .delete import Delete
 
-__all__ = ['CRUDE']
-
-from ..expr import BaseElement
-
-from enum import IntEnum, unique
-
-
-@unique
-class CRUDE(IntEnum):
-
-    CREATE = 1
-    READ = 2
-    UPDATE = 3
-    DELETE = 4
-    EXE = 5
-
-
-class CRUDEElement(BaseElement):
-    """Base crude operation.
-
-    Can be associated to a request."""
-
-    __slots__ = ['request', 'result'] + BaseElement.__slots__
-
-    def __init__(self, request=None, result=None, *args, **kwargs):
-        """
-        :param b3j0f.requester.Request request:
-        :param result: result of this crude processing.
-        """
-
-        super(CRUDEElement, self).__init__(*args, **kwargs)
-
-        self.request = request
-        self.result = result
-
-    def __call__(self):
-        """Execute this CRUDE element.
-
-        :return: this execuion result."""
-
-        if self.request is None:
-            raise ExetimeError(
-                'Impossible to execute this without associate it to a request.'
-            )
-
-        else:
-            return self.request.processcrude(self)

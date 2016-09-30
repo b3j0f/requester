@@ -34,11 +34,10 @@ from unittest import main
 from ..base import BaseElement
 from ..core import Request, Context
 from ..expr import Expression as E, Function as F, FuncName as FN
-from ..crude.create import Create
-from ..crude.read import Read
-from ..crude.update import Update
-from ..crude.delete import Delete
-from ..crude.exe import Exe
+from ..crud.create import Create
+from ..crud.read import Read
+from ..crud.update import Update
+from ..crud.delete import Delete
 
 
 class ContextTest(UTCase):
@@ -55,25 +54,25 @@ class ContextTest(UTCase):
 
         self.assertIn('a', context)
 
-    def test_crude(self):
+    def test_crud(self):
 
         context = Context()
-        crude = BaseElement()
+        crud = BaseElement()
 
-        self.assertNotIn(crude, context)
+        self.assertNotIn(crud, context)
 
-        context[crude] = 1
+        context[crud] = 1
 
-        self.assertIn(crude, context)
-        self.assertIn(crude.ctxname, context)
+        self.assertIn(crud, context)
+        self.assertIn(crud.ctxname, context)
 
-        self.assertEqual(context[crude], 1)
-        self.assertEqual(context[crude.ctxname], 1)
+        self.assertEqual(context[crud], 1)
+        self.assertEqual(context[crud.ctxname], 1)
 
-        del context[crude]
+        del context[crud]
 
-        self.assertNotIn(crude, context)
-        self.assertNotIn(crude.ctxname, context)
+        self.assertNotIn(crud, context)
+        self.assertNotIn(crud.ctxname, context)
 
     def test_fill(self):
 
@@ -119,15 +118,15 @@ class RequestTest(UTCase):
         self.assertIsNone(request.driver)
         self.assertEqual(request.ctx, {})
         self.assertIsNone(request.query)
-        self.assertEqual(request.crudes, [])
+        self.assertEqual(request.cruds, [])
 
     def test_init_errorquery(self):
 
         self.assertRaises(TypeError, Request, query=1)
 
-    def test_init_errorcrudes(self):
+    def test_init_errorcruds(self):
 
-        self.assertRaises(TypeError, Request, crudes=[1])
+        self.assertRaises(TypeError, Request, cruds=[1])
 
     def test_and_query(self):
 
@@ -269,19 +268,19 @@ class RequestTest(UTCase):
         self.assertIsInstance(read, Read)
         self.assertEqual(read.join(), value)
 
-    def test_processcrude(self):
+    def test_processcrud(self):
 
-        crudes = [
+        cruds = [
             Create('create', {}),
             Read(),
             Update('update', {}),
             Delete()
         ]
 
-        self.request.processcrude(*crudes)
+        self.request.processcrud(*cruds)
 
         self.assertIn(self.request, self.requests)
-        self.assertEqual(self.request.crudes, crudes)
+        self.assertEqual(self.request.cruds, cruds)
 
     def test_create(self):
 
@@ -291,12 +290,12 @@ class RequestTest(UTCase):
         self.request.create(name, **values)
 
         self.assertIn(self.request, self.requests)
-        crude = self.request.crudes[0]
+        crud = self.request.cruds[0]
 
-        self.assertIsInstance(crude, Create)
-        self.assertIs(crude.request, self.request)
-        self.assertEqual(crude.name, name)
-        self.assertEqual(crude.values, values)
+        self.assertIsInstance(crud, Create)
+        self.assertIs(crud.request, self.request)
+        self.assertEqual(crud.name, name)
+        self.assertEqual(crud.values, values)
 
     def test_read(self):
 
@@ -306,12 +305,12 @@ class RequestTest(UTCase):
         self.request.read(select=select, limit=limit)
 
         self.assertIn(self.request, self.requests)
-        crude = self.request.crudes[0]
+        crud = self.request.cruds[0]
 
-        self.assertIsInstance(crude, Read)
-        self.assertIs(crude.request, self.request)
-        self.assertEqual(crude.select(), select)
-        self.assertEqual(crude.limit(), limit)
+        self.assertIsInstance(crud, Read)
+        self.assertIs(crud.request, self.request)
+        self.assertEqual(crud.select(), select)
+        self.assertEqual(crud.limit(), limit)
 
     def test_update(self):
 
@@ -321,12 +320,12 @@ class RequestTest(UTCase):
         self.request.update(name, **values)
 
         self.assertIn(self.request, self.requests)
-        crude = self.request.crudes[0]
+        crud = self.request.cruds[0]
 
-        self.assertIsInstance(crude, Update)
-        self.assertIs(crude.request, self.request)
-        self.assertEqual(crude.name, name)
-        self.assertEqual(crude.values, values)
+        self.assertIsInstance(crud, Update)
+        self.assertIs(crud.request, self.request)
+        self.assertEqual(crud.name, name)
+        self.assertEqual(crud.values, values)
 
     def test_delete(self):
 
@@ -335,11 +334,11 @@ class RequestTest(UTCase):
         self.request.delete(*names)
 
         self.assertIn(self.request, self.requests)
-        crude = self.request.crudes[0]
+        crud = self.request.cruds[0]
 
-        self.assertIsInstance(crude, Delete)
-        self.assertIs(crude.request, self.request)
-        self.assertEqual(crude.names, names)
+        self.assertIsInstance(crud, Delete)
+        self.assertIs(crud.request, self.request)
+        self.assertEqual(crud.names, names)
 
     def test_exe(self):
 
@@ -349,12 +348,12 @@ class RequestTest(UTCase):
         self.request.exe(name, *params)
 
         self.assertIn(self.request, self.requests)
-        crude = self.request.crudes[0]
+        crud = self.request.cruds[0]
 
-        self.assertIsInstance(crude, Exe)
-        self.assertIs(crude.request, self.request)
-        self.assertEqual(crude.name, name)
-        self.assertEqual(crude.params, params)
+        self.assertIsInstance(crud, Read)
+        self.assertIs(crud.request, self.request)
+        self.assertEqual(crud.name, name)
+        self.assertEqual(crud.params, params)
 
 if __name__ == '__main__':
     main()

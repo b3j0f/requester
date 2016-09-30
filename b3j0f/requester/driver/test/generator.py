@@ -33,16 +33,14 @@ from unittest import main
 
 from ..base import Driver
 from ..generator import (
-    func2crudeprocessing, obj2driver, DriverAnnotation, FunctionalDriver
+    func2crudprocessing, obj2driver, DriverAnnotation, FunctionalDriver
 )
-from ...request.crude.base import CRUDE
+from ...request.crud.base import CRUD
 from ...request.core import Request, Context
-from ...request.crude.create import Create
-from ...request.crude.read import Read
-from ...request.crude.update import Update
-from ...request.crude.delete import Delete
-from ...request.crude.exe import Exe
-
+from ...request.crud.create import Create
+from ...request.crud.read import Read
+from ...request.crud.update import Update
+from ...request.crud.delete import Delete
 
 
 class FunctionalDriverTest(UTCase):
@@ -51,13 +49,13 @@ class FunctionalDriverTest(UTCase):
 
         self.processed = {}
 
-        def process(crude, count):
+        def process(crud, count):
 
             def _process(request, **kwargs):
 
-                self.processed.setdefault(crude.name, []).append(kwargs)
+                self.processed.setdefault(crud.name, []).append(kwargs)
 
-                request.ctx['count'] += 10 ** crude.value
+                request.ctx['count'] += 10 ** crud.value
 
                 return request
 
@@ -71,10 +69,10 @@ class FunctionalDriverTest(UTCase):
 
         count = 1
 
-        for crude in CRUDE.__members__.values():
+        for crud in CRUD.__members__.values():
 
-            kwargs['{0}s'.format(crude.name.lower())] = self.process(
-                crude, count
+            kwargs['{0}s'.format(crud.name.lower())] = self.process(
+                crud, count
             )
             count += 1
 
@@ -84,9 +82,8 @@ class FunctionalDriverTest(UTCase):
 
         request = Request(
             ctx={'count': 0},
-            crudes=[
-                Create(None, None), Read(), Update(None, None), Delete(),
-                Exe(None)
+            cruds=[
+                Create(None, None), Read(), Update(None, None), Delete()
             ]
         )
         request.ctx['count'] = 0
@@ -97,11 +94,11 @@ class FunctionalDriverTest(UTCase):
 
         count = 1
 
-        for crude in CRUDE.__members__:
+        for crud in CRUD.__members__:
 
-            self.assertEqual(len(self.processed[crude]), count)
+            self.assertEqual(len(self.processed[crud]), count)
 
-            processedkwargs = self.processed[crude]
+            processedkwargs = self.processed[crud]
 
             self.assertEqual(len(processedkwargs), count)
 
@@ -120,16 +117,16 @@ class Func2CrudeProcessingTest(UTCase):
 
             return [a + b]
 
-        genfunc = func2crudeprocessing(func)
+        genfunc = func2crudprocessing(func)
 
-        crude = Create(None, {'a': 1})
+        crud = Create(None, {'a': 1})
 
         request = Request(ctx=Context({'b': 2}))
 
-        _request = genfunc(crude=crude, request=request)
+        _request = genfunc(crud=crud, request=request)
 
         self.assertIs(_request, request)
-        self.assertEqual(_request.ctx[crude], [3])
+        self.assertEqual(_request.ctx[crud], [3])
 
     def test_function_read(self):
 
@@ -137,16 +134,16 @@ class Func2CrudeProcessingTest(UTCase):
 
             return [i for i in range(count)]
 
-        genfunc = func2crudeprocessing(func)
+        genfunc = func2crudprocessing(func)
 
-        crude = Read(offset=2, limit=2)
+        crud = Read(offset=2, limit=2)
 
         request = Request(ctx=Context({'count': 5}))
 
-        _request = genfunc(crude=crude, request=request)
+        _request = genfunc(crud=crud, request=request)
 
         self.assertIs(_request, request)
-        self.assertEqual(_request.ctx[crude], [2, 3])
+        self.assertEqual(_request.ctx[crud], [2, 3])
 
     def test_function_update(self):
 
@@ -154,16 +151,16 @@ class Func2CrudeProcessingTest(UTCase):
 
             return [a + b]
 
-        genfunc = func2crudeprocessing(func)
+        genfunc = func2crudprocessing(func)
 
-        crude = Update(None, {'a': 1})
+        crud = Update(None, {'a': 1})
 
         request = Request(ctx=Context({'b': 2}))
 
-        _request = genfunc(crude=crude, request=request)
+        _request = genfunc(crud=crud, request=request)
 
         self.assertIs(_request, request)
-        self.assertEqual(_request.ctx[crude], [3])
+        self.assertEqual(_request.ctx[crud], [3])
 
     def test_function_delete(self):
 
@@ -171,16 +168,16 @@ class Func2CrudeProcessingTest(UTCase):
 
             return []
 
-        genfunc = func2crudeprocessing(func)
+        genfunc = func2crudprocessing(func)
 
-        crude = Delete()
+        crud = Delete()
 
         request = Request(ctx=Context({'b': 2}))
 
-        _request = genfunc(crude=crude, request=request)
+        _request = genfunc(crud=crud, request=request)
 
         self.assertIs(_request, request)
-        self.assertEqual(_request.ctx[crude], [])
+        self.assertEqual(_request.ctx[crud], [])
 
     def test_function_exe(self):
 
@@ -188,16 +185,17 @@ class Func2CrudeProcessingTest(UTCase):
 
             return list(params)
 
-        genfunc = func2crudeprocessing(func)
+        genfunc = func2crudprocessing(func)
 
-        crude = Exe(None, params=[1, 2, 3])
+        query = F.func(1, 2, 3)
+        crud = Read(None)
 
-        request = Request(ctx=Context({'b': 2}))
+        request = Request(query=query, ctx=Context({'b': 2}))
 
-        _request = genfunc(crude=crude, request=request)
+        _request = genfunc(crud=crud, request=request)
 
         self.assertIs(_request, request)
-        self.assertEqual(_request.ctx[crude], [1, 2, 3])
+        self.assertEqual(_request.ctx[crud], [1, 2, 3])
 
     def test_object(self):
 
@@ -207,15 +205,17 @@ class Func2CrudeProcessingTest(UTCase):
 
                 return list(params)
 
-        request = Request(ctx=Context({'b': 1}))
+        query = F.test(1, 2, 3)
 
-        exe = Exe('test', params=[1, 2, 3])
+        request = Request(query=query, ctx=Context({'b': 1}))
+
+        exe = Read('test')
 
         test = Test()
 
-        func = func2crudeprocessing(obj=test)
+        func = func2crudprocessing(obj=test)
 
-        func(request=request, crude=exe)
+        func(request=request, crud=exe)
 
         self.assertEqual(request.ctx[exe], [1, 2, 3])
 

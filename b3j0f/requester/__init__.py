@@ -32,5 +32,5 @@ from .driver import Driver
 from .expr import Expression as E, Function as F
 from .manager import RequestManager
 from .request import Request
-from .crude import Create as C, Read as R, Update as U, Delete as D
+from .crud import Create as C, Read as R, Update as U, Delete as D
 """

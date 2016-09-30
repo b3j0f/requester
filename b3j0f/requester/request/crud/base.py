@@ -24,20 +24,51 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""update module."""
+"""base crud module."""
 
-__all__ = ['Update']
+__all__ = ['CRUD']
 
-from .base import CRUDEElement
+from ..expr import BaseElement
+
+from enum import IntEnum, unique
 
 
-class Update(CRUDEElement):
+@unique
+class CRUD(IntEnum):
 
-    __slots__ = ['name', 'values'] + CRUDEElement.__slots__
+    CREATE = 1
+    READ = 2
+    UPDATE = 3
+    DELETE = 4
 
-    def __init__(self, name, values, *args, **kwargs):
 
-        super(Update, self).__init__(*args, **kwargs)
+class CRUDElement(BaseElement):
+    """Base crud operation.
 
-        self.name = name
-        self.values = values
+    Can be associated to a request."""
+
+    __slots__ = ['request', 'result'] + BaseElement.__slots__
+
+    def __init__(self, request=None, result=None, *args, **kwargs):
+        """
+        :param b3j0f.requester.Request request:
+        :param result: result of this crud processing.
+        """
+
+        super(CRUDElement, self).__init__(*args, **kwargs)
+
+        self.request = request
+        self.result = result
+
+    def __call__(self):
+        """Execute this CRUD element.
+
+        :return: this execuion result."""
+
+        if self.request is None:
+            raise RuntimeError(
+                'Impossible to execute this without associate it to a request.'
+            )
+
+        else:
+            return self.request.processcrud(self)

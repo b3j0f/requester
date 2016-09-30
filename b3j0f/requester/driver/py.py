@@ -26,9 +26,7 @@
 
 """Python driver module."""
 
-__all__ = [
-    'PyDriver', 'processcrude', 'create', 'read', 'update', 'delete', 'exe'
-]
+__all__ = ['PyDriver', 'processcrud', 'create', 'read', 'update', 'delete']
 
 from .base import Driver
 
@@ -44,11 +42,10 @@ from operator import (
 from re import match
 
 from ..request.expr import FuncName
-from ..request.crude.create import Create
-from ..request.crude.read import Read
-from ..request.crude.update import Update
-from ..request.crude.delete import Delete
-from ..request.crude.exe import Exe
+from ..request.crud.create import Create
+from ..request.crud.read import Read, Join
+from ..request.crud.update import Update
+from ..request.crud.delete import Delete
 
 from random import random
 
@@ -80,7 +77,7 @@ class PyDriver(Driver):
         self.values = [] if values is None else values
 
     def process(self, request, **kwargs):
-        """Generic method to override in order to crude input data related to
+        """Generic method to override in order to crud input data related to
         request and kwargs.
 
         :param Request request: request to process.
@@ -98,9 +95,9 @@ class PyDriver(Driver):
                 )
             )
 
-        for crude in request.crudes:
+        for crud in request.cruds:
 
-            processcrude(request=request, items=self.values, crude=crude)
+            processcrud(request=request, items=self.values, crud=crud)
 
         return request
 
@@ -217,49 +214,27 @@ def delete(items, delete):
     return result
 
 
-def exe(items, exe):
-    """Execute exe on input items.
-
-    :param list items: items to process.
-    :param Exe exe: execution rule to process on items. Name must match items
-        key and value must be a function.
-    :rtype: list
-    :return: list of (item, execution result)."""
-
-    result = []
-
-    for item in values:
-        if exe.name in item:
-            func = item[exe.name]
-            funcresult = func(*params)
-            result.append([item, result])
-
-    return result
-
-def processcrude(request, items, crude):
+def processcrud(request, items, crud):
     """Apply the right rule on input items.
 
     :param list items: items to process.
-    :param CRUDEElement crude: crude rule to apply.
+    :param CRUDElement crud: crud rule to apply.
     :rtype: list
     :return: list"""
 
-    if isinstance(crude, Create):
-        processresult = create(items=items, create=crude)
+    if isinstance(crud, Create):
+        processresult = create(items=items, create=crud)
 
-    elif isinstance(crude, Read):
-        processresult = read(items=items, read=crude)
+    elif isinstance(crud, Read):
+        processresult = read(items=items, read=crud)
 
-    elif isinstance(crude, Update):
-        processresult = update(items=items, update=crude)
+    elif isinstance(crud, Update):
+        processresult = update(items=items, update=crud)
 
-    elif isinstance(crude, Delete):
-        processresult = delete(items=items, delete=crude)
+    elif isinstance(crud, Delete):
+        processresult = delete(items=items, delete=crud)
 
-    elif isinstance(crude, Exe):
-        processresult = exe(items=items, exe=crude)
-
-    request.ctx[crude] = processresult
+    request.ctx[crud] = processresult
 
     return items
 
@@ -364,3 +339,107 @@ _OPERTORS_BY_NAME = {
     FuncName.MONTH.value: lambda date=None: datetime.strpformat(date, DATETIMEFORMAT).month,
     FuncName.YEAR.value: lambda date=None: datetime.strpformat(date, DATETIMEFORMAT).year,
 }
+
+
+def innerjoin(litems, ritems):
+
+    return [item for item in litems if item in ritems]
+
+
+def leftjoin(litems, ritems):
+
+    return litems
+
+
+def leftexjoin(litems, ritems):
+
+    return [item for item in litems if item not in ritems]
+
+
+def rightjoin(litems, ritems):
+
+    return ritems
+
+
+def rightexjoin(litems, ritems):
+
+    return [item for item in ritems if item not in litems]
+
+
+def fulljoin(litems, ritems):
+    """Apply full join on litems and rtimes.
+
+    :param list litems:
+    :param list ritmes:
+    :return: new list of items.
+    :rtype: list"""
+
+    return litems + [item for item in ritems if item not in litems]
+
+
+def fullexjoin(litems, ritems):
+
+    return leftexjoin(litems, ritems) + rightexjoin(litems, ritems)
+
+
+def crossjoin(litems, ritems):
+
+    return [(litem, ritem) for litem in litems for ritem in ritems]
+
+
+def selfjoin(litems, ritems):
+
+    return crossjoin(litems, litems)
+
+
+def naturaljoin(litems, ritems):
+
+    result = []
+
+    for litem in litems:
+
+        for ritem in ritems:
+
+            issame = False
+
+            for key in ritem:
+
+                if key in litem:
+                    if litem[key] == ritem[key]:
+                        issame = True
+
+                    else:
+                        break
+
+            else:
+                if issame:
+                    item = deepcopy(litem)
+                    item.update(deepcopy(ritem))
+                    result.append(item)
+
+    return result
+
+
+_JOINBYNAME = {
+    Join.INNER.name: innerjoin,
+    Join.LEFT.name: leftjoin,
+    Join.LEFTEX.name: leftexjoin,
+    Join.RIGHT.name: rightjoin,
+    Join.RIGHTEX.name: rightexjoin,
+    Join.FULL.name: fulljoin,
+    Join.FULLEX.name: fullexjoin,
+    Join.CROSS.name: crossjoin,
+    Join.SELF.name: selfjoin,
+    Join.NATURAL.name: naturaljoin,
+    Join.UNION.name: unionjoin
+}
+
+
+def applyjoin(litems, ritems, join=Join.FULL):
+
+    if isinstance(join, Join):
+        join = join.name
+
+    func = _JOINBYNAME[join]
+
+    return func(litems, ritems)

@@ -30,12 +30,11 @@ __all__ = ['Request']
 
 from .base import BaseElement
 from .expr import Expression
-from .crude.base import CRUDEElement
-from .crude.create import Create
-from .crude.read import Read
-from .crude.update import Update
-from .crude.delete import Delete
-from .crude.exe import Exe
+from .crud.base import CRUDElement
+from .crud.create import Create
+from .crud.read import Read, Join
+from .crud.update import Update
+from .crud.delete import Delete
 
 from six import iteritems
 
@@ -71,7 +70,7 @@ class Context(dict):
 
         return super(Context, self).__contains__(key)
 
-    def fill(self, ctx):
+    def fill(self, ctx, join=Join.FULL):
         """Fill this content with ctx data not in this data.
 
         :param Context ctx: ctx context from where get items."""
@@ -79,10 +78,8 @@ class Context(dict):
         if isinstance(ctx, Context):
             for key, value in iteritems(ctx):
 
-                if key in self:
-                    self[key] += [
-                        item for item in value if item not in self[key]
-                    ]
+                if key in list(self):
+                    self[key] = applyjoin(self[key], value)
 
                 else:
                     self[key] = ctx[key]
@@ -91,30 +88,28 @@ class Context(dict):
 
                 for key in list(self):
                     if key.endswith(dotkey):
-                        self[key] += [
-                            item for item in value if item not in self[key]
-                        ]
+                        self[key] = applyjoin(self[key], value)
 
 
         return self
 
 
 class Request(object):
-    """CRUDEElement/exenable object bound to a driver in order to access to data.
+    """CRUDElement/exenable object bound to a driver in order to access to data.
 
     Common use is to instanciate it from a RequestManager."""
 
-    __slots__ = ['driver', 'ctx', '_query', 'crudes']
+    __slots__ = ['driver', 'ctx', '_query', 'cruds']
 
     def __init__(
-            self, driver=None, ctx=None, query=None, crudes=None,
+            self, driver=None, ctx=None, query=None, cruds=None,
             *args, **kwargs
     ):
         """
         :param Driver driver: driver able to execute the request.
         :param Context ctx: request execution context.
         :param Expression query: request query.
-        :param tuple ops: crudes.
+        :param tuple ops: cruds.
         """
 
         super(Request, self).__init__(*args, **kwargs)
@@ -122,17 +117,17 @@ class Request(object):
         self.driver = driver
         self.ctx = Context() if ctx is None else ctx
         self._query = query
-        self.crudes = [] if crudes is None else crudes
+        self.cruds = [] if cruds is None else cruds
 
         if query is not None and not isinstance(query, Expression):
             raise TypeError(
                 'Wrong type {0}. {1} expected.'.format(query, Expression)
             )
 
-        for crude in self.crudes:
-            if not isinstance(crude, CRUDEElement):
+        for crud in self.cruds:
+            if not isinstance(crud, CRUDElement):
                 raise TypeError(
-                    'Wrong type {0}. {1} expected.'.format(crude, CRUDEElement)
+                    'Wrong type {0}. {1} expected.'.format(crud, CRUDElement)
                 )
 
     def __repr__(self):
@@ -148,8 +143,8 @@ class Request(object):
         if self._query:
             result += 'query: {0},'.format(self._query)
 
-        if self.crudes:
-            result += 'crudes: {0}'.format(self.crudes)
+        if self.cruds:
+            result += 'cruds: {0}'.format(self.cruds)
 
         result += ')'
 
@@ -243,10 +238,10 @@ class Request(object):
 
         return self.delete(key)
 
-    def processcrude(self, *crudes):
-        """Process several crude operations."""
+    def processcrud(self, *cruds):
+        """Process several crud operations."""
 
-        self.crudes += list(crudes)
+        self.cruds += list(cruds)
 
         self.driver.process(self)
 
@@ -284,15 +279,17 @@ class Request(object):
         return Delete(request=self, names=names)()
 
     def exe(self, name, *params):
-        """Execute input operation with params.
+        """Execute input named function with params.
 
-        :param name: operation name.
-        :type name: str or Expression
-        :param tuple params: operation parameters.
-        :return: operation result.
-        """
+        :param str name: function name.
+        :param tuple params: function params.
+        :return: function result."""
 
-        return Exe(request=self, name=name, params=params)()
+        query = Function(name=name, params=params)
+
+        self.query &= query
+
+        return Read(request=self, alias=query.ctxname)()
 
     def select(self, *values):
         """Start a read operation in defining values to select.

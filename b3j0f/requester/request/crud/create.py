@@ -24,20 +24,20 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""exe module."""
+"""create module."""
 
-__all__ = ['Exe']
+__all__ = ['Create']
 
-from .base import CRUDEElement
+from .base import CRUDElement
 
 
-class Exe(CRUDEElement):
-    """In charge of executing system service."""
-    __slots__ = ['name', 'params'] + CRUDEElement.__slots__
+class Create(CRUDElement):
 
-    def __init__(self, name, params=None, *args, **kwargs):
+    __slots__ = ['name', 'values'] + CRUDElement.__slots__
 
-        super(Exe, self).__init__(*args, **kwargs)
+    def __init__(self, name, values, *args, **kwargs):
+
+        super(Create, self).__init__(*args, **kwargs)
 
         self.name = name
-        self.params = [] if params is None else params
+        self.values = values

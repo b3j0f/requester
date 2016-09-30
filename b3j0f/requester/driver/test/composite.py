@@ -34,14 +34,13 @@ from unittest import main
 from ..base import Driver
 from ..py import PyDriver
 from ..composite import DriverComposite
-from ..generator import func2crudeprocessing, obj2driver, DriverAnnotation
+from ..generator import func2crudprocessing, obj2driver, DriverAnnotation
 from ...request.core import Request, Context
 from ...request.expr import Expression as E, Function as F
-from ...request.crude.create import Create
-from ...request.crude.read import Read
-from ...request.crude.update import Update
-from ...request.crude.delete import Delete
-from ...request.crude.exe import Exe
+from ...request.crud.create import Create
+from ...request.crud.read import Read
+from ...request.crud.update import Update
+from ...request.crud.delete import Delete
 
 
 class TestDriver(PyDriver):

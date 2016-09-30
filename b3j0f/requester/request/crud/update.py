@@ -24,10 +24,20 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""CRUDE configuration package."""
-from .base import CRUDE
-from .create import Create
-from .read import Read, Cursor
-from .update import Update
-from .delete import Delete
+"""update module."""
 
+__all__ = ['Update']
+
+from .base import CRUDElement
+
+
+class Update(CRUDElement):
+
+    __slots__ = ['name', 'values'] + CRUDElement.__slots__
+
+    def __init__(self, name, values, *args, **kwargs):
+
+        super(Update, self).__init__(*args, **kwargs)
+
+        self.name = name
+        self.values = values

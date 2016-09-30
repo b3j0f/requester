@@ -28,7 +28,7 @@
 
 __all__ = ['Read', 'Cursor', 'Join']
 
-from .base import CRUDEElement
+from .base import CRUDElement
 
 from enum import IntEnum, unique
 
@@ -42,18 +42,20 @@ class Join(IntEnum):
 
     INNER = 0  #: inner join.
     LEFT = 1  #: left join.
-    LEFT_EX = 2  #: left exclusive join.
+    LEFTEX = 2  #: left exclusive join.
     RIGHT = 3  #: right exclusive join.
-    RIGHT_EX = 4  #: right exclusive join.
+    RIGHTEX = 4  #: right exclusive join.
     FULL = 5  #: full join.
-    FULL_EX = 6  #: full exclusive join.
+    FULLEX = 6  #: full exclusive join.
     CROSS = 7  #: cross join.
     SELF = 8  #: self join.
     NATURAL = 9  #: natural join.
     UNION = 10  #: union join.
 
 
-class Read(CRUDEElement):
+
+
+class Read(CRUDElement):
     """In charge of parameterize a reading request.
 
     Execution is done in calling it or in using the getslice method.
@@ -61,7 +63,7 @@ class Read(CRUDEElement):
 
     __slots__ = [
         '_select', '_offset', '_limit', '_orderby', '_groupby', '_join'
-    ] + CRUDEElement.__slots__
+    ] + CRUDElement.__slots__
 
     def __init__(
             self,
