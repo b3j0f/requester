@@ -26,18 +26,23 @@
 
 """create module."""
 
-__all__ = ['Create']
-
 from .base import CRUDElement
+
+__all__ = ['Create']
 
 
 class Create(CRUDElement):
 
-    __slots__ = ['name', 'values'] + CRUDElement.__slots__
+    __slots__ = ['name', 'values', 'result'] + CRUDElement.__slots__
 
-    def __init__(self, name, values, *args, **kwargs):
-
+    def __init__(self, name, values, result=True, *args, **kwargs):
+        """
+        :param str name: model name.
+        :param dict values: model value.
+        :param bool result: if True (default) return created elements.
+        """
         super(Create, self).__init__(*args, **kwargs)
 
         self.name = name
         self.values = values
+        self.result = result

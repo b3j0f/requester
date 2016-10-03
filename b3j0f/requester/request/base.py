@@ -26,9 +26,9 @@
 
 """base module."""
 
-__all__ = ['BaseElement']
-
 from uuid import uuid4
+
+__all__ = ['BaseElement']
 
 
 class BaseElement(object):
@@ -75,7 +75,7 @@ class BaseElement(object):
 
         :rtype: str"""
 
-        return self.alias or getattr(self, 'name', str(self.uuid))
+        return self.alias or self.uuid
 
     def __eq__(self, other):
 

@@ -26,8 +26,6 @@
 
 """Request module."""
 
-__all__ = ['Request']
-
 from .base import BaseElement
 from .expr import Expression
 from .crud.base import CRUDElement
@@ -35,8 +33,12 @@ from .crud.create import Create
 from .crud.read import Read, Join
 from .crud.update import Update
 from .crud.delete import Delete
+from ..driver.base import Driver
+from ..driver.py import applyjoin
 
 from six import iteritems
+
+__all__ = ['Context', 'Request']
 
 
 class Context(dict):
@@ -90,7 +92,6 @@ class Context(dict):
                     if key.endswith(dotkey):
                         self[key] = applyjoin(self[key], value)
 
-
         return self
 
 
@@ -99,17 +100,13 @@ class Request(object):
 
     Common use is to instanciate it from a RequestManager."""
 
-    __slots__ = ['driver', 'ctx', '_query', 'cruds']
+    __slots__ = ['driver', 'ctx', '_query']
 
-    def __init__(
-            self, driver=None, ctx=None, query=None, cruds=None,
-            *args, **kwargs
-    ):
+    def __init__(self, driver=None, ctx=None, query=None, *args, **kwargs):
         """
         :param Driver driver: driver able to execute the request.
         :param Context ctx: request execution context.
         :param Expression query: request query.
-        :param tuple ops: cruds.
         """
 
         super(Request, self).__init__(*args, **kwargs)
@@ -117,18 +114,11 @@ class Request(object):
         self.driver = driver
         self.ctx = Context() if ctx is None else ctx
         self._query = query
-        self.cruds = [] if cruds is None else cruds
 
         if query is not None and not isinstance(query, Expression):
             raise TypeError(
                 'Wrong type {0}. {1} expected.'.format(query, Expression)
             )
-
-        for crud in self.cruds:
-            if not isinstance(crud, CRUDElement):
-                raise TypeError(
-                    'Wrong type {0}. {1} expected.'.format(crud, CRUDElement)
-                )
 
     def __repr__(self):
 
@@ -142,9 +132,6 @@ class Request(object):
 
         if self._query:
             result += 'query: {0},'.format(self._query)
-
-        if self.cruds:
-            result += 'cruds: {0}'.format(self.cruds)
 
         result += ')'
 
@@ -214,17 +201,13 @@ class Request(object):
 
         return self
 
-    def commit(self, explain=False):
-        """Process this request and return self.
+    def __iand__(self, other):
 
-        :param bool explain: if True (default False), give additional
-            informations about the request execution (indexes, etc.).
-        :return: self
-        :rtype: Request"""
+        return self.query.__iand__(other)
 
-        self.driver.process(self, explain=explain)
+    def __ior__(self, other):
 
-        return self
+        return self.query.__ior__(other)
 
     def __getitem__(self, key):
 
@@ -238,18 +221,21 @@ class Request(object):
 
         return self.delete(key)
 
-    def processcrud(self, *cruds):
-        """Process several crud operations."""
+    def processcrud(
+            self, crud,
+            explain=Driver.__DEFAULTEXPLAIN__, async=Driver.__DEFAULTASYNC__,
+            callback=None, **kwargs
+    ):
+        """Generic method for processing a crud object."""
 
-        self.cruds += list(cruds)
+        return self.driver.process(
+            self, crud=crud, explain=explain, callback=callback, async=async,
+            **kwargs
+        )
 
-        self.driver.process(self)
+    def create(self, name_, **values):
 
-        return self
-
-    def create(self, name, **values):
-
-        return Create(request=self, name=name, values=values)()
+        return Create(request=self, name=name_, values=values)()
 
     def read(self, select, **kwargs):
         """Read input expressions.
@@ -261,13 +247,13 @@ class Request(object):
 
         return Read(request=self, select=select, **kwargs)()
 
-    def update(self, name, **values):
+    def update(self, name_, **values):
         """Apply input updates.
 
         :param tuple updates: updates to apply.
         """
 
-        return Update(request=self, name=name, values=values)()
+        return Update(request=self, name=name_, values=values)()
 
     def delete(self, *names):
         """Delete input deletes.
@@ -277,19 +263,6 @@ class Request(object):
         """
 
         return Delete(request=self, names=names)()
-
-    def exe(self, name, *params):
-        """Execute input named function with params.
-
-        :param str name: function name.
-        :param tuple params: function params.
-        :return: function result."""
-
-        query = Function(name=name, params=params)
-
-        self.query &= query
-
-        return Read(request=self, alias=query.ctxname)()
 
     def select(self, *values):
         """Start a read operation in defining values to select.
@@ -304,6 +277,7 @@ class Request(object):
         """Start a read operation in defining the offset.
 
         See the Read object for more details about how to use it.
+        :param int value: offset value.
         :return: a read object.
         :rtype: Read"""
 
@@ -313,6 +287,8 @@ class Request(object):
         """Start a read operation in defining the limit.
 
         See the Read object for more details about how to use it.
+
+        :param int limit: limit value.
         :return: a read object.
         :rtype: Read"""
 
@@ -340,6 +316,7 @@ class Request(object):
         """Start a read operation in defining the join.
 
         See the Read object for more details about how to use it.
+        :param str join: join value.
         :return: a read object.
         :rtype: Read"""
 

@@ -68,7 +68,9 @@ class CRUDTest(UTCase):
 
         self.assertIn(request, requests)
 
-        self.assertIn(crud, request.cruds)
+    def test__call__error(self):
+
+        self.assertRaises(RuntimeError, CRUDElement())
 
 if __name__ == '__main__':
     main()

@@ -26,8 +26,6 @@
 
 """Module which specifices a composite of drivers."""
 
-__all__ = ['DriverComposite']
-
 from .base import Driver
 
 from ..request.core import Request
@@ -44,6 +42,8 @@ try:
 
 except ImportError:
     from dummy_threading import Thread
+
+__all__ = ['DriverComposite']
 
 
 class DriverComposite(Driver):
@@ -64,53 +64,51 @@ class DriverComposite(Driver):
 
             self.drivers[driver.name] = driver
 
-    def process(self, request, **kwargs):
+    def _process(self, request, crud, **kwargs):
 
         result = self._processquery(query=query, ctx=request.ctx, **kwargs)
 
-        for crud in request.cruds:
+        if isinstance(crud, (Create, Update)):
+            if isinstance(crud.name, Expression):
+                ctx = self._processquery(query=crud.name, ctx=ctx).ctx
+                names = [crud.name.name]
 
-            if isinstance(crud, (Create, Update)):
-                if isinstance(crud.name, Expression):
-                    ctx = self._processquery(query=crud.name, ctx=ctx).ctx
-                    names = [crud.name.name]
+            else:
+                names = [crud.name]
 
-                else:
-                    names = [crud.name]
+        elif isinstance(crud, (Read, Delete)):
+            names = []
 
-            elif isinstance(crud, (Read, Delete)):
-                names = []
+            items = crud.select() if isinstance(crud, Read) else crud.names
 
-                items = crud.select() if isinstance(crud, Read) else crud.names
-
-                for item in items:
-                    if isinstance(item, Expression):
-                        ctx = self._processquery(query=item, ctx=ctx)
-                        names.append(item.name)
-
-                    else:
-                        names.append(item)
-
-            if names:
-                driver = self.drivers.get(names[0])
-
-                if driver is None:
-
-                    processingdrivers = [
-                        driver for driver in self.drivers.values()
-                        if names[0] in driver.getschemas()
-                    ]
+            for item in items:
+                if isinstance(item, Expression):
+                    ctx = self._processquery(query=item, ctx=ctx)
+                    names.append(item.name)
 
                 else:
-                    processingdrivers = [driver]
+                    names.append(item)
 
-                request = Request(query=query, ctx=ctx, cruds=crud)
+        if names:
+            driver = self.drivers.get(names[0])
 
-                for processingdriver in processingdrivers:
+            if driver is None:
 
-                    pctx = processingdriver.process(request=request)
+                processingdrivers = [
+                    driver for driver in self.drivers.values()
+                    if names[0] in driver.getschemas()
+                ]
 
-                    ctx.fill(pctx)
+            else:
+                processingdrivers = [driver]
+
+            request = Request(query=query, ctx=ctx, cruds=crud)
+
+            for processingdriver in processingdrivers:
+
+                pctx = processingdriver.process(request=request)
+
+                ctx.fill(pctx)
 
         request.ctx = ctx
 

@@ -26,8 +26,6 @@
 
 """Read module."""
 
-__all__ = ['Read', 'Cursor', 'Join']
-
 from .base import CRUDElement
 
 from enum import IntEnum, unique
@@ -35,6 +33,8 @@ from enum import IntEnum, unique
 from collections import Iterable
 
 from six import string_types
+
+__all__ = ['Read', 'Cursor', 'Join']
 
 
 @unique
@@ -53,8 +53,6 @@ class Join(IntEnum):
     UNION = 10  #: union join.
 
 
-
-
 class Read(CRUDElement):
     """In charge of parameterize a reading request.
 
@@ -68,7 +66,7 @@ class Read(CRUDElement):
     def __init__(
             self,
             select=None, offset=None, limit=None, orderby=None, groupby=None,
-            join=None, *args, **kwargs
+            join=None, callback=None, *args, **kwargs
     ):
         """
         :param list select: data to select.

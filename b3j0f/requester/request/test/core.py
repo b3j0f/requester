@@ -34,6 +34,7 @@ from unittest import main
 from ..base import BaseElement
 from ..core import Request, Context
 from ..expr import Expression as E, Function as F, FuncName as FN
+from ..crud.base import CRUDElement
 from ..crud.create import Create
 from ..crud.read import Read
 from ..crud.update import Update
@@ -103,9 +104,10 @@ class RequestTest(UTCase):
 
         class TestDriver(object):
 
-            def process(_self, request, **kwargs):
+            def process(_self, request, crud, **kwargs):
 
                 self.requests.append(request)
+                self.request.ctx[crud] = crud
 
         self.driver = TestDriver()
 
@@ -118,7 +120,6 @@ class RequestTest(UTCase):
         self.assertIsNone(request.driver)
         self.assertEqual(request.ctx, {})
         self.assertIsNone(request.query)
-        self.assertEqual(request.cruds, [])
 
     def test_init_errorquery(self):
 
@@ -214,12 +215,6 @@ class RequestTest(UTCase):
             'B'
         )
 
-    def test_commit(self):
-
-        self.request.commit()
-
-        self.assertEqual(self.requests, [self.request])
-
     def test_select(self):
 
         value = 'test'
@@ -270,27 +265,24 @@ class RequestTest(UTCase):
 
     def test_processcrud(self):
 
-        cruds = [
-            Create('create', {}),
-            Read(),
-            Update('update', {}),
-            Delete()
-        ]
+        crud = CRUDElement()
 
-        self.request.processcrud(*cruds)
+        self.request.processcrud(crud)
 
         self.assertIn(self.request, self.requests)
-        self.assertEqual(self.request.cruds, cruds)
+        self.assertIn(crud, self.request.ctx)
 
     def test_create(self):
 
         name = 'test'
         values = {'a': 1, 'b': 2}
 
-        self.request.create(name, **values)
+        self.request.create(name_=name, **values)
 
         self.assertIn(self.request, self.requests)
-        crud = self.request.cruds[0]
+        for key in self.request.ctx:
+            crud = self.request.ctx[key]
+            break
 
         self.assertIsInstance(crud, Create)
         self.assertIs(crud.request, self.request)
@@ -305,7 +297,10 @@ class RequestTest(UTCase):
         self.request.read(select=select, limit=limit)
 
         self.assertIn(self.request, self.requests)
-        crud = self.request.cruds[0]
+
+        for key in self.request.ctx:
+            crud = self.request.ctx[key]
+            break
 
         self.assertIsInstance(crud, Read)
         self.assertIs(crud.request, self.request)
@@ -317,10 +312,13 @@ class RequestTest(UTCase):
         name = 'test'
         values = {'a': 1, 'b': 2}
 
-        self.request.update(name, **values)
+        self.request.update(name_=name, **values)
 
         self.assertIn(self.request, self.requests)
-        crud = self.request.cruds[0]
+
+        for key in self.request.ctx:
+            crud = self.request.ctx[key]
+            break
 
         self.assertIsInstance(crud, Update)
         self.assertIs(crud.request, self.request)
@@ -334,26 +332,14 @@ class RequestTest(UTCase):
         self.request.delete(*names)
 
         self.assertIn(self.request, self.requests)
-        crud = self.request.cruds[0]
+
+        for key in self.request.ctx:
+            crud = self.request.ctx[key]
+            break
 
         self.assertIsInstance(crud, Delete)
         self.assertIs(crud.request, self.request)
         self.assertEqual(crud.names, names)
-
-    def test_exe(self):
-
-        name = 'test'
-        params = (1, 2)
-
-        self.request.exe(name, *params)
-
-        self.assertIn(self.request, self.requests)
-        crud = self.request.cruds[0]
-
-        self.assertIsInstance(crud, Read)
-        self.assertIs(crud.request, self.request)
-        self.assertEqual(crud.name, name)
-        self.assertEqual(crud.params, params)
 
 if __name__ == '__main__':
     main()

@@ -91,10 +91,6 @@ class BaseElementTest(UTCase):
 
         self.assertEqual(elt.ctxname, elt.uuid)
 
-        elt.name = 1
-
-        self.assertEqual(elt.ctxname, elt.name)
-
         elt.alias = True
 
         self.assertEqual(elt.ctxname, elt.alias)
@@ -113,14 +109,6 @@ class BaseElementTest(UTCase):
         self.assertEqual(base0, base1)
 
         base0.alias = base1.alias = None
-
-        self.assertNotEqual(base0, base1)
-
-        base0.name = base1.name = 1
-
-        self.assertEqual(base0, base1)
-
-        base0.name = base1.name = None
 
         self.assertNotEqual(base0, base1)
 

@@ -26,17 +26,21 @@
 
 """delete module."""
 
-__all__ = ['Delete']
-
 from .base import CRUDElement
+
+__all__ = ['Delete']
 
 
 class Delete(CRUDElement):
 
-    __slots__ = ['names'] + CRUDElement.__slots__
+    __slots__ = ['names', 'result'] + CRUDElement.__slots__
 
-    def __init__(self, names=None, *args, **kwargs):
-
+    def __init__(self, names=None, result=True, *args, **kwargs):
+        """
+        :param list names: model names to delete.
+        :param bool result: if True (default), return deleted elements.
+        """
         super(Delete, self).__init__(*args, **kwargs)
 
         self.names = names
+        self.result = result

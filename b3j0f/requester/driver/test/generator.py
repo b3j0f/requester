@@ -36,7 +36,7 @@ from ..generator import (
     func2crudprocessing, obj2driver, DriverAnnotation, FunctionalDriver
 )
 from ...request.crud.base import CRUD
-from ...request.core import Request, Context
+from ...request.core import Request, Context, Expression as F
 from ...request.crud.create import Create
 from ...request.crud.read import Read
 from ...request.crud.update import Update
@@ -109,7 +109,7 @@ class FunctionalDriverTest(UTCase):
             count += 1
 
 
-class Func2CrudeProcessingTest(UTCase):
+class Func2CrudProcessingTest(UTCase):
 
     def test_function_create(self):
 
@@ -195,6 +195,7 @@ class Func2CrudeProcessingTest(UTCase):
         _request = genfunc(crud=crud, request=request)
 
         self.assertIs(_request, request)
+        print(_request.ctx)
         self.assertEqual(_request.ctx[crud], [1, 2, 3])
 
     def test_object(self):

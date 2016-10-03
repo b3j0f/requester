@@ -26,8 +26,6 @@
 
 """Manager module."""
 
-__all__ = ['RequestManager']
-
 from .request import Request
 
 from .request.crud.base import CRUD
@@ -36,6 +34,8 @@ from .request.crud.read import Read
 from .request.crud.update import Update
 from .request.crud.delete import Delete
 from .driver.base import Driver
+
+__all__ = ['RequestManager']
 
 
 class RequestManager(Driver):

@@ -26,8 +26,6 @@
 
 """Python driver module."""
 
-__all__ = ['PyDriver', 'processcrud', 'create', 'read', 'update', 'delete']
-
 from .base import Driver
 
 from operator import (
@@ -56,6 +54,8 @@ from md5 import md5
 from time import time
 from datetime import datetime
 
+__all__ = ['PyDriver', 'processcrud', 'create', 'read', 'update', 'delete']
+
 soundex = getInstance().soundex
 
 DATETIMEFORMAT = '%Y-%m-%d %H:%M:%S'
@@ -76,17 +76,7 @@ class PyDriver(Driver):
 
         self.values = [] if values is None else values
 
-    def process(self, request, **kwargs):
-        """Generic method to override in order to crud input data related to
-        request and kwargs.
-
-        :param Request request: request to process.
-        :param bool explain: give additional information about the request
-            execution.
-        :param dict kwargs: additional parameters specific to the driver.
-        :return: request.
-        :rtype: Request
-        """
+    def _process(self, request, crud, **kwargs):
 
         if kwargs:
             raise ValueError(
@@ -95,11 +85,22 @@ class PyDriver(Driver):
                 )
             )
 
-        for crud in request.cruds:
+        if request.query not in request.ctx:
+            self._processquery(request.query, request.ctx)
 
-            processcrud(request=request, items=self.values, crud=crud)
+        processcrud(request=request, items=self.values, crud=crud)
 
         return request
+
+    def _processquery(self, query, ctx):
+
+        if query in ctx:
+            return ctx[query]
+
+        else:
+            pass
+
+            ctx[query] = query
 
 
 def create(items, create):
@@ -418,6 +419,10 @@ def naturaljoin(litems, ritems):
                     result.append(item)
 
     return result
+
+def unionjoin(litems, ritems):
+
+    return litems + ritems
 
 
 _JOINBYNAME = {

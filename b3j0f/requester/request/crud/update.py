@@ -26,18 +26,24 @@
 
 """update module."""
 
-__all__ = ['Update']
-
 from .base import CRUDElement
+
+__all__ = ['Update']
 
 
 class Update(CRUDElement):
 
-    __slots__ = ['name', 'values'] + CRUDElement.__slots__
+    __slots__ = ['name', 'values', 'result'] + CRUDElement.__slots__
 
-    def __init__(self, name, values, *args, **kwargs):
+    def __init__(self, name, values, result=True, *args, **kwargs):
+        """
+        :param str name: model name.
+        :param dict values: values to update.
+        :param bool result: if true (default), return updated elements.
+        """
 
         super(Update, self).__init__(*args, **kwargs)
 
         self.name = name
         self.values = values
+        self.result = result

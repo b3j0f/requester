@@ -41,7 +41,7 @@ from ...request.crud.update import Update
 from ...request.crud.delete import Delete
 
 
-class Func2CrudeProcessingTest(UTCase):
+class Func2CrudProcessingTest(UTCase):
 
     def test_function(self):
 

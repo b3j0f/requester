@@ -28,8 +28,6 @@
 
 from __future__ import division
 
-__all__ = ['Expression', 'FuncName', 'Function', 'MetaExpression']
-
 from six import add_metaclass, string_types, PY3
 
 from numbers import Number
@@ -37,6 +35,8 @@ from numbers import Number
 from enum import Enum, unique
 
 from .base import BaseElement
+
+__all__ = ['Expression', 'FuncName', 'Function', 'MetaExpression']
 
 
 @unique
@@ -574,6 +574,14 @@ class Expression(BaseElement):
 
         return Function(name=self.name, params=params)
 
+    @property
+    def ctxname(self):
+        """Get ctx name to store result execution.
+
+        :rtype: str"""
+
+        return self.alias or self.name or self.uuid
+
 
 class Function(Expression):
     """A function is an expression with parameters called 'params'.
@@ -659,5 +667,20 @@ class Function(Expression):
             result += '{0},'.format(rparam)
 
         result += ')'
+
+        return result
+
+    @property
+    def ctxname(self):
+        """Get ctx name to store result execution.
+
+        :rtype: str"""
+
+        result = self.alias
+
+        if not result:
+            result = '{0}({1})'.format(
+                self.name, ','.join([str(param) for param in self.params])
+            )
 
         return result

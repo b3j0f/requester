@@ -26,12 +26,6 @@
 
 """Driver generator module."""
 
-__all__ = [
-    'FunctionalDriver',
-    'func2crodprocessing', 'obj2driver', 'DriverAnnotation',
-    'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation', 'DeleteAnnotation'
-]
-
 from b3j0f.annotation import Annotation
 from b3j0f.schema import data2schema, data2schemacls, Schema
 from b3j0f.schema.lang.python import FunctionSchema
@@ -45,6 +39,12 @@ from ..request.crud.create import Create
 from ..request.crud.read import Read
 from ..request.crud.update import Update
 from ..request.crud.delete import Delete
+
+__all__ = [
+    'FunctionalDriver',
+    'func2crodprocessing', 'obj2driver', 'DriverAnnotation',
+    'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation', 'DeleteAnnotation'
+]
 
 
 class FunctionalDriver(Driver):
@@ -62,7 +62,7 @@ class FunctionalDriver(Driver):
 
     def __init__(
             self, creates=None, reads=None, updates=None, deletes=None,
-            *args, **kwargs
+            functions=None, *args, **kwargs
     ):
         """
         :param list creates: creation functions. Take in parameters a request,
@@ -74,6 +74,7 @@ class FunctionalDriver(Driver):
             a crud operation and specific kwargs. Return updated items.
         :param list deletes: deletion functions. Take in parameters a request,
             a crud operation and specific kwargs. Return deleted items.
+        :param dict functions: function to process for specific query functions.
         """
 
         super(FunctionalDriver, self).__init__(*args, **kwargs)
@@ -82,47 +83,42 @@ class FunctionalDriver(Driver):
         self.reads = [] if reads is None else reads
         self.updates = [] if updates is None else updates
         self.deletes = [] if deletes is None else deletes
+        self.functions = {} if functions is None else functions
 
-    def process(self, request, **kwargs):
+    def _process(self, request, crud, **kwargs):
 
         result = request
 
-        for crud in request.cruds:
+        crudname = type(crud).__name__.lower()
 
-            crudname = type(crud).__name__.lower()
+        funcs = getattr(self, '{0}s'.format(crudname))
 
-            funcs = getattr(self, '{0}s'.format(crudname))
+        if funcs:
+            for func in funcs:
+                result = func(crud=crud, request=result, **kwargs)
 
-            if funcs:
-                for func in funcs:
-                    result = func(crud=crud, request=result, **kwargs)
-
-            else:
-                raise NotImplementedError(
-                    'No implementation found for {0}'.format(crudname)
-                )
+        else:
+            raise NotImplementedError(
+                'No implementation found for {0}'.format(crudname)
+            )
 
         return result
 
+    def _processquery(self, query, ctx):
 
-def func2crudprocessing(func=None, obj=None):
+        if query in ctx:
+            result = ctx[query]
+
+        else:
+            pass
+
+
+def func2crudprocessing(func=None):
 
     if func is not None and not isinstance(func, Schema):
         func = data2schema(func)
 
-    if obj is not None and not isinstance(obj, Schema):
-        obj = data2schema(obj, _force=True)
-
-    def _processing(crud, request, _func=func, _obj=obj, **kwargs):
-
-        if _func is None:
-            crudname = crud.name
-            funcname = crudname.split('.')[-1]
-            _func = getattr(_obj, funcname)
-            schemafunc = getattr(type(_obj), funcname)
-
-        else:
-            schemafunc = _func
+    def _processing(crud, request, _func=func, **kwargs):
 
         funckwargs = {}
         funcvarargs = []
@@ -131,7 +127,7 @@ def func2crudprocessing(func=None, obj=None):
             funckwargs.update(crud.values)
             # todo : specific _func args
 
-        for param in schemafunc.params:
+        for param in _func.params:
 
             if param.name in request.ctx:
 
@@ -150,7 +146,8 @@ def func2crudprocessing(func=None, obj=None):
 
 
 def obj2driver(
-        obj, name=None, creates=None, reads=None, updates=None, deletes=None,
+        obj, name=None,
+        creates=None, reads=None, updates=None, deletes=None, functions=None
 ):
     """Convert an object to a driver.
 
@@ -159,6 +156,7 @@ def obj2driver(
     :param list reads: read function names to retrieve from the obj.
     :param list updates: update function names to retrieve from the obj.
     :param list deletes: delete function names to retrieve from the obj.
+    :param dict functions: fuctions by name. obj functions by default.
     :rtype: FunctionalDriver
     """
 
@@ -201,12 +199,20 @@ def obj2driver(
 
             _locals['f{0}s'.format(crudname)].append(fcrudfunc)
 
+    ffunctions = {} if functions is None else functions
+
+    for schema in obj.getschemas():
+
+        if isinstance(schema, FunctionSchema):
+            ffunctions[schema.name] = schema
+
     return FunctionalDriver(
         name=fname,
         creates=fcreates,
         reads=freads,
         updates=fupdates,
-        deletes=fdeletes
+        deletes=fdeletes,
+        functions=ffunctions
     )
 
 
@@ -244,7 +250,7 @@ class DriverAnnotation(Annotation):
         :param obj: instance to transform to a functional driver.
         :rtype: FunctionalDriver"""
 
-        kwargs = {'name': self.name, 'obj': obj}
+        kwargs = {'name': self.name}
 
         for crud in (crud.lower() for crud in CRUD.__members__):
 

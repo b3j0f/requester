@@ -24,13 +24,14 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""base crud module."""
-
-__all__ = ['CRUD']
+"""Base crud module."""
 
 from ..expr import BaseElement
+from ...driver.base import Driver
 
 from enum import IntEnum, unique
+
+__all__ = ['CRUD']
 
 
 @unique
@@ -60,10 +61,19 @@ class CRUDElement(BaseElement):
         self.request = request
         self.result = result
 
-    def __call__(self):
+    def __call__(
+            self,
+            explain=Driver.__DEFAULTEXPLAIN__, async=Driver.__DEFAULTASYNC__,
+            callback=None, **kwargs
+    ):
         """Execute this CRUD element.
 
-        :return: this execuion result."""
+        :param bool async: if False (default), result is this element result,
+            otherwise, process the function in an isolated thread.
+        :param callback: callback callable which takes in parameter the CRUD
+            element result.
+        :param dict kwargs: driver kwargs.
+        :return: this execution result if async is False."""
 
         if self.request is None:
             raise RuntimeError(
@@ -71,4 +81,7 @@ class CRUDElement(BaseElement):
             )
 
         else:
-            return self.request.processcrud(self)
+            return self.request.processcrud(
+                crud=self, explain=explain, async=async, callback=callback,
+                *kwargs
+            )
