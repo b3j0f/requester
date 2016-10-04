@@ -41,7 +41,8 @@ from re import match
 
 from ..request.expr import FuncName
 from ..request.crud.create import Create
-from ..request.crud.read import Read, Join
+from ..request.crud.read import Read
+from ..request.crud.join import applyjoin, Join
 from ..request.crud.update import Update
 from ..request.crud.delete import Delete
 
@@ -340,111 +341,3 @@ _OPERTORS_BY_NAME = {
     FuncName.MONTH.value: lambda date=None: datetime.strpformat(date, DATETIMEFORMAT).month,
     FuncName.YEAR.value: lambda date=None: datetime.strpformat(date, DATETIMEFORMAT).year,
 }
-
-
-def innerjoin(litems, ritems):
-
-    return [item for item in litems if item in ritems]
-
-
-def leftjoin(litems, ritems):
-
-    return litems
-
-
-def leftexjoin(litems, ritems):
-
-    return [item for item in litems if item not in ritems]
-
-
-def rightjoin(litems, ritems):
-
-    return ritems
-
-
-def rightexjoin(litems, ritems):
-
-    return [item for item in ritems if item not in litems]
-
-
-def fulljoin(litems, ritems):
-    """Apply full join on litems and rtimes.
-
-    :param list litems:
-    :param list ritmes:
-    :return: new list of items.
-    :rtype: list"""
-
-    return litems + [item for item in ritems if item not in litems]
-
-
-def fullexjoin(litems, ritems):
-
-    return leftexjoin(litems, ritems) + rightexjoin(litems, ritems)
-
-
-def crossjoin(litems, ritems):
-
-    return [(litem, ritem) for litem in litems for ritem in ritems]
-
-
-def selfjoin(litems, ritems):
-
-    return crossjoin(litems, litems)
-
-
-def naturaljoin(litems, ritems):
-
-    result = []
-
-    for litem in litems:
-
-        for ritem in ritems:
-
-            issame = False
-
-            for key in ritem:
-
-                if key in litem:
-                    if litem[key] == ritem[key]:
-                        issame = True
-
-                    else:
-                        break
-
-            else:
-                if issame:
-                    item = deepcopy(litem)
-                    item.update(deepcopy(ritem))
-                    result.append(item)
-
-    return result
-
-def unionjoin(litems, ritems):
-
-    return litems + ritems
-
-
-_JOINBYNAME = {
-    Join.INNER.name: innerjoin,
-    Join.LEFT.name: leftjoin,
-    Join.LEFTEX.name: leftexjoin,
-    Join.RIGHT.name: rightjoin,
-    Join.RIGHTEX.name: rightexjoin,
-    Join.FULL.name: fulljoin,
-    Join.FULLEX.name: fullexjoin,
-    Join.CROSS.name: crossjoin,
-    Join.SELF.name: selfjoin,
-    Join.NATURAL.name: naturaljoin,
-    Join.UNION.name: unionjoin
-}
-
-
-def applyjoin(litems, ritems, join=Join.FULL):
-
-    if isinstance(join, Join):
-        join = join.name
-
-    func = _JOINBYNAME[join]
-
-    return func(litems, ritems)

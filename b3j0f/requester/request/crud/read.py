@@ -34,23 +34,9 @@ from collections import Iterable
 
 from six import string_types
 
-__all__ = ['Read', 'Cursor', 'Join']
+from .join import Join
 
-
-@unique
-class Join(IntEnum):
-
-    INNER = 0  #: inner join.
-    LEFT = 1  #: left join.
-    LEFTEX = 2  #: left exclusive join.
-    RIGHT = 3  #: right exclusive join.
-    RIGHTEX = 4  #: right exclusive join.
-    FULL = 5  #: full join.
-    FULLEX = 6  #: full exclusive join.
-    CROSS = 7  #: cross join.
-    SELF = 8  #: self join.
-    NATURAL = 9  #: natural join.
-    UNION = 10  #: union join.
+__all__ = ['Read', 'Cursor']
 
 
 class Read(CRUDElement):

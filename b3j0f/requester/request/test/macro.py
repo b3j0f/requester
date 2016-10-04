@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -24,29 +25,22 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""create module."""
+"""conf file driver UTs."""
 
-from .base import CRUDElement
+from b3j0f.utils.ut import UTCase
 
-__all__ = ['Create']
+from unittest import main
+
+from ..macro import FuncName
 
 
-class Create(CRUDElement):
+class FuncNameTest(UTCase):
 
-    __slots__ = ['name', 'values'] + CRUDElement.__slots__
+    def test_contains(self):
 
-    def __init__(self, name, values, *args, **kwargs):
-        """
-        :param str name: model name.
-        :param dict values: model value.
-        """
-        super(Create, self).__init__(*args, **kwargs)
+        for member in FuncName.__members__.values():
 
-        self.name = name
-        self.values = values
+            self.assertTrue(FuncName.contains(member.value))
 
-    def set(self, key, value):
-
-        self.values[key] = value
-
-        return self
+if __name__ == '__main__':
+    main()

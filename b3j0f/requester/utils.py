@@ -24,29 +24,29 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""create module."""
+"""Utilities."""
 
-from .base import CRUDElement
-
-__all__ = ['Create']
+__all__ = ['tostr']
 
 
-class Create(CRUDElement):
+def tostr(self):
+    """Get the string representation of an object with the class attribute
+    __slots__ or __dict__."""
 
-    __slots__ = ['name', 'values'] + CRUDElement.__slots__
+    cls = type(self)
 
-    def __init__(self, name, values, *args, **kwargs):
-        """
-        :param str name: model name.
-        :param dict values: model value.
-        """
-        super(Create, self).__init__(*args, **kwargs)
+    result = '{0}('.format(cls.__name__)
 
-        self.name = name
-        self.values = values
+    try:
+        names = cls.__slots__
 
-    def set(self, key, value):
+    except AttributeError:
+        names = self.__dict__
 
-        self.values[key] = value
+    for name in names:
 
-        return self
+        val = getattr(self, name)
+        if val is not None:
+            result += '{0}={1}, '.format(name, val)
+
+    return result + ')'

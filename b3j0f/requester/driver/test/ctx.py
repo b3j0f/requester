@@ -25,53 +25,69 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""conf file driver UTs."""
+"""request.base UTs."""
 
 from b3j0f.utils.ut import UTCase
 
 from unittest import main
 
-from ..base import CRUDElement
-from ....driver.base import Driver
-from ....driver.transaction import Transaction
+from ...request.crud.base import BaseElement
+from ..ctx import Context
 
 
-class CRUDTest(UTCase):
-
-    def test_init_defaul(self):
-
-        crud = CRUDElement()
-
-        self.assertIsNone(crud.transaction)
+class ContextTest(UTCase):
 
     def test_init(self):
 
-        transaction = Transaction(driver=None)
+        self.assertFalse(Context())
 
-        crud = CRUDElement(transaction=transaction)
+    def test_init_params(self):
 
-        self.assertIs(transaction, crud.transaction)
+        context = Context({'a': 1})
 
-    def test__call__(self):
+        self.assertTrue(context)
 
-        requests = []
+        self.assertIn('a', context)
 
-        class TestDriver(Driver):
+    def test_crud(self):
 
-            def process(self, transaction, **kwargs):
+        context = Context()
+        crud = BaseElement()
 
-                requests.append(transaction)
+        self.assertNotIn(crud, context)
 
-        transaction = Transaction(driver=TestDriver())
+        context[crud] = 1
 
-        crud = CRUDElement(transaction=transaction)
-        crud()
+        self.assertIn(crud, context)
+        self.assertIn(crud.ctxname, context)
 
-        self.assertIn(transaction, requests)
+        self.assertEqual(context[crud], 1)
+        self.assertEqual(context[crud.ctxname], 1)
 
-    def test__call__error(self):
+        del context[crud]
 
-        self.assertRaises(RuntimeError, CRUDElement())
+        self.assertNotIn(crud, context)
+        self.assertNotIn(crud.ctxname, context)
+
+    def test_fill(self):
+
+        context = Context({
+            'a.b': [1, 2, 4],
+            'c': [5]
+        })
+
+        _context = Context({
+            'b': [3],
+            'c': [4],
+            'a': [5]
+        })
+
+        context.fill(_context)
+
+        self.assertEqual(context['a'], [5])
+        self.assertEqual(context['b'], [3])
+        self.assertEqual(context['c'], [5, 4])
+        self.assertEqual(context['a.b'], [1, 2, 4, 3])
 
 if __name__ == '__main__':
     main()

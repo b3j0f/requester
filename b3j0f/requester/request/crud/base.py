@@ -27,61 +27,77 @@
 """Base crud module."""
 
 from ..expr import BaseElement
-from ...driver.base import Driver
 
 from enum import IntEnum, unique
 
-__all__ = ['CRUD']
-
-
-@unique
-class CRUD(IntEnum):
-
-    CREATE = 1
-    READ = 2
-    UPDATE = 3
-    DELETE = 4
+__all__ = ['CRUDElement']
 
 
 class CRUDElement(BaseElement):
     """Base crud operation.
 
-    Can be associated to a request."""
+    Can be associated to a transaction."""
 
-    __slots__ = ['request', 'result'] + BaseElement.__slots__
+    __slots__ = ['transaction', 'query'] + BaseElement.__slots__
 
-    def __init__(self, request=None, result=None, *args, **kwargs):
+    def __init__(self, query=None, transaction=None, *args, **kwargs):
         """
-        :param b3j0f.requester.Request request:
-        :param result: result of this crud processing.
+        :param Expression query: query.
+        :param Transaction transaction: related transaction.
         """
 
         super(CRUDElement, self).__init__(*args, **kwargs)
 
-        self.request = request
-        self.result = result
+        self.query = query
+        self.transaction = transaction
 
-    def __call__(
-            self,
-            explain=Driver.__DEFAULTEXPLAIN__, async=Driver.__DEFAULTASYNC__,
-            callback=None, **kwargs
-    ):
+    def __call__(self, **kwargs):
         """Execute this CRUD element.
 
-        :param bool async: if False (default), result is this element result,
-            otherwise, process the function in an isolated thread.
-        :param callback: callback callable which takes in parameter the CRUD
-            element result.
-        :param dict kwargs: driver kwargs.
+        :param dict kwargs: driver specific kwargs. See Driver.process for more
+            details.
         :return: this execution result if async is False."""
 
-        if self.request is None:
-            raise RuntimeError(
-                'Impossible to execute this without associate it to a request.'
-            )
+        if self.transaction is None:
+            raise RuntimeError('No transaction attached.')
 
         else:
-            return self.request.processcrud(
-                crud=self, explain=explain, async=async, callback=callback,
-                *kwargs
-            )
+            self.transaction.process(cruds=[self], **kwargs)
+
+            return self.transaction.ctx.get(self)
+
+    def where(self, query):
+        """Apply input query to this query.
+
+        :return: self
+        :rtype: Request"""
+
+        if self.query is None:
+            self.query = query
+
+        else:
+            self.query &= query
+
+        return self
+
+    def orwhere(self, query):
+        """Apply input query to this query.
+
+        :return: self
+        :rtype: Request"""
+
+        if self.query is None:
+            self.query = query
+
+        else:
+            self.query |= query
+
+        return self
+
+    def __iand__(self, other):
+
+        return self.where(other)
+
+    def __ior__(self, other):
+
+        return self.orwhere(other)

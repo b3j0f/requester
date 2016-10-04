@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -24,29 +25,45 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""create module."""
+"""request.base UTs."""
 
-from .base import CRUDElement
+from b3j0f.utils.ut import UTCase
 
-__all__ = ['Create']
+from unittest import main
+
+from ..utils import tostr
 
 
-class Create(CRUDElement):
+class ToStrTest(UTCase):
 
-    __slots__ = ['name', 'values'] + CRUDElement.__slots__
+    def test_default(self):
 
-    def __init__(self, name, values, *args, **kwargs):
-        """
-        :param str name: model name.
-        :param dict values: model value.
-        """
-        super(Create, self).__init__(*args, **kwargs)
+        class Test(object):
+            pass
 
-        self.name = name
-        self.values = values
+        test = Test()
 
-    def set(self, key, value):
+        self.assertEqual(tostr(test), 'Test()')
 
-        self.values[key] = value
+    def test_attr(self):
 
-        return self
+        class Test(object):
+            pass
+
+        test = Test()
+        test.a = 1
+
+        self.assertEqual(tostr(test), 'Test(a=1, )')
+
+    def test_slot(self):
+
+        class Test(object):
+            __slots__ = ['a']
+
+        test = Test()
+        test.a = 1
+
+        self.assertEqual(tostr(test), 'Test(a=1, )')
+
+if __name__ == '__main__':
+    main()

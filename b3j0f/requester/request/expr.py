@@ -36,148 +36,9 @@ from enum import Enum, unique
 
 from .base import BaseElement
 
-__all__ = ['Expression', 'FuncName', 'Function', 'MetaExpression']
+from .macro import FuncName
 
-
-@unique
-class FuncName(Enum):
-    """Default function names which might be supported by drivers."""
-
-    AND = '&'
-    IAND = '&='
-    OR = '|'
-    IOR = '|='
-    XOR = '^'
-    IXOR = '^='
-    TRUTH = 'truth'
-    IS = 'is'
-    ISNOT = 'isnot'
-    NOT = '!'
-    EQ = '=='
-    NE = '!='
-    GT = '>'
-    GE = '>='
-    LT = '<'
-    LE = '<='
-    ADD = '+'
-    IADD = '+='
-    SUB = '-'
-    ISUB = '-='
-    DIV = '/'
-    IDIV = '/='
-    FLOORDIV = '//'
-    IFLOORDIV = '//='
-    MUL = '*'
-    IMUL = '*='
-    POW = '**'
-    IPOW = '**='
-    LIKE = '%%'
-    RSHIFT = '>>'
-    IRSHIFT = '>>='
-    LSHIFT = '<<'
-    ILSHIFT = '<<='
-    MOD = '%'
-    IMOD = '%='
-    NEG = 'neg'
-    ABS = 'abs'
-    INVERT = '~'
-    EXISTS = 'exists'
-    GETSLICE = 'getslice'
-    SETSLICE = 'setslice'
-    DELSLICE = 'delslice'
-    GETITEM = 'getitem'
-    SETITEM = 'setitem'
-    DELITEM = 'delitem'
-
-    # remainders functions are not supported by the Expression methods
-    ISNULL = 'isnull'
-    BETWEEN = 'between'
-    IN = 'in'
-
-    # selection operators  TODO: might be migrated to the Read object...
-    HAVING = 'having'
-    UNION = 'union'
-    INTERSECT = 'intersect'
-
-    # request comparison
-    ALL = 'all'
-    ANY = 'any'
-    SOME = 'some'
-
-    # DB operations
-    OPTIMIZE = 'optimize'
-    VERSION = 'version'
-
-    # aggregation operations
-    AVG = 'avg'
-    COUNT = 'count'
-    MEAN = 'mean'
-    MAX = 'max'
-    MIN = 'min'
-    SUM = 'sum'
-
-    # string operations
-    CONCAT = 'concat'
-    ICONCAT = 'iconcat'
-    LENGTH = 'length'
-    REPLACE = 'replace'
-    SOUNDEX = 'soundex'
-    SUBSTR = 'substr'
-    SUBSTRING = 'substring'
-    LEFT = 'left'
-    RIGHT = 'right'
-    REVERSE = 'reverse'
-    TRIM = 'trim'
-    LTRIM = 'ltrim'
-    RTRIM = 'rtrim'
-    LPAD = 'lpad'
-    RPAD = 'rpad'
-    UPPER = 'upper'
-    LOWER = 'lower'
-    UCASE = 'ucase'
-    LCASE = 'lcase'
-    LOCATE = 'locate'
-    INSTR = 'instr'
-
-    # mathematical operations
-    RAND = 'rand'
-    ROUND = 'round'
-    MD5 = 'md5'
-
-    # datetime operations
-    NOW = 'now'
-    SEC_TO_TIME = 'sec_to_time'
-    DATEDIFF = 'datediff'
-    MONTH = 'month'
-    YEAR = 'year'
-
-    # array operations
-    INDEX = 'index'
-    REPEAT = 'repeat'
-    IREPEAT = 'irepeat'
-    COUNTOF = 'countof'
-    INCLUDE = 'include'
-
-    # additional operations
-    CAST = 'cast'
-    CONVERT = 'convert'
-    GROUPCONCAT = 'groupconcat'
-
-    # update
-    IRSHIFT = '<<='
-    ILSHIFT = '>>='
-
-    @staticmethod
-    def contains(value):
-
-        result = False
-
-        for member in FuncName.__members__.values():
-            if member.value == value:
-                result = True
-                break
-
-        return result
+__all__ = ['Expression', 'Function', 'MetaExpression']
 
 
 class MetaExpression(type):
@@ -185,6 +46,9 @@ class MetaExpression(type):
 
     def __getattr__(cls, key):
         """Instanciate a new cls expression for not existing attribute."""
+
+        if key[-1] == '_' and key[:-1] in cls.__slots__:
+            key = key[:-1]
 
         return cls(name=key)
 
@@ -200,7 +64,23 @@ class Expression(BaseElement):
     - Expression('wheel'): expression named 'wheel'.
     - Expression('car.wheel'): expression 'wheel' from expression 'car'.
     - Expression('wheel', alias='wh'): expression aliased 'wh'.
-    """
+
+    A simpler construction is possible with the __getattr__ (cls) method:
+
+    Expression('human.eye') equals:
+
+    - Expression.human.eye
+    - Expression('human').eye
+
+    If you want to use a name which equals to an Expression attribute name, use
+    the suffix '_'...
+
+    For example:
+
+    .. code-block:: python
+
+        assert Expression.human.name_.name == 'human.name'
+        assert Expression.bar.as__.name == 'bar.as_'"""
 
     __slots__ = ['name'] + BaseElement.__slots__
 
@@ -232,7 +112,7 @@ class Expression(BaseElement):
         :rtype: Expression
         """
 
-        if key[-1] == '_':
+        if key[-1] == '_' and hasattr(self, key[:-1]):
             key = key[:-1]
 
         return type(self)(name='{0}.{1}'.format(self.name, key))
@@ -656,19 +536,7 @@ class Function(Expression):
 
     def __repr__(self):
 
-        result = super(Function, self).__repr__()
-
-        result += '('
-
-        for param in self.params:
-
-            rparam = repr(param)
-
-            result += '{0},'.format(rparam)
-
-        result += ')'
-
-        return result
+        return tostr(self)
 
     @property
     def ctxname(self):

@@ -31,20 +31,12 @@ from b3j0f.utils.ut import UTCase
 
 from unittest import main
 
-from ..expr import Expression, Function, FuncName
+from ..macro import FuncName
+from ..expr import Expression, Function
 
 from numbers import Number
 
 from six import iteritems
-
-
-class FuncNameTest(UTCase):
-
-    def test_contains(self):
-
-        for member in FuncName.__members__.values():
-
-            self.assertTrue(FuncName.contains(member.value))
 
 
 class ExpressionTest(UTCase):
@@ -57,6 +49,12 @@ class ExpressionTest(UTCase):
 
         self.assertEqual(name, expr.name)
         self.assertIsNone(expr.alias)
+
+    def test_getattr_cls(self):
+
+        expr = Expression.name_
+
+        self.assertEqual(expr.name, 'name')
 
     def test_getattr(self):
 
