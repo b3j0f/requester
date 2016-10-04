@@ -39,7 +39,7 @@ from operator import (
 
 from re import match
 
-from ..request.expr import FuncName
+from ..request.macro import FuncName
 from ..request.crud.create import Create
 from ..request.crud.read import Read
 from ..request.crud.join import applyjoin, Join

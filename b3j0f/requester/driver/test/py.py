@@ -34,7 +34,8 @@ from unittest import main
 from ..base import Driver
 from ..py import PyDriver, processcrud, create, read, update, delete
 from ..generator import func2crudprocessing, obj2driver, DriverAnnotation
-from ...request.core import Request, Context
+from ..transaction import Transaction
+from ..ctx import Context
 from ...request.crud.create import Create
 from ...request.crud.read import Read
 from ...request.crud.update import Update
@@ -53,11 +54,11 @@ class Func2CrudProcessingTest(UTCase):
 
         crud = Create(None, {'a': 1})
 
-        request = Request(ctx=Context({'b': 2}))
+        transaction = Transaction(driver=None, ctx=Context({'b': 2}))
 
-        _request = genfunc(crud=crud, request=request)
+        _request = genfunc(crud=crud, transaction=transaction)
 
-        self.assertIs(_request, request)
+        self.assertIs(_request, transaction)
         self.assertEqual(_request.ctx[crud], [3])
 
     def test_object(self):

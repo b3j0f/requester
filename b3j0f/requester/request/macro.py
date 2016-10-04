@@ -32,15 +32,6 @@ __all__ = ['CRUD', 'FuncName']
 
 
 @unique
-class CRUD(IntEnum):
-
-    CREATE = 1
-    READ = 2
-    UPDATE = 3
-    DELETE = 4
-
-
-@unique
 class FuncName(Enum):
     """Default function names which might be supported by drivers."""
 

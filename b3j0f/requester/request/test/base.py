@@ -38,15 +38,15 @@ class BaseElementTest(UTCase):
 
     def test_init_default(self):
 
-        alias = BaseElement()
+        base = BaseElement()
 
-        self.assertIsNone(alias.alias)
+        self.assertIsNone(base.alias)
 
     def test_init(self):
 
-        alias = BaseElement(alias='alias')
+        base = BaseElement(alias='alias')
 
-        self.assertEqual(alias.alias, 'alias')
+        self.assertEqual(base.alias, 'alias')
 
     def test_as_(self):
 

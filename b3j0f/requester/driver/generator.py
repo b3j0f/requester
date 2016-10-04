@@ -85,9 +85,9 @@ class FunctionalDriver(Driver):
         self.deletes = [] if deletes is None else deletes
         self.functions = {} if functions is None else functions
 
-    def _process(self, request, crud, **kwargs):
+    def _process(self, transaction, crud, **kwargs):
 
-        result = request
+        result = transaction
 
         crudname = type(crud).__name__.lower()
 
@@ -95,7 +95,7 @@ class FunctionalDriver(Driver):
 
         if funcs:
             for func in funcs:
-                result = func(crud=crud, request=result, **kwargs)
+                result = func(crud=crud, transaction=result, **kwargs)
 
         else:
             raise NotImplementedError(
@@ -118,7 +118,7 @@ def func2crudprocessing(func=None):
     if func is not None and not isinstance(func, Schema):
         func = data2schema(func)
 
-    def _processing(crud, request, _func=func, **kwargs):
+    def _processing(crud, transaction, _func=func, **kwargs):
 
         funckwargs = {}
         funcvarargs = []
@@ -129,18 +129,18 @@ def func2crudprocessing(func=None):
 
         for param in _func.params:
 
-            if param.name in request.ctx:
+            if param.name in transaction.ctx:
 
-                funckwargs[param.name] = request.ctx[param.name]
+                funckwargs[param.name] = transaction.ctx[param.name]
 
         funcresult = list(_func(*funcvarargs, **funckwargs))
 
         if isinstance(crud, Read):
             read(read=crud, items=funcresult)
 
-        request.ctx[crud] = funcresult
+        transaction.ctx[crud] = funcresult
 
-        return request
+        return transaction
 
     return _processing
 

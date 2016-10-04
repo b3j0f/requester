@@ -35,8 +35,10 @@ from ..base import Driver
 from ..generator import (
     func2crudprocessing, obj2driver, DriverAnnotation, FunctionalDriver
 )
+from ..ctx import Context
+from ..transaction import Transaction
 from ...request.crud.base import CRUD
-from ...request.core import Request, Context, Expression as F
+from ...request.expr import Expression as E
 from ...request.crud.create import Create
 from ...request.crud.read import Read
 from ...request.crud.update import Update
@@ -51,13 +53,13 @@ class FunctionalDriverTest(UTCase):
 
         def process(crud, count):
 
-            def _process(request, **kwargs):
+            def _process(transaction, **kwargs):
 
                 self.processed.setdefault(crud.name, []).append(kwargs)
 
-                request.ctx['count'] += 10 ** crud.value
+                transaction.ctx['count'] += 10 ** crud.value
 
-                return request
+                return transaction
 
             return [_process for _ in range(count)]
 
@@ -80,15 +82,15 @@ class FunctionalDriverTest(UTCase):
 
         kwargs = {'foo': 'bar'}
 
-        request = Request(
+        transaction = driver.open(
             ctx={'count': 0},
             cruds=[
                 Create(None, None), Read(), Update(None, None), Delete()
             ]
         )
-        request.ctx['count'] = 0
+        transaction.ctx['count'] = 0
 
-        result = driver.process(request=request, **kwargs)
+        result = driver.process(transaction=transaction, **kwargs)
 
         self.assertEqual(result.ctx['count'], 543210)
 
@@ -121,11 +123,11 @@ class Func2CrudProcessingTest(UTCase):
 
         crud = Create(None, {'a': 1})
 
-        request = Request(ctx=Context({'b': 2}))
+        transaction = Transaction(driver=None, ctx=Context({'b': 2}))
 
-        _request = genfunc(crud=crud, request=request)
+        _request = genfunc(crud=crud, transaction=transaction)
 
-        self.assertIs(_request, request)
+        self.assertIs(_request, transaction)
         self.assertEqual(_request.ctx[crud], [3])
 
     def test_function_read(self):
@@ -138,11 +140,11 @@ class Func2CrudProcessingTest(UTCase):
 
         crud = Read(offset=2, limit=2)
 
-        request = Request(ctx=Context({'count': 5}))
+        transaction = Transaction(driver=None, ctx=Context({'count': 5}))
 
-        _request = genfunc(crud=crud, request=request)
+        _request = genfunc(crud=crud, transaction=transaction)
 
-        self.assertIs(_request, request)
+        self.assertIs(_request, transaction)
         self.assertEqual(_request.ctx[crud], [2, 3])
 
     def test_function_update(self):
@@ -155,11 +157,11 @@ class Func2CrudProcessingTest(UTCase):
 
         crud = Update(None, {'a': 1})
 
-        request = Request(ctx=Context({'b': 2}))
+        transaction = Transaction(driver=None, ctx=Context({'b': 2}))
 
-        _request = genfunc(crud=crud, request=request)
+        _request = genfunc(crud=crud, transaction=transaction)
 
-        self.assertIs(_request, request)
+        self.assertIs(_request, transaction)
         self.assertEqual(_request.ctx[crud], [3])
 
     def test_function_delete(self):
@@ -172,11 +174,11 @@ class Func2CrudProcessingTest(UTCase):
 
         crud = Delete()
 
-        request = Request(ctx=Context({'b': 2}))
+        transaction = Transaction(driver=None, ctx=Context({'b': 2}))
 
-        _request = genfunc(crud=crud, request=request)
+        _request = genfunc(crud=crud, transaction=transaction)
 
-        self.assertIs(_request, request)
+        self.assertIs(_request, transaction)
         self.assertEqual(_request.ctx[crud], [])
 
     def test_function_exe(self):
@@ -187,15 +189,15 @@ class Func2CrudProcessingTest(UTCase):
 
         genfunc = func2crudprocessing(func)
 
-        query = F.func(1, 2, 3)
+        query = E.func(1, 2, 3)
         crud = Read(None)
 
-        request = Request(query=query, ctx=Context({'b': 2}))
+        transaction = Transaction(driver=None, query=query, ctx=Context({'b': 2}))
 
-        _request = genfunc(crud=crud, request=request)
+        _request = genfunc(crud=crud, transaction=transaction)
 
-        self.assertIs(_request, request)
-        print(_request.ctx)
+        self.assertIs(_request, transaction)
+
         self.assertEqual(_request.ctx[crud], [1, 2, 3])
 
     def test_object(self):
@@ -206,9 +208,11 @@ class Func2CrudProcessingTest(UTCase):
 
                 return list(params)
 
-        query = F.test(1, 2, 3)
+        query = E.test(1, 2, 3)
 
-        request = Request(query=query, ctx=Context({'b': 1}))
+        transaction = Transaction(
+            driver=None, query=query, ctx=Context({'b': 1})
+        )
 
         exe = Read('test')
 
@@ -216,9 +220,9 @@ class Func2CrudProcessingTest(UTCase):
 
         func = func2crudprocessing(obj=test)
 
-        func(request=request, crud=exe)
+        func(transaction=transaction, crud=exe)
 
-        self.assertEqual(request.ctx[exe], [1, 2, 3])
+        self.assertEqual(transaction.ctx[exe], [1, 2, 3])
 
 
 class Obj2DriverTest(UTCase):

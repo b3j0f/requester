@@ -35,7 +35,8 @@ from ..base import Driver
 from ..py import PyDriver
 from ..composite import DriverComposite
 from ..generator import func2crudprocessing, obj2driver, DriverAnnotation
-from ...request.core import Request, Context
+from ..transaction import Transaction
+from ..ctx import Context
 from ...request.expr import Expression as E, Function as F
 from ...request.crud.create import Create
 from ...request.crud.read import Read
@@ -74,7 +75,7 @@ class DriverCompositeTest(UTCase):
 
         self.ctx = Context()
 
-        self.request = Request(ctx=self.ctx)
+        self.request = Transaction(driver=None, ctx=self.ctx)
 
     def test__processquery_no_system(self):
 
@@ -112,7 +113,7 @@ class DriverCompositeTest(UTCase):
         query = F.A(expr)
 
         self.driver._processquery(query=query, ctx=self.request.ctx)
-        print(query)
+
         self.assertIn(expr, self.request.ctx)
         self.assertIn(query, self.request.ctx)
 

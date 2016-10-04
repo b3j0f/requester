@@ -30,7 +30,16 @@ from ..expr import BaseElement
 
 from enum import IntEnum, unique
 
-__all__ = ['CRUDElement']
+__all__ = ['CRUDElement', 'CRUD']
+
+
+@unique
+class CRUD(IntEnum):
+
+    CREATE = 1
+    READ = 2
+    UPDATE = 3
+    DELETE = 4
 
 
 class CRUDElement(BaseElement):

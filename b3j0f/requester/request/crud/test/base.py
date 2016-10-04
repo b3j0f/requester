@@ -34,23 +34,31 @@ from unittest import main
 from ..base import CRUDElement
 from ....driver.base import Driver
 from ....driver.transaction import Transaction
+from ...expr import Expression as E, Function as F
+from ...macro import FuncName as FN
 
 
 class CRUDTest(UTCase):
+
+    def setUp(self):
+
+        self.crudelt = CRUDElement()
 
     def test_init_defaul(self):
 
         crud = CRUDElement()
 
         self.assertIsNone(crud.transaction)
+        self.assertIsNone(crud.query)
 
     def test_init(self):
 
         transaction = Transaction(driver=None)
 
-        crud = CRUDElement(transaction=transaction)
+        crud = CRUDElement(transaction=transaction, query=False)
 
         self.assertIs(transaction, crud.transaction)
+        self.assertFalse(crud.query)
 
     def test__call__(self):
 
@@ -65,6 +73,9 @@ class CRUDTest(UTCase):
         transaction = Transaction(driver=TestDriver())
 
         crud = CRUDElement(transaction=transaction)
+
+        self.assertNotIn(transaction, requests)
+
         crud()
 
         self.assertIn(transaction, requests)
@@ -72,6 +83,82 @@ class CRUDTest(UTCase):
     def test__call__error(self):
 
         self.assertRaises(RuntimeError, CRUDElement())
+
+    def test_and_query(self):
+
+        self.crudelt.query = E.A
+
+        self.assertEqual(self.crudelt.query.name, 'A')
+
+        self.crudelt.query &= E.B
+
+        self.assertEqual(self.crudelt.query.name, FN.AND.value)
+        self.assertEqual(
+            self.crudelt.query.params[0].name,
+            'A'
+        )
+        self.assertEqual(
+            self.crudelt.query.params[1].name,
+            'B'
+        )
+
+    def test_or_query(self):
+
+        self.crudelt.query = E.A
+
+        self.assertEqual(self.crudelt.query.name, 'A')
+
+        self.crudelt.query |= E.B
+
+        self.assertEqual(self.crudelt.query.name, FN.OR.value)
+        self.assertEqual(
+            self.crudelt.query.params[0].name,
+            'A'
+        )
+        self.assertEqual(
+            self.crudelt.query.params[1].name,
+            'B'
+        )
+
+    def test_and__query(self):
+
+        self.crudelt.query = E.A
+
+        self.assertEqual(self.crudelt.query.name, 'A')
+
+        request = self.crudelt.where(E.B)
+
+        self.assertIs(request, self.crudelt)
+
+        self.assertEqual(self.crudelt.query.name, FN.AND.value)
+        self.assertEqual(
+            self.crudelt.query.params[0].name,
+            'A'
+        )
+        self.assertEqual(
+            self.crudelt.query.params[1].name,
+            'B'
+        )
+
+    def test_or__query(self):
+
+        self.crudelt.query = E.A
+
+        self.assertEqual(self.crudelt.query.name, 'A')
+
+        request = self.crudelt.orwhere(E.B)
+
+        self.assertIs(request, self.crudelt)
+
+        self.assertEqual(self.crudelt.query.name, FN.OR.value)
+        self.assertEqual(
+            self.crudelt.query.params[0].name,
+            'A'
+        )
+        self.assertEqual(
+            self.crudelt.query.params[1].name,
+            'B'
+        )
 
 if __name__ == '__main__':
     main()

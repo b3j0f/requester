@@ -58,7 +58,7 @@ class Transaction(object):
     ]
 
     def __init__(
-            self, driver, parent=None, autocommit=False, ctx=None,
+            self, driver, parent=None, autocommit=False, ctx=None, cruds=None,
             *args, **kwargs
     ):
         """
@@ -67,6 +67,7 @@ class Transaction(object):
         :param bool autocommit: if True (default False), commit as soon a CRUD
             operation is processed by this transaction.
         :param Context ctx: CRUD execution context.
+        :param list cruds: crud operations.
         """
 
         super(Transaction, self).__init__(*args, **kwargs)
@@ -74,7 +75,7 @@ class Transaction(object):
         self.driver = driver
         self.uuid = uuid()
         self.parent = parent
-        self.cruds = []
+        self.cruds = [] if cruds is None else cruds
         self.state = State.PENDING
         self.autocommit = autocommit
         self.ctx = Context() if ctx is None else ctx
@@ -122,9 +123,12 @@ class Transaction(object):
 
         return self.driver.process(transaction=self, **kwargs)
 
-    def open(self):
+    def open(self, autocommit=False, cruds=None):
 
-        return Transaction(driver=self.driver, parent=self, ctx=self.ctx)
+        return Transaction(
+            driver=self.driver, parent=self, ctx=self.ctx,
+            autocommit=autocommit, cruds=cruds
+        )
 
     def _process(self, cls, **kwargs):
 

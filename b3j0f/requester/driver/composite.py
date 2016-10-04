@@ -28,8 +28,8 @@
 
 from .base import Driver
 
-from ..request.core import Request
-from ..request.expr import Expression, Function, FuncName
+from ..request.expr import Expression, Function
+from ..request.macro import FuncName
 from ..request.crud.create import Create
 from ..request.crud.read import Read
 from ..request.crud.update import Update
@@ -64,9 +64,9 @@ class DriverComposite(Driver):
 
             self.drivers[driver.name] = driver
 
-    def _process(self, request, crud, **kwargs):
+    def _process(self, transaction, crud, **kwargs):
 
-        result = self._processquery(query=query, ctx=request.ctx, **kwargs)
+        result = self._processquery(query=query, ctx=transaction.ctx, **kwargs)
 
         if isinstance(crud, (Create, Update)):
             if isinstance(crud.name, Expression):
@@ -102,15 +102,15 @@ class DriverComposite(Driver):
             else:
                 processingdrivers = [driver]
 
-            request = Request(query=query, ctx=ctx, cruds=crud)
+            transaction = transaction.open(ctx=ctx, cruds=[crud])
 
             for processingdriver in processingdrivers:
 
-                pctx = processingdriver.process(request=request)
+                pctx = processingdriver.process(transaction=transaction)
 
                 ctx.fill(pctx)
 
-        request.ctx = ctx
+        transaction.ctx = ctx
 
     def _processquery(self, query, ctx, _lastquery=None, **kwargs):
         """Parse deeply the query from the left to the right and aggregates
@@ -172,7 +172,7 @@ class DriverComposite(Driver):
             else:
                 processingdrivers = [lastdriver]
 
-            request = Request(query=query, ctx=ctx)
+            transaction = Request(query=query, ctx=ctx)
 
             for processingdriver in processingdrivers:
 
@@ -186,11 +186,11 @@ class DriverComposite(Driver):
                     alias=query.ctxname  # set alias equals query ctxname
                 )
 
-                request.cruds = [crud]
+                transaction.cruds = [crud]
 
-                request = processingdriver.process(request=request, **kwargs)
+                transaction = processingdriver.process(transaction=transaction, **kwargs)
 
-                ctx = request.ctx
+                ctx = transaction.ctx
 
         return ctx
 

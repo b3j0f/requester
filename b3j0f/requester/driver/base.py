@@ -54,7 +54,7 @@ class Driver(object):
         if name is not None:
             self.name = name
 
-    def open(self, ctx=None, autocommit=False):
+    def open(self, ctx=None, autocommit=False, cruds=None):
         """open a new transaction.
 
         :param Context ctx: execution context.
@@ -63,7 +63,9 @@ class Driver(object):
         :rtype: Transaction.
         """
 
-        return Transaction(driver=self, ctx=ctx, autocommit=autocommit)
+        return Transaction(
+            driver=self, ctx=ctx, autocommit=autocommit, cruds=cruds
+        )
 
     def rollback(self, transaction):
 
