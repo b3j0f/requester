@@ -68,13 +68,10 @@ Reflective concerns permit to not consider only data access with four create/rea
 
 In a minimal case, there are 6 concepts to know:
 
-- Driver: in charge of access to data.
-- RequestManager: create request and apply them on a driver.
-- Request: in charge of defining CRUDE operations.
-- Expression: refers to data models.
-- Function: refers to system functions.
-
-Queries and CRUDE operations are done with Expression and Function objects.
+- Driver: in charge of accessing data.
+- Expression and Function: refers to data models and system functions.
+- Transaction: refers to data access transaction.
+- Context: execution context such as a dict where keys are expressions, and values are system data.
 
 Let a data models containing a table 'user' where fields are 'name' and 'age'.
 
@@ -94,7 +91,7 @@ Now, imagine you have two systems, called respectivelly Administration and Club.
 
 .. code-block:: python
 
-   Expression.Administration.user.name == Expression.Club.user.name & Expression.user.age >= 20
+   (Expression.Administration.user.name == Expression.Club.user.name) & (Expression.user.age >= 20)
 
 Therefore, all python operators are overriden by the object Expression in order to let you requests in a pythonic way.
 
@@ -129,56 +126,65 @@ Create data from a system
 
 .. code-block:: python
 
-   from b3j0f.requester import RequestManager, Driver
+   from b3j0f.requester import Driver
 
    class MyDriver(Driver):
       """implement your own driver..."""
 
-   requestmanager = RequestManager(driver=MyDriver())
+   driver = MyDriver()
 
    # ways to create data from the request manager
-   requestmanager.create('C.user', {'name': 'john'})
-   requestmanager.create(E.C.user, {'name': 'john'})
+   driver.create(name='C.user', values={'name': 'john'})
+   driver.create(name=E.C.user, values={'name': 'john'})
 
-   # create several data at once with method chaining
-   req = requestmanager.request()
+   # create several data at once with method chaining and transaction
+   with driver.open() as transaction:
+      """transaction.create(...).update(...)"""
 
-   req.create('C.user', {'name': 'john'}).create(E.C.user, {'name': 'paul'}).process(Create('C.user', {'name': 'david'}), Create(E.C.user, {'name': 'thomas'})).commit()
+   The with ensure the transaction is commited or rollbacked in case of any error.
 
-   # create data from an historical request
-   req = requestmanager.request(req)
+   trans = driver.open()
+
+   # it is also possible to create a hierarchy of transaction with trans.open()
+
+   trans.create('C.user', {'name': 'john'}).create(E.C.user, {'name': 'paul'}).process(Create('C.user', {'name': 'david'}), Create(E.C.user, {'name': 'thomas'})).commit()
+
+   # create transaction with autocommit and with an historical context
+   # autocommit and ctx can be changed at runtime
+   trans = driver.open(autocommit=True, ctx=Context())
 
 Read data from a system
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   from b3j0f.requester import Read as R, Jointure as J
+   from b3j0f.requester import Read as R, Join as J
 
-   # add queries
-   req &= E.A.id == E.B.id & F.now > E.B.timestamp
+   # get a read resource with specific offset
+   crud = driver.read(offset=5)
 
-   # read data from the request manager
-   result = requestmanager.read((E.A, E.B), limit=10, jointure='FULL', groupby=E.A.name, sortby=E.A.id)
+   # add filters
+   crud &= (E.A.id == E.B.id) & (F.now > E.B.timestamp)
+   # same as
+   crud.where(query)
+   # and with a "or"
+   crud.orwhere(query); crud |= query
+
+   # method chaining and max 10 data, sorted by A.id and grouped by A.name
+   result = crud.sortby(E.A.id).groupby(E.A.name).join('FULL').select()[:10]
 
    for data in result:  # display A and B
       print(data['A'], data['B'])
 
-   # read data from the request
-   result = req.read((E.A, E.B), limit=10, jointure='FULL', groupby=E.A.name, sortby=E.A.id)
-
-   # read data with method chaining
-   result = req.sortby(E.A.id).groupby(E.A.name).jointure('FULL').select()[:10]  # get max 10 data, sorted by A.id and grouped by A.name
+   # or get the result via a callback
+   crud(async=True, callback=lambda result: None)
 
    # read data with a Read object
-   read = R(limit=10, groupby=E.A.name, jointure=J.FULL, sort=E.A.name)
-   result = req.processcrude(read).ctx[read.select]  # get context request which contain all data from systems
+   read = R(limit=10, groupby=E.A.name, join=J.FULL, sort=E.A.name)
+   result = trans.process(read).ctx[read]  # get context request which contain all data from systems and a transaction with autocommit
 
-   # read data from the request manager with default parameters
-   AandB = requestmanager['A', 'B']
-
-   # read data from the request with default parameters
-   AandB = requestmanager['A', 'B']
+   # read data from the driver with default parameters
+   AandB = driver['A', 'B']
 
 Update data from a system
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -187,20 +193,20 @@ Update data from a system
 
    from b3j0f.requester import Update as U
 
-   # udpate data from the request manager
-   requestmanager.update('user', {'name': 'john'})
-   requestmanager.update(E.user, {'name': 'john'})
-   requestmanager.update(E.user, {'name': 'john'})
-   requestmanager[E.user] = {'name': 'john'}
-   requestmanager['user'] = {'name': 'john'}
+   # udpate data from the driver
+   driver.update(name='user', values={'name': 'john'})
+   driver.update(name=E.user, values={'name': 'john'})
+   driver.update(name=E.user, values={'name': 'john'})
+   driver[E.user] = {'name': 'john'}
+   driver['user'] = {'name': 'john'}
 
-   # update data from the request
-   req.update(E.user, {'name': 'john'})
-   req.update('user', {'name': 'john'})
-   req['user'] = {'name': 'john'}
-   req[E.user] = {'name': 'john'}
-   req.process(U('user', {'name': 'john'}))
-   req.process(U(E.user, {'name': 'john'}))
+   # update data from the transaction
+   trans.update(name=E.user, values={'name': 'john'})
+   trans.update('user', {'name': 'john'})
+   trans['user'] = {'name': 'john'}
+   trans[E.user] = {'name': 'john'}
+   trans.process(U(name='user', values={'name': 'john'}))
+   trans.process(U(name=E.user, values={'name': 'john'}))
 
 Delete data from a system
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -209,42 +215,19 @@ Delete data from a system
 
    from b3j0f.requester import Delete as D
 
-   # delete a user from a requestmanager
-   requestmanager.delete('user')
-   requestmanager.delete(E.user)
-   del requestmanager['user']
-   del requestmanager[E.user]
+   # delete a user from a driver
+   driver.delete(names=['user'], query=query)
+   driver.delete(names=[E.user], query=query)
+   del driver['user']
+   del driver[E.user]
 
-   # delete a user from a request
-   req.delete(D.user)
-   req.delete('user')
-   del req['user']
-   del req[E.user]
-   req.process(D('user'))
-   req.process(D(E.user))
-
-Run a service with parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   from b3j0f.requester import Exe
-
-   # let a system 'Kitchen' providing the service 'cook' with ingredients such as parameters...
-
-   # run this service from a request manager
-   requestmanager.run('Kitchen.cook', 'apple', 'pear')
-   requestmanager.run(E.user.service, *E.Kitchen.fruits)
-   requestmanager('Kitchen.cook', 'apple', 'pear')
-   requestmanager(E.Kitchen.cook, *E.Kitchen.fruits)
-
-   # run this service from a request
-   req.run('Kitchen.cook', 'apple', 'pear')
-   req.run(E.user.service, *E.Kitchen.fruits)
-   req('Kitchen.cook', 'apple', 'pear')
-   req(E.Kitchen.cook, *E.Kitchen.fruits)
-   req.process(Exe('Kitchen.fruits', 'apple', 'pear'))
-   req.process(Exe(E.Kitchen.fruits, params=['apple', 'pear']))
+   # delete a user from a transaction
+   trans.delete(names=[D.user], query=query)
+   trans.delete(names=['user'], query=query)
+   del trans['user']
+   del trans[E.user]
+   trans.process(names=[D('user')], query=query)
+   trans.process(names=[D(E.user)], query=query)
 
 Perspectives
 ------------
