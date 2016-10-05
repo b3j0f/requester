@@ -39,9 +39,11 @@ from operator import (
 
 from re import match
 
+from .ctx import Context
 from .transaction import State
 
 from ..request.macro import FuncName
+from ..request.expr import Expression, Function
 from ..request.crud.create import Create
 from ..request.crud.read import Read
 from ..request.crud.join import applyjoin, Join
@@ -59,7 +61,10 @@ from datetime import datetime
 
 from six import iteritems
 
-__all__ = ['PyDriver', 'processcrud', 'create', 'read', 'update', 'delete']
+__all__ = [
+    'PyDriver', 'processcrud', 'processquery',
+    'create', 'read', 'update', 'delete'
+]
 
 soundex = getInstance().soundex
 
@@ -94,6 +99,7 @@ class PyDriver(Driver):
             return
 
         for crud in transaction.cruds:
+
             self._processquery(query=crud.query, ctx=transaction.ctx)
 
             processcrud(ctx=transaction.ctx, items=self.values, crud=crud)
@@ -106,12 +112,10 @@ class PyDriver(Driver):
             return ctx[query]
 
         else:
-            pass
-
             ctx[query] = query
 
 
-def create(items, create):
+def create(items, create, ctx=None):
     """Apply input Create element to items.
 
     :param list items: items to process with input Create.
@@ -119,12 +123,19 @@ def create(items, create):
     :return: created item.
     :rtype: list"""
 
-    items.append(create.values)
+    values = {}
+
+    for key in list(create.values):
+
+        value = processquery(items=create.values[key], query=name, ctx=ctx)
+        values[key] = value
+
+    items.append(values)
 
     return items
 
 
-def read(items, read):
+def read(items, read, ctx=None):
     """Return application of input Read to items.
 
     :param list items: items to read.
@@ -180,7 +191,7 @@ def read(items, read):
     return result
 
 
-def update(items, update):
+def update(items, update, ctx=None):
     """Apply update to items.
 
     :param list items: items to update.
@@ -188,14 +199,26 @@ def update(items, update):
     :return: updated items.
     :rtype: list"""
 
+    values = {}
+
+    for key in list(update.values):
+
+        value = processquery(items=items, query=update.values[key], ctx=ctx)
+        values[key] = value
+
     for item in items:
-        for name, value in iteritems(update.values):
-            item[name] = value
+        for name, value in iteritems(values):
+
+            if callable(value):
+                value(name, item)
+
+            else:
+                item[name] = value
 
     return items
 
 
-def delete(items, delete):
+def delete(items, delete, ctx=None):
     """Apply deletion rule to items.
 
     :param list items: items to modify.
@@ -204,7 +227,13 @@ def delete(items, delete):
     :return: modified/deleted items."""
 
     if delete.names:
-        for name in delete.names:
+
+        names = [
+            processquery(query=name, ctx=ctx, items=items)
+            for name in delete.names
+        ]
+
+        for name in names:
             for item in items:
                 if name in item:
                     del item[name]
@@ -215,33 +244,38 @@ def delete(items, delete):
     return items
 
 
-def processcrud(ctx, items, crud):
+def processcrud(items, crud, ctx=None):
     """Apply the right rule on input items.
 
-    :param Context ctx: context where to store the processing result.
     :param list items: items to process.
     :param CRUDElement crud: crud rule to apply.
+    :param Context ctx: context where to store the processing result. Default is
+        None.
+
     :rtype: list
     :return: list"""
 
+    if ctx is None:
+        ctx = Context()
+
     if isinstance(crud, Create):
-        processresult = create(items=items, create=crud)
+        processresult = create(items=items, create=crud, ctx=ctx)
 
     elif isinstance(crud, Read):
-        processresult = read(items=items, read=crud)
+        processresult = read(items=items, read=crud, ctx=ctx)
 
     elif isinstance(crud, Update):
-        processresult = update(items=items, update=crud)
+        processresult = update(items=items, update=crud, ctx=ctx)
 
     elif isinstance(crud, Delete):
-        processresult = delete(items=items, delete=crud)
+        processresult = delete(items=items, delete=crud, ctx=ctx)
 
     ctx[crud] = processresult
 
     return items
 
 
-_OPERTORS_BY_NAME = {
+_OPERATORS_BY_NAME = {
     FuncName.LT.value: lt,
     FuncName.LE.value: le,
     FuncName.EQ.value: eq,
@@ -341,3 +375,54 @@ _OPERTORS_BY_NAME = {
     FuncName.MONTH.value: lambda date=None: datetime.strpformat(date, DATETIMEFORMAT).month,
     FuncName.YEAR.value: lambda date=None: datetime.strpformat(date, DATETIMEFORMAT).year,
 }
+
+
+def processquery(query, items, ctx=None):
+    """Process input query related to items and ctx."""
+
+    result = query
+
+    if ctx is None:
+        ctx = Context()
+
+    if query not in ctx:  # is query calculated already ?
+
+        if isinstance(query, Function):
+
+            isor = query.name == FuncName.OR
+
+            if isor:
+                result = []
+
+            pqueries = []
+            for param in query.params:
+
+                fitems = list(items) if isor else items
+
+                pquery = processquery(query=param, items=fitems, ctx=ctx)
+                pqueries.append(pquery)
+
+                if isor:
+                    result += pquery
+
+            if query.name in _OPERATORS_BY_NAME:
+                operator = _OPERATORS_BY_NAME[query.name]
+
+                result = applyoperator(operator, items, *pqueries)
+
+        elif isinstance(query, Expression):
+            result = query.name
+
+        else:
+            result = query
+
+    ctx[query] = result
+
+    return result
+
+
+def applyoperator(operator, items, name, *params):
+
+    return [
+        item for item in items if operator(item[name], *params)
+    ]

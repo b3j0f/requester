@@ -37,6 +37,7 @@ from enum import Enum, unique
 from .base import BaseElement
 
 from .macro import FuncName
+from ..utils import tostr
 
 __all__ = ['Expression', 'Function', 'MetaExpression']
 
@@ -533,10 +534,6 @@ class Function(Expression):
         self.params = params
 
         return self
-
-    def __repr__(self):
-
-        return tostr(self)
 
     @property
     def ctxname(self):

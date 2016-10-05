@@ -31,11 +31,13 @@ from b3j0f.utils.ut import UTCase
 
 from unittest import main
 
-from ..base import Driver
-from ..py import PyDriver, processcrud, create, read, update, delete
+from ..py import (
+    PyDriver, processcrud, create, read, update, delete, processquery
+)
 from ..generator import func2crudprocessing, obj2driver, DriverAnnotation
 from ..transaction import Transaction
 from ..ctx import Context
+from ...request.expr import Expression as E, Function as F
 from ...request.crud.create import Create
 from ...request.crud.read import Read
 from ...request.crud.update import Update
@@ -53,7 +55,7 @@ class CreateTest(CRUDTest):
 
     def test(self):
 
-        crud = Create(name='test', values=True)
+        crud = Create(name='test', values={})
 
         result = create(items=self.items, create=crud)
 
@@ -193,6 +195,15 @@ class ProcessCRUDTest(CRUDTest):
         crud = Delete()
 
         self._assert(crud=crud)
+
+
+class ProcessQueryTest(CRUDTest):
+
+    def test(self):
+
+        result = processquery(items=self.items, query=E.name_ == '2')
+
+        self.assertEqual(result, [self.items[2]])
 
 
 class PyDriverTest(UTCase):

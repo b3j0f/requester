@@ -47,6 +47,6 @@ def tostr(self):
 
         val = getattr(self, name)
         if val is not None:
-            result += '{0}={1}, '.format(name, val)
+            result += '{0}: {1}, '.format(name, val)
 
     return result + ')'
