@@ -42,34 +42,164 @@ from ...request.crud.update import Update
 from ...request.crud.delete import Delete
 
 
-class Func2CrudProcessingTest(UTCase):
+class CRUDTest(UTCase):
 
-    def test_function(self):
+    def setUp(self):
 
-        def func(a, b):
+        self.items = [{'name': str(i), 'id': i} for i in range(5)]
 
-            return [a + b]
 
-        genfunc = func2crudprocessing(func)
+class CreateTest(CRUDTest):
 
-        crud = Create(None, {'a': 1})
+    def test(self):
 
-        transaction = Transaction(driver=None, ctx=Context({'b': 2}))
+        crud = Create(name='test', values=True)
 
-        _request = genfunc(crud=crud, transaction=transaction)
+        result = create(items=self.items, create=crud)
 
-        self.assertIs(_request, transaction)
-        self.assertEqual(_request.ctx[crud], [3])
+        self.assertIn(crud.values, self.items)
 
-    def test_object(self):
+        self.assertIs(result, self.items)
 
-        class Test(object):
+class ReadTest(CRUDTest):
 
-            def test(self, a, b):
+    def test_default(self):
 
-                return a + b
+        crud = Read()
 
-        result = func2crudprocessing(Test)
+        result = read(items=self.items, read=crud)
+
+        self.assertEqual(result, self.items)
+
+        self.assertIsNot(result, self.items)
+
+    def test_select(self):
+
+        crud = Read(select=['id'])
+
+        result = read(items=self.items, read=crud)
+
+        self.assertEqual(result, [{'id': i} for i in range(5)])
+
+        self.assertIsNot(result, self.items)
+
+    def test_offset(self):
+
+        crud = Read(offset=1)
+
+        result = read(items=self.items, read=crud)
+
+        self.assertEqual(result, self.items[1:])
+
+        self.assertIsNot(result, self.items)
+
+    def test_limit(self):
+
+        crud = Read(limit=1)
+
+        result = read(items=self.items, read=crud)
+
+        self.assertEqual(result, self.items[:1])
+
+        self.assertIsNot(result, self.items)
+
+    def test_groupby(self):
+
+        crud = Read(groupby=['a'])
+
+        self.assertRaises(
+            NotImplementedError, read, items=self.items, read=crud
+        )
+
+    def test_join(self):
+
+        crud = Read(join='')
+
+        self.assertRaises(
+            NotImplementedError, read, items=self.items, read=crud
+        )
+
+
+class UpdateTest(CRUDTest):
+
+    def test(self):
+
+        crud = Update(name='', values={'name': 1})
+
+        result = update(items=self.items, update=crud)
+
+        self.assertIs(result, self.items)
+
+        self.assertEqual(result, [{'name': 1, 'id': i} for i in range(5)])
+
+
+class DeleteTest(CRUDTest):
+
+    def test_default(self):
+
+        crud = Delete()
+
+        result = delete(items=self.items, delete=crud)
+
+        self.assertIs(result, self.items)
+
+        self.assertFalse(result)
+
+    def test_name(self):
+
+        crud = Delete(names=('name', ))
+
+        result = delete(items=self.items, delete=crud)
+
+        self.assertIs(result, self.items)
+
+        self.assertEqual(result, [{'id': i} for i in range(5)])
+
+
+class ProcessCRUDTest(CRUDTest):
+
+    def setUp(self):
+
+        super(ProcessCRUDTest, self).setUp()
+
+        self.ctx = Context()
+
+    def _assert(self, crud):
+
+        result = processcrud(crud=crud, ctx=self.ctx, items=self.items)
+
+        self.assertEqual(result, self.ctx[crud])
+
+    def test_create(self):
+
+        crud = Create(name='', values={})
+
+        self._assert(crud=crud)
+
+    def test_read(self):
+
+        crud = Read()
+
+        self._assert(crud=crud)
+
+    def test_update(self):
+
+        crud = Update(name='', values={})
+
+        self._assert(crud=crud)
+
+    def test_delete(self):
+
+        crud = Delete()
+
+        self._assert(crud=crud)
+
+
+class PyDriverTest(UTCase):
+
+    def setUp(self):
+
+        self.driver = PyDriver()
 
 if __name__ == '__main__':
     main()

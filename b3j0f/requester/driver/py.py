@@ -39,6 +39,8 @@ from operator import (
 
 from re import match
 
+from .transaction import State
+
 from ..request.macro import FuncName
 from ..request.crud.create import Create
 from ..request.crud.read import Read
@@ -54,6 +56,8 @@ from md5 import md5
 
 from time import time
 from datetime import datetime
+
+from six import iteritems
 
 __all__ = ['PyDriver', 'processcrud', 'create', 'read', 'update', 'delete']
 
@@ -77,7 +81,7 @@ class PyDriver(Driver):
 
         self.values = [] if values is None else values
 
-    def _process(self, request, crud, **kwargs):
+    def _process(self, transaction, **kwargs):
 
         if kwargs:
             raise ValueError(
@@ -86,12 +90,15 @@ class PyDriver(Driver):
                 )
             )
 
-        if request.query not in request.ctx:
-            self._processquery(request.query, request.ctx)
+        if transaction.state is not State.COMMITTING:
+            return
 
-        processcrud(request=request, items=self.values, crud=crud)
+        for crud in transaction.cruds:
+            self._processquery(query=crud.query, ctx=transaction.ctx)
 
-        return request
+            processcrud(ctx=transaction.ctx, items=self.values, crud=crud)
+
+        return transaction
 
     def _processquery(self, query, ctx):
 
@@ -126,7 +133,7 @@ def read(items, read):
     :rtype: list
     """
 
-    result = items
+    result = list(items)
 
     if read.select():
         result = []
@@ -148,6 +155,7 @@ def read(items, read):
             result.sort(key=lambda item: item.get(orderby))
 
     if read.groupby():
+        raise NotImplementedError()
         groupbyresult = {}
         _groupbyresult = []
         for groupby in read.groupby():
@@ -164,12 +172,10 @@ def read(items, read):
 
     if read.join() not in ('FULL', None):
         raise NotImplementedError(
-            'Driver {0} does not support join {1}'.format(
-                self, read.join()
+            'read function does not support join {0}'.format(
+                read.join()
             )
         )
-
-    items[:] = result
 
     return result
 
@@ -182,14 +188,11 @@ def update(items, update):
     :return: updated items.
     :rtype: list"""
 
-    result = []
-
     for item in items:
-        if update.name in item:
-            item[update.name] = update.values
-            result.append(item)
+        for name, value in iteritems(update.values):
+            item[name] = value
 
-    return result
+    return items
 
 
 def delete(items, delete):
@@ -200,25 +203,22 @@ def delete(items, delete):
     :rtype: list
     :return: modified/deleted items."""
 
-    result = []
-
     if delete.names:
         for name in delete.names:
             for item in items:
                 if name in item:
                     del item[name]
-                    result.append(item)
 
     else:
-        result = items
         items[:] = []
 
-    return result
+    return items
 
 
-def processcrud(request, items, crud):
+def processcrud(ctx, items, crud):
     """Apply the right rule on input items.
 
+    :param Context ctx: context where to store the processing result.
     :param list items: items to process.
     :param CRUDElement crud: crud rule to apply.
     :rtype: list
@@ -236,7 +236,7 @@ def processcrud(request, items, crud):
     elif isinstance(crud, Delete):
         processresult = delete(items=items, delete=crud)
 
-    request.ctx[crud] = processresult
+    ctx[crud] = processresult
 
     return items
 
