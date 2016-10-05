@@ -219,21 +219,28 @@ class Read(CRUDElement):
 
         return result
 
-    def __getslice__(self, i, j):
+    def __getslice__(self, start, stop):
         """Set offset and limit and execute the selection.
 
-        :param int i: offset property.
-        :param int j: limit property.
+        :param int start: offset property.
+        :param int stop: limit property.
         :return: selection execution result.
         :rtype: Cursor"""
 
-        if i is not None:
-            self._offset = i
+        if start is not None:
+            self._offset = start
 
-        if j is not None:
-            self._limit = j
+        if stop is not None:
+            self._limit = stop
 
         return self()
+
+    def __getitem__(self, key):
+
+        if not isinstance(key, slice):
+            key = slice(key, key + 1)
+
+        return self.__getslice__(key.start, key.stop)
 
 
 class Cursor(Iterable):

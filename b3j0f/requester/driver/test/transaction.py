@@ -48,11 +48,13 @@ class TransactionTest(UTCase):
     def setUp(self):
 
         self.transactions = []
+        self.states = []
 
         class TestDriver(Driver):
 
             def process(_self, transaction, **kwargs):
 
+                self.states.append(transaction.state)
                 self.transactions.append(transaction)
                 for crud in transaction.cruds:
                     self.transaction.ctx[crud] = crud
@@ -162,29 +164,42 @@ class TransactionTest(UTCase):
         self.assertIsInstance(newtransaction, Transaction)
         self.assertIsNot(newtransaction, self.transaction)
         self.assertIs(newtransaction.parent, self.transaction)
+        self.assertIs(newtransaction.ctx, self.transaction.ctx)
 
     def test_rollback(self):
 
         self.assertIs(self.transaction.state, State.PENDING)
 
+        self.assertEqual(self.states, [])
+
         self.transaction.process(cruds=[])
+
+        self.assertEqual(self.states, [State.PENDING])
 
         self.assertIs(self.transaction.state, State.PENDING)
 
         self.transaction.commit()
 
-        self.assertIs(self.transaction.state, State.COMMITTING)
+        self.assertEqual(self.states[-1], State.COMMITTING)
 
-        self.assertRaises(NotImplementedError, self.transaction.rollback)
+        self.assertIs(self.transaction.state, State.PENDING)
 
-        self.assertIs(self.transaction.state, State.ROLLBACKING)
+        self.transaction.rollback()
+
+        self.assertEqual(self.states[-1], State.ROLLBACKING)
+
+        self.assertIs(self.transaction.state, State.PENDING)
 
     def test_enter_exit(self):
+
+        self.assertFalse(self.states)
 
         with self.transaction:
             pass
 
-        self.assertIs(self.transaction.state, State.COMMITTING)
+        self.assertEqual(self.states[-1], State.COMMITTING)
+
+        self.assertIs(self.transaction.state, State.PENDING)
 
         try:
             with self.transaction:
@@ -193,7 +208,9 @@ class TransactionTest(UTCase):
         except:
             pass
 
-        self.assertIs(self.transaction.state, State.ROLLBACKING)
+        self.assertEqual(self.states[-1], State.ROLLBACKING)
+
+        self.assertIs(self.transaction.state, State.PENDING)
 
 if __name__ == '__main__':
     main()

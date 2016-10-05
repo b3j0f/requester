@@ -67,10 +67,6 @@ class Driver(object):
             driver=self, ctx=ctx, autocommit=autocommit, cruds=cruds
         )
 
-    def rollback(self, transaction):
-
-        raise NotImplementedError()
-
     def process(
             self, transaction,
             explain=DEFAULT_EXPLAIN, async=DEFAULT_ASYNC, callback=None,

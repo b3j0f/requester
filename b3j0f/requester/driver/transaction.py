@@ -98,16 +98,36 @@ class Transaction(object):
         return tostr(self)
 
     def commit(self, **kwargs):
+        """Commit this transaction and return this.
+
+        While committing, this transaction change of state. After that, this
+        transaction state go back to PENDING.
+        :return: driver processing result."""
 
         self.state = State.COMMITTING
 
-        return self.driver.process(transaction=self, **kwargs)
+        result = self.driver.process(transaction=self, **kwargs)
 
-    def rollback(self):
+        self.state = State.PENDING
+
+        return result
+
+    def rollback(self, **kwargs):
+        """Rollback this transaction and return this.
+
+        While rollbacking, this transaction change of state. After that, this
+        transaction state go back to PENDING.
+
+        :param dict kwargs: driver kwargs.
+        :return: driver processing result."""
 
         self.state = State.ROLLBACKING
 
-        return self.driver.rollback(self)
+        result = self.driver.process(transaction=self, **kwargs)
+
+        self.state = State.PENDING
+
+        return result
 
     def process(self, cruds, **kwargs):
         """Process input cruds with control paremeters.
@@ -119,9 +139,10 @@ class Transaction(object):
         self.cruds += cruds
 
         if self.autocommit:
-            self.state = State.COMMITTING
+            this.state = State.COMMITTING
 
-        return self.driver.process(transaction=self, **kwargs)
+        else:
+            return self.driver.process(transaction=self, **kwargs)
 
     def open(self, autocommit=False, cruds=None):
 

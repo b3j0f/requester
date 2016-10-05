@@ -26,9 +26,9 @@
 
 """Macro module."""
 
-from enum import IntEnum, Enum, unique
+from enum import Enum, unique
 
-__all__ = ['CRUD', 'FuncName']
+__all__ = ['FuncName']
 
 
 @unique
