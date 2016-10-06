@@ -63,7 +63,7 @@ from six import iteritems
 
 __all__ = [
     'PyDriver', 'processcrud', 'processquery',
-    'create', 'read', 'update', 'delete'
+    'create', 'read', 'update', 'delete', 'applyfunction', 'FunctionChooser'
 ]
 
 soundex = getInstance().soundex
@@ -405,24 +405,101 @@ def processquery(query, items, ctx=None):
                 if isor:
                     result += pquery
 
-            if query.name in _OPERATORS_BY_NAME:
-                operator = _OPERATORS_BY_NAME[query.name]
+            if query.name not in [FuncName.AND, FuncName.OR]:
 
-                result = applyoperator(operator, items, *pqueries)
+                result = applyfunction(
+                    query=query, ctx=ctx, params=params, fparams=pqueryies
+                )
 
         elif isinstance(query, Expression):
-            result = query.name
-
-        else:
-            result = query
+            result = items
 
     ctx[query] = result
 
     return result
 
 
-def applyoperator(operator, items, name, *params):
+_CONDFUNCTIONNAMES = [
+    FuncName.LT.value,
+    FuncName.LE.value,
+    FuncName.EQ.value,
+    FuncName.NE.value,
+    FuncName.GE.value,
+    FuncName.GT.value,
+    FuncName.NOT.value,
+    FuncName.TRUTH.value,
+    FuncName.IS.value,
+    FuncName.ISNOT.value,
+    FuncName.COUNT.value,
+    FuncName.LENGTH.value,
+    FuncName.AVG.value,
+    FuncName.MEAN.value,
+    FuncName.MAX.value,
+    FuncName.MIN.value,
+    FuncName.SUM.value,
+    FuncName.EXISTS.value,
+    FuncName.ISNULL.value,
+    FuncName.BETWEEN.value,
+    FuncName.IN.value,
+    FuncName.HAVING.value,
+    FuncName.UNION.value,
+    FuncName.INTERSECT.value,
+    FuncName.ALL.value,
+    FuncName.ANY.value,
+    FuncName.COUNTOF.value,
+    FuncName.LIKE.value,
+    FuncName.INCLUDE.value,
+    FuncName.SOUNDEX.value,
+]
 
-    return [
-        item for item in items if operator(item[name], *params)
-    ]
+
+def condoperator(operator):
+
+    def result(query, params, fparams, ctx):
+
+        return [
+            item for item in fparams[0]
+            if operator(item[params[0].name], *fparams[1:])
+        ]
+
+    return result
+
+
+for name in _CONDFUNCTIONNAMES:
+    _OPERATORS_BY_NAME[name] = condoperator(_OPERATORS_BY_NAME[name])
+
+
+class FunctionChooser(object):
+
+    def __init__(self, functionsbyname, *args, **kwargs):
+
+        super(FunctionChooser, self).__init__(*args, **kwargs)
+
+        self.functionsbyname = functionsbyname
+
+    def applyfunction(self, query, ctx, params, fparams=None):
+
+        try:
+            function = self.functionsbyname[query.name]
+
+            if fparams is None:
+                fparams = [ctx.get(param, param) for param in params]
+
+            return function(query=query, params=params, fparams=fparams, ctx=ctx)
+
+        except KeyError:
+            raise NotImplementedError(
+                'Function {0} is not implented by {1}'.format(query, self)
+            )
+
+    def __repr__(self):
+
+        return 'FunctionChooser({0})'.format(self.functionsbyname)
+
+
+_PYFUNCTIONCHOOSER = FunctionChooser(functionsbyname=_OPERATORS_BY_NAME)
+
+
+def applyfunction(query, ctx, params, fparams):
+
+    return _PYFUNCTIONCHOOSER.applyfunction(query, ctx, params, fparams)
