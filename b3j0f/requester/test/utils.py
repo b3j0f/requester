@@ -53,7 +53,7 @@ class ToStrTest(UTCase):
         test = Test()
         test.a = 1
 
-        self.assertEqual(tostr(test), 'Test(a=1, )')
+        self.assertEqual(tostr(test), 'Test(a: 1, )')
 
     def test_slot(self):
 
@@ -63,7 +63,7 @@ class ToStrTest(UTCase):
         test = Test()
         test.a = 1
 
-        self.assertEqual(tostr(test), 'Test(a=1, )')
+        self.assertEqual(tostr(test), 'Test(a: 1, )')
 
 if __name__ == '__main__':
     main()

@@ -407,9 +407,7 @@ def processquery(query, items, ctx=None):
 
             if query.name not in [FuncName.AND, FuncName.OR]:
 
-                result = applyfunction(
-                    query=query, ctx=ctx, params=params, fparams=pqueryies
-                )
+                result = applyfunction(query=query, ctx=ctx, fparams=pqueries)
 
         elif isinstance(query, Expression):
             result = items
@@ -455,11 +453,13 @@ _CONDFUNCTIONNAMES = [
 
 def condoperator(operator):
 
-    def result(query, params, fparams, ctx):
+    def result(query, fparams, ctx):
+
+        first = query.params[0]
 
         return [
             item for item in fparams[0]
-            if operator(item[params[0].name], *fparams[1:])
+            if operator(item[first.name], *fparams[1:])
         ]
 
     return result
@@ -477,15 +477,15 @@ class FunctionChooser(object):
 
         self.functionsbyname = functionsbyname
 
-    def applyfunction(self, query, ctx, params, fparams=None):
+    def applyfunction(self, query, ctx, fparams=None):
 
         try:
             function = self.functionsbyname[query.name]
 
             if fparams is None:
-                fparams = [ctx.get(param, param) for param in params]
+                fparams = [ctx.get(param, param) for param in query.params]
 
-            return function(query=query, params=params, fparams=fparams, ctx=ctx)
+            return function(query=query, fparams=fparams, ctx=ctx)
 
         except KeyError:
             raise NotImplementedError(
@@ -500,6 +500,6 @@ class FunctionChooser(object):
 _PYFUNCTIONCHOOSER = FunctionChooser(functionsbyname=_OPERATORS_BY_NAME)
 
 
-def applyfunction(query, ctx, params, fparams):
+def applyfunction(query, ctx, fparams):
 
-    return _PYFUNCTIONCHOOSER.applyfunction(query, ctx, params, fparams)
+    return _PYFUNCTIONCHOOSER.applyfunction(query, ctx, fparams)
