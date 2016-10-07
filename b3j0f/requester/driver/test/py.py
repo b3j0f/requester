@@ -323,11 +323,9 @@ class ProcessQueryTest(CRUDTest):
 
         self.assertEqual(result, self.items[2:])
 
-
-"""
     def test_or(self):
 
-        result = processquery(items=self.items, query=(E.id < 2) & (E.id > 3))
+        result = processquery(items=self.items, query=(E.id < 2) | (E.id > 3))
 
         self.assertEqual(result, self.items[:2] + self.items[4:])
 
@@ -336,7 +334,7 @@ class ProcessQueryTest(CRUDTest):
         result = processquery(items=self.items, query=(E.id > 2) & (E.id < 4))
 
         self.assertEqual(result, [self.items[2]])
-"""
+
 
 class PyDriverTest(UTCase):
 

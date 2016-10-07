@@ -489,21 +489,24 @@ def processquery(query, items, ctx=None):
 
             pqueries = []
             for param in query.params:
-
                 fitems = list(items) if isor else items
 
                 pquery = processquery(query=param, items=fitems, ctx=ctx)
+
                 pqueries.append(pquery)
 
                 if isor:
                     result += pquery
 
-            if query.name not in [FuncName.AND, FuncName.OR]:
+            if query.name not in [FuncName.AND.value, FuncName.OR.value]:
 
                 result = applyfunction(query=query, ctx=ctx, fparams=pqueries)
 
         elif isinstance(query, Expression):
             result = items
+
+    else:
+        result = ctx[query]
 
     ctx[query] = result
 
@@ -585,4 +588,6 @@ _PYFUNCTIONCHOOSER = FunctionChooser(functionsbyname=_ENRICHEDOPERATORSBYNAME)
 
 def applyfunction(query, ctx, fparams):
 
-    return _PYFUNCTIONCHOOSER.applyfunction(query, ctx, fparams)
+    return _PYFUNCTIONCHOOSER.applyfunction(
+        query=query, ctx=ctx, fparams=fparams
+    )
