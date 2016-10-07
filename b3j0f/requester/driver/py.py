@@ -42,7 +42,7 @@ from re import match
 from .ctx import Context
 from .transaction import State
 
-from ..request.macro import FuncName
+from ..request.macro import FuncName, CONDITIONS
 from ..request.expr import Expression, Function
 from ..request.crud.create import Create
 from ..request.crud.read import Read
@@ -417,39 +417,20 @@ def processquery(query, items, ctx=None):
     return result
 
 
-_CONDFUNCTIONNAMES = [
-    FuncName.LT.value,
-    FuncName.LE.value,
-    FuncName.EQ.value,
-    FuncName.NE.value,
-    FuncName.GE.value,
-    FuncName.GT.value,
-    FuncName.NOT.value,
-    FuncName.TRUTH.value,
-    FuncName.IS.value,
-    FuncName.ISNOT.value,
-    FuncName.COUNT.value,
-    FuncName.LENGTH.value,
-    FuncName.AVG.value,
-    FuncName.MEAN.value,
-    FuncName.MAX.value,
-    FuncName.MIN.value,
-    FuncName.SUM.value,
-    FuncName.EXISTS.value,
-    FuncName.ISNULL.value,
-    FuncName.BETWEEN.value,
-    FuncName.IN.value,
-    FuncName.HAVING.value,
-    FuncName.UNION.value,
-    FuncName.INTERSECT.value,
-    FuncName.ALL.value,
-    FuncName.ANY.value,
-    FuncName.COUNTOF.value,
-    FuncName.LIKE.value,
-    FuncName.INCLUDE.value,
-    FuncName.SOUNDEX.value,
-]
+def getsubitem(name, item):
 
+    names = name.split('.')
+
+    isdict = isinstance(item, dict)
+
+    result = item
+
+    for name in names:
+        result = item.get(name, None) if isdict else getattr(item, name, None)
+        if result is None:
+            break
+
+    return result
 
 def condoperator(operator):
 
@@ -459,14 +440,14 @@ def condoperator(operator):
 
         return [
             item for item in fparams[0]
-            if operator(item[first.name], *fparams[1:])
+            if operator(getsubitem(first.name, item), *fparams[1:])
         ]
 
     return result
 
 
-for name in _CONDFUNCTIONNAMES:
-    _OPERATORS_BY_NAME[name] = condoperator(_OPERATORS_BY_NAME[name])
+for condition in CONDITIONS:
+    _OPERATORS_BY_NAME[condition] = condoperator(_OPERATORS_BY_NAME[condition])
 
 
 class FunctionChooser(object):

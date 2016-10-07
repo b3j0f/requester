@@ -28,7 +28,7 @@
 
 from enum import Enum, unique
 
-__all__ = ['FuncName']
+__all__ = ['FuncName', 'CONDITIONS']
 
 
 @unique
@@ -170,3 +170,37 @@ class FuncName(Enum):
                 break
 
         return result
+
+
+CONDITIONS = [  #: expression conditions.
+    FuncName.LT.value,
+    FuncName.LE.value,
+    FuncName.EQ.value,
+    FuncName.NE.value,
+    FuncName.GE.value,
+    FuncName.GT.value,
+    FuncName.NOT.value,
+    FuncName.TRUTH.value,
+    FuncName.IS.value,
+    FuncName.ISNOT.value,
+    FuncName.COUNT.value,
+    FuncName.LENGTH.value,
+    FuncName.AVG.value,
+    FuncName.MEAN.value,
+    FuncName.MAX.value,
+    FuncName.MIN.value,
+    FuncName.SUM.value,
+    FuncName.EXISTS.value,
+    FuncName.ISNULL.value,
+    FuncName.BETWEEN.value,
+    FuncName.IN.value,
+    FuncName.HAVING.value,
+    FuncName.UNION.value,
+    FuncName.INTERSECT.value,
+    FuncName.ALL.value,
+    FuncName.ANY.value,
+    FuncName.COUNTOF.value,
+    FuncName.LIKE.value,
+    FuncName.INCLUDE.value,
+    FuncName.SOUNDEX.value,
+]
