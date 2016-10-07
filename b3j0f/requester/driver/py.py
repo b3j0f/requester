@@ -494,9 +494,7 @@ def processquery(query, items, ctx=None):
             pqueries = []
             for param in query.params:
                 fitems = list(items) if isor else items
-
                 pquery = processquery(query=param, items=fitems, ctx=ctx)
-
                 pqueries.append(pquery)
 
                 if isor:
@@ -507,7 +505,29 @@ def processquery(query, items, ctx=None):
                 result = applyfunction(query=query, ctx=ctx, fparams=pqueries)
 
         elif isinstance(query, Expression):
-            result = items
+
+            result = []
+
+            for item in items:
+                try:
+                    getsubitem(item, query.name, error=True)
+
+                except KeyError:
+                    pass
+
+                else:
+                    result.append(item)
+
+            if not result:
+                try:
+                    result = lookup(query.name)
+
+                except ImportError:
+                    items[:] = result
+                    pass
+
+            else:
+                items[:] = result
 
     else:
         result = ctx[query]
@@ -578,14 +598,15 @@ FUNCTIONCHOOSER = PyFunctionChooser()
 
 
 def applyfunction(query, ctx, fparams=None, functionchooser=FUNCTIONCHOOSER):
-
+    print(query)
     try:
         function = functionchooser.getfunction(name=query.name)
 
         if fparams is None:
             fparams = [ctx.get(param, param) for param in query.params]
 
-        return function(query=query, fparams=fparams, ctx=ctx)
+        if fparams:
+            return function(query=query, fparams=fparams, ctx=ctx)
 
     except KeyError:
         raise NotImplementedError(

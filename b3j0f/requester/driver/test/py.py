@@ -33,7 +33,7 @@ from unittest import main
 
 from ..py import (
     PyDriver, processcrud, create, read, update, delete, processquery,
-    getsubitem
+    getsubitem, applyfunction
 )
 from ..generator import func2crudprocessing, obj2driver, DriverAnnotation
 from ..transaction import Transaction
@@ -204,6 +204,19 @@ class ProcessCRUDTest(CRUDTest):
 
 class ProcessQueryTest(CRUDTest):
 
+    def test_item(self):
+
+        result = processquery(items=self.items, query=E.ext)
+
+        self.assertEqual(result, [self.items[-1]])
+
+    def test_lookup(self):
+
+        result = processquery(items=self.items, query=E.b3j0f.utils.ut.UTCase)
+
+        self.assertIs(result, UTCase)
+        self.assertTrue(self.items)
+
     def test_is(self):
 
         result = processquery(items=self.items, query=F.is_(E.id, 2))
@@ -296,7 +309,7 @@ class ProcessQueryTest(CRUDTest):
 
     def test_all(self):
 
-        result = processquery(items=self.items, query=E.all(E.id, E('>'), [1, 2]))
+        result = processquery(items=self.items, query=E.all(E.id, F('>'), [1, 2]))
 
         self.assertEqual(result, self.items[3:])
 
@@ -306,7 +319,7 @@ class ProcessQueryTest(CRUDTest):
 
     def test_any(self):
 
-        result = processquery(items=self.items, query=E.any(E.id, E('>'), [1, 2]))
+        result = processquery(items=self.items, query=E.any(E.id, F('>'), [1, 2]))
 
         self.assertEqual(result, self.items[2:])
 
@@ -316,7 +329,7 @@ class ProcessQueryTest(CRUDTest):
 
     def test_some(self):
 
-        result = processquery(items=self.items, query=E.some(E.id, E('>'), [1, 2]))
+        result = processquery(items=self.items, query=E.some(E.id, F('>'), [1, 2]))
 
         self.assertEqual(result, self.items[2:])
 
@@ -336,6 +349,11 @@ class ProcessQueryTest(CRUDTest):
 
         self.assertEqual(result, [self.items[2]])
 
+    def test_not(self):
+
+        result = processquery(items=self.items, query=F.not_(True))
+
+        print(result)
 
 class GetSubItemTest(UTCase):
 
