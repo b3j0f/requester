@@ -34,6 +34,8 @@ from unittest import main
 from ...request.crud.base import BaseElement
 from ..ctx import Context, getctxname
 
+from collections import Hashable
+
 
 class GetCtxNameTest(UTCase):
 
@@ -51,8 +53,21 @@ class GetCtxNameTest(UTCase):
 
         elt = {}
 
-        self.assertEqual(getctxname(elt), id(elt))
+        self.assertIsInstance(getctxname(elt), Hashable)
 
+        self.assertEqual(getctxname(elt), getctxname(elt))
+
+        self.assertEqual(getctxname({1: 1, 2: 2}), getctxname({2: 2, 1: 1}))
+
+        self.assertNotEqual(getctxname({1: 1}), getctxname({1: None}))
+
+    def test_nothashable_nothashable(self):
+
+        elt = [[{1: []}]]
+
+        self.assertIsInstance(getctxname(elt), Hashable)
+
+        self.assertEqual(getctxname(elt), getctxname(list(elt)))
 
 class ContextTest(UTCase):
 

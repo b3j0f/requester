@@ -31,9 +31,10 @@ from ..request.crud.join import applyjoin, Join
 
 from six import iteritems
 
-from collections import Hashable
+from collections import Hashable, Iterable
 
 __all__ = ['Context', 'getctxname']
+
 
 def getctxname(obj):
     """Get context name from input obj.
@@ -44,11 +45,28 @@ def getctxname(obj):
 
     result = obj
 
-    if isinstance(obj, BaseElement):
-        result = obj.ctxname
+    if obj is not None:
 
-    elif not isinstance(obj, Hashable):
-        result = id(obj)
+        if isinstance(obj, BaseElement):
+            result = obj.ctxname
+
+        elif not isinstance(obj, Hashable):
+
+            if isinstance(obj, Iterable):
+                keys = sorted(list(obj))
+
+                if isinstance(obj, dict):
+                    _obj = [
+                        (key, getctxname(obj[key])) for key in keys
+                    ]
+
+                else:
+                    _obj = [getctxname(key) for key in keys]
+
+                result = hash(str(_obj))
+
+            else:
+                result = id(obj)
 
     return result
 
