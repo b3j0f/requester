@@ -198,8 +198,6 @@ CONDITIONS = [  #: expression conditions.
 
     # selection operators  TODO: might be migrated to the Read object...
     FuncName.HAVING.value,
-    FuncName.UNION.value,
-    FuncName.INTERSECT.value,
 
     # request comparison
     FuncName.ALL.value,

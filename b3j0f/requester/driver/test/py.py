@@ -275,9 +275,42 @@ class ProcessQueryTest(CRUDTest):
 
     def test_between(self):
 
-        result = processquery(items=self.items, query=E.between(E.id, [1, 2]))
+        result = processquery(items=self.items, query=E.between(E.id, 1, 2))
 
-        self.assertEqual(result, self.items[1:2])
+        self.assertEqual(result, self.items[1:3])
+
+    def test_in(self):
+
+        result = processquery(items=self.items, query=E.in_(E.id, [1, 2]))
+
+        self.assertEqual(result, self.items[1:3])
+
+    def test_having(self):
+
+        result = processquery(items=self.items, query=E.having(E.in_(E.id, [1, 2])))
+
+        self.assertEqual(result, self.items[1:3])
+
+    def test_all(self):
+
+        result = processquery(items=self.items, query=E.all(E.id, E('>'), [1, 2]))
+
+        self.assertEqual(result, self.items[3:])
+
+        result = processquery(items=self.items, query=E.all(E.id, '>', [1, 2]))
+
+        self.assertEqual(result, self.items[3:])
+
+    def test_any(self):
+
+        result = processquery(items=self.items, query=E.any(E.id, E('>'), [1, 2]))
+
+        self.assertEqual(result, self.items[2:])
+
+        result = processquery(items=self.items, query=E.any(E.id, '>', [1, 2]))
+
+        self.assertEqual(result, self.items[2:])
+
 """
     def test_or(self):
 

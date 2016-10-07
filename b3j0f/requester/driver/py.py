@@ -61,8 +61,6 @@ from datetime import datetime
 
 from six import iteritems
 
-from collections import Hashable
-
 __all__ = [
     'PyDriver', 'processcrud', 'processquery',
     'create', 'read', 'update', 'delete', 'applyfunction', 'FunctionChooser'
@@ -277,7 +275,7 @@ def processcrud(items, crud, ctx=None):
     return items
 
 
-def exists(item, name):
+def exists(query, item, name, fparams, ctx):
 
     result = True
 
@@ -302,7 +300,7 @@ def exists(item, name):
     return result
 
 
-def isnull(item, name):
+def isnull(query, item, name, fparams, ctx):
 
     try:
         val = getsubitem(item, name, error=True)
@@ -316,13 +314,56 @@ def isnull(item, name):
 
 def _namedelt(operator):
 
-    def result(item, name, *params):
+    def result(query, item, name, fparams, ctx):
 
         subitem = getsubitem(item, name)
 
-        return operator(subitem, *params)
+        return operator(subitem, *fparams[1:])
 
     return result
+
+
+def all_(query, item, name, fparams, ctx):
+
+    items = fparams[2]
+
+    result = len(items) > 0
+
+    operator = query.params[1]
+
+    if isinstance(operator, Expression):
+        operator = operator.name
+
+    func = _OPERATORS_BY_NAME[operator]
+
+    for _item in items:
+        if not func(query.params[0], item, name, [items, _item], ctx):
+            result = False
+            break
+
+    return result
+
+
+def any_(query, item, name, fparams, ctx):
+
+    items = fparams[2]
+
+    result = False
+
+    operator = query.params[1]
+
+    if isinstance(operator, Expression):
+        operator = operator.name
+
+    func = _OPERATORS_BY_NAME[operator]
+
+    for _item in items:
+        if func(query.params[0], item, name, [items, _item], ctx):
+            result = True
+            break
+
+    return result
+
 
 _OPERATORS_BY_NAME = {
     FuncName.LT.value: _namedelt(lt),
@@ -342,9 +383,7 @@ _OPERATORS_BY_NAME = {
     FuncName.INDEX.value: indexOf,
     FuncName.INVERT.value: invert,
     FuncName.MOD.value: mod,
-    FuncName.LIKE.value:
-        lambda item, name, *params:
-            match(params[0], getsubitem(item, name), *params[1:]),
+    FuncName.LIKE.value: _namedelt(lambda val, msg: match(msg, val)),
     FuncName.MUL.value: mul,
     FuncName.NEG.value: neg,
     FuncName.OR.value: or_,
@@ -385,16 +424,17 @@ _OPERATORS_BY_NAME = {
     FuncName.MIN.value: min,
     FuncName.SUM.value: sum,
     FuncName.EXISTS.value: exists,
-    FuncName.NEXISTS.value: lambda obj, name: not exists(obj, name),
+    FuncName.NEXISTS.value:
+        lambda query, item, name, *_: not exists(query, item, name, *_),
     FuncName.ISNULL.value: isnull,
-    FuncName.BETWEEN.value: lambda data, inf, sup: inf <= data <= sup,
-    FuncName.IN.value: contains,
-    FuncName.HAVING.value: contains,
+    FuncName.BETWEEN.value: _namedelt(lambda val, inf, sup: inf <= val <= sup),
+    FuncName.IN.value: _namedelt(lambda x, y: contains(y, x)),
+    FuncName.HAVING.value: lambda query, item, name, fparams, ctx: fparams[0],
     FuncName.UNION.value: lambda seq1, seq2: set(seq1) + set(seq2),
     FuncName.INTERSECT.value: lambda seq1, seq2: set(seq1) & set(seq2),
-    FuncName.ALL.value: all,
-    FuncName.ANY.value: any,
-    FuncName.SOME.value: any,
+    FuncName.ALL.value: all_,
+    FuncName.ANY.value: any_,
+    FuncName.SOME.value: any_,
     FuncName.VERSION.value: PyDriver.version,
     FuncName.CONCAT.value: str.__add__,
     FuncName.ICONCAT.value: str.__add__,
@@ -499,14 +539,17 @@ def condoperator(operator):
 
         return [
             item for item in fparams[0]
-            if operator(item, name, *fparams[1:])
+            if operator(query, item, name, fparams, ctx)
         ]
 
     return result
 
 
+_ENRICHEDOPERATORSBYNAME = {}
+
+
 for condition in CONDITIONS:
-    _OPERATORS_BY_NAME[condition] = condoperator(_OPERATORS_BY_NAME[condition])
+    _ENRICHEDOPERATORSBYNAME[condition] = condoperator(_OPERATORS_BY_NAME[condition])
 
 
 class FunctionChooser(object):
@@ -537,7 +580,7 @@ class FunctionChooser(object):
         return 'FunctionChooser({0})'.format(self.functionsbyname)
 
 
-_PYFUNCTIONCHOOSER = FunctionChooser(functionsbyname=_OPERATORS_BY_NAME)
+_PYFUNCTIONCHOOSER = FunctionChooser(functionsbyname=_ENRICHEDOPERATORSBYNAME)
 
 
 def applyfunction(query, ctx, fparams):
