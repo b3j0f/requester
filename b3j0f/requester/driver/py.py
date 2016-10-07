@@ -61,6 +61,8 @@ from datetime import datetime
 
 from six import iteritems
 
+from collections import Hashable
+
 __all__ = [
     'PyDriver', 'processcrud', 'processquery',
     'create', 'read', 'update', 'delete', 'applyfunction', 'FunctionChooser'
@@ -275,13 +277,13 @@ def processcrud(items, crud, ctx=None):
     return items
 
 
-def exists(obj, name):
+def exists(item, name):
 
     result = True
 
     names = name.split('.')
 
-    val = obj
+    val = item
 
     for name in names:
         if isinstance(val, dict):
@@ -300,10 +302,10 @@ def exists(obj, name):
     return result
 
 
-def isnull(obj, name):
+def isnull(item, name):
 
     try:
-        val = getsubitem(name, obj, error=True)
+        val = getsubitem(item, name, error=True)
 
     except KeyError:
         return False
@@ -312,17 +314,27 @@ def isnull(obj, name):
         return val is None
 
 
+def _namedelt(operator):
+
+    def result(item, name, *params):
+
+        subitem = getsubitem(item, name)
+
+        return operator(subitem, *params)
+
+    return result
+
 _OPERATORS_BY_NAME = {
-    FuncName.LT.value: lt,
-    FuncName.LE.value: le,
-    FuncName.EQ.value: eq,
-    FuncName.NE.value: ne,
-    FuncName.GE.value: ge,
-    FuncName.GT.value: gt,
+    FuncName.LT.value: _namedelt(lt),
+    FuncName.LE.value: _namedelt(le),
+    FuncName.EQ.value: _namedelt(eq),
+    FuncName.NE.value: _namedelt(ne),
+    FuncName.GE.value: _namedelt(ge),
+    FuncName.GT.value: _namedelt(gt),
     FuncName.NOT.value: not_,
     FuncName.TRUTH.value: truth,
-    FuncName.IS.value: is_,
-    FuncName.ISNOT.value: is_not,
+    FuncName.IS.value: _namedelt(is_),
+    FuncName.ISNOT.value: _namedelt(is_not),
     FuncName.ABS.value: abs,
     FuncName.ADD.value: add,
     FuncName.FLOORDIV.value: floordiv,
@@ -330,7 +342,9 @@ _OPERATORS_BY_NAME = {
     FuncName.INDEX.value: indexOf,
     FuncName.INVERT.value: invert,
     FuncName.MOD.value: mod,
-    FuncName.LIKE.value: lambda x, y: match(y, x),
+    FuncName.LIKE.value:
+        lambda item, name, *params:
+            match(params[0], getsubitem(item, name), *params[1:]),
     FuncName.MUL.value: mul,
     FuncName.NEG.value: neg,
     FuncName.OR.value: or_,
@@ -456,7 +470,7 @@ def processquery(query, items, ctx=None):
     return result
 
 
-def getsubitem(name, item, error=False):
+def getsubitem(item, name, error=False):
 
     names = name.split('.')
 
@@ -479,22 +493,13 @@ def condoperator(operator):
 
     def result(query, fparams, ctx):
 
-        first = query.params[0]
-
         items = fparams[0]
 
-        if len(fparams) > 1:
-            fparams = fparams[1:]
-
-        else:
-            fparams = [query.params[0].name]
+        name = query.params[0].name
 
         return [
-            item for item in items
-            if operator(
-                getsubitem(first.name, item) if len(fparams) > 1 else item,
-                *fparams
-            )
+            item for item in fparams[0]
+            if operator(item, name, *fparams[1:])
         ]
 
     return result

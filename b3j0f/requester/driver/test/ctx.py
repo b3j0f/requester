@@ -32,7 +32,26 @@ from b3j0f.utils.ut import UTCase
 from unittest import main
 
 from ...request.crud.base import BaseElement
-from ..ctx import Context
+from ..ctx import Context, getctxname
+
+
+class GetCtxNameTest(UTCase):
+
+    def test_hashable(self):
+
+        self.assertEqual(getctxname('test'), 'test')
+
+    def test_baseelement(self):
+
+        baseelement = BaseElement()
+
+        self.assertEqual(getctxname(baseelement), baseelement.ctxname)
+
+    def test_nothashable(self):
+
+        elt = {}
+
+        self.assertEqual(getctxname(elt), id(elt))
 
 
 class ContextTest(UTCase):

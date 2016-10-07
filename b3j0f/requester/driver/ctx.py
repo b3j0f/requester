@@ -31,7 +31,26 @@ from ..request.crud.join import applyjoin, Join
 
 from six import iteritems
 
-__all__ = ['Context']
+from collections import Hashable
+
+__all__ = ['Context', 'getctxname']
+
+def getctxname(obj):
+    """Get context name from input obj.
+
+    :param obj: object from where get a context name.
+    :return: obj context name.
+    :rtype: str:"""
+
+    result = obj
+
+    if isinstance(obj, BaseElement):
+        result = obj.ctxname
+
+    elif not isinstance(obj, Hashable):
+        result = id(obj)
+
+    return result
 
 
 class Context(dict):
@@ -39,38 +58,33 @@ class Context(dict):
 
     def __getitem__(self, key):
 
-        if isinstance(key, BaseElement):
-            key = key.ctxname
+        ctxname = getctxname(key)
 
-        return super(Context, self).__getitem__(key)
+        return super(Context, self).__getitem__(ctxname)
 
     def __setitem__(self, key, value):
 
-        if isinstance(key, BaseElement):
-            key = key.ctxname
+        ctxname = getctxname(key)
 
-        return super(Context, self).__setitem__(key, value)
+        return super(Context, self).__setitem__(ctxname, value)
 
     def __delitem__(self, key):
 
-        if isinstance(key, BaseElement):
-            key = key.ctxname
+        ctxname = getctxname(key)
 
-        return super(Context, self).__delitem__(key)
+        return super(Context, self).__delitem__(ctxname)
 
     def __contains__(self, key):
 
-        if isinstance(key, BaseElement):
-            key = key.ctxname
+        ctxname = getctxname(key)
 
-        return super(Context, self).__contains__(key)
+        return super(Context, self).__contains__(ctxname)
 
     def get(self, key, default=None):
 
-        if isinstance(key, BaseElement):
-            key = key.ctxname
+        ctxname = getctxname(key)
 
-        return super(Context, self).get(key, default)
+        return super(Context, self).get(ctxname, default)
 
     def fill(self, ctx, join=Join.FULL):
         """Fill this content with ctx data not in this data.

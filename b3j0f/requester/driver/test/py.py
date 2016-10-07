@@ -257,21 +257,27 @@ class ProcessQueryTest(CRUDTest):
 
     def test_exists(self):
 
-        result = processquery(items=self.items, query=F.exists(E.ext))
+        result = processquery(items=self.items, query=E.exists(E.ext))
 
         self.assertEqual(result, [self.items[-1]])
 
     def test_nexists(self):
 
-        result = processquery(items=self.items, query=F.nexists(E.ext))
+        result = processquery(items=self.items, query=E.nexists(E.ext))
 
         self.assertEqual(result, self.items[:-1])
 
     def test_isnull(self):
 
-        result = processquery(items=self.items, query=F.isnull(E.ext))
+        result = processquery(items=self.items, query=E.isnull(E.ext))
 
         self.assertEqual(result, [self.items[-1]])
+
+    def test_between(self):
+
+        result = processquery(items=self.items, query=E.between(E.id, [1, 2]))
+
+        self.assertEqual(result, self.items[1:2])
 """
     def test_or(self):
 
