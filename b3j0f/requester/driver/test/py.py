@@ -353,7 +353,6 @@ class ProcessQueryTest(CRUDTest):
 
         result = processquery(items=self.items, query=F.not_(True))
 
-        print(result)
 
 class GetSubItemTest(UTCase):
 

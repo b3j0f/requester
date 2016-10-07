@@ -598,7 +598,7 @@ FUNCTIONCHOOSER = PyFunctionChooser()
 
 
 def applyfunction(query, ctx, fparams=None, functionchooser=FUNCTIONCHOOSER):
-    print(query)
+
     try:
         function = functionchooser.getfunction(name=query.name)
 

@@ -562,13 +562,20 @@ class Function(Expression):
 
     def __repr__(self):
 
-        tojoin = ' {0} '.format(self.name)
+        if len(self.params) > 1:
+            params = [repr(expr) for expr in self.params]
+            tojoin = ' {0} '.format(self.name)
+            sparams = tojoin.join([repr(expr) for expr in self.params])
 
-        params = tojoin.join([repr(expr) for expr in self.params])
+            result = '({0})'.format(sparams)
 
-        result = '({0})'.format(params)
+        elif self.params:
+            result = '{0}({1})'.format(self.name, repr(self.params[0]))
+
+        else:
+            result = '{0}'.format(self.name)
 
         if self.alias:
-            result = '{0} as {1}'.format(result, self.alias)
+            result += '{0} as {1}'.format(result, self.alias)
 
         return result
