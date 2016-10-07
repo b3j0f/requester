@@ -242,6 +242,30 @@ class Read(CRUDElement):
 
         return self.__getslice__(key.start, key.stop)
 
+    def __repr__(self):
+
+        result = 'READ '
+
+        if self._select:
+            result += '{0} '.format(repr(self._select))
+
+        if self._limit is not None:
+            result += 'limit {0}'.format(repr(self._limit))
+
+        if self._offset is not None:
+            result += 'offset {0}'.format(repr(self._offset))
+
+        if self._groupby:
+            result += 'group by {0} '.format(repr(self._groupby))
+
+        if self._orderby:
+            result += 'order by {0} '.format(repr(self._orderby))
+
+        if self.query:
+            result += 'where {1} '.format(repr(self.query))
+
+        return result
+
 
 class Cursor(Iterable):
     """Read request result."""

@@ -466,7 +466,12 @@ class Expression(BaseElement):
 
     def __repr__(self):
 
-        return '{0}'.format(self.name)
+        result = '{0}'.format(self.name)
+
+        if self.alias:
+            result = '{0} as {1}'.format(result, self.alias)
+
+        return result
 
 
 class Function(Expression):
@@ -562,5 +567,8 @@ class Function(Expression):
         params = tojoin.join([repr(expr) for expr in self.params])
 
         result = '({0})'.format(params)
+
+        if self.alias:
+            result = '{0} as {1}'.format(result, self.alias)
 
         return result

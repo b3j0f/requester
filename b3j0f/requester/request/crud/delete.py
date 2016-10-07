@@ -42,3 +42,12 @@ class Delete(CRUDElement):
         super(Delete, self).__init__(*args, **kwargs)
 
         self.names = names
+
+    def __repr__(self):
+
+        result = 'DELETE ({0})'.format(repr(self.names))
+
+        if self.query:
+            result = '{0} where {1}'.format(result, repr(self.query))
+
+        return result
