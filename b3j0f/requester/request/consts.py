@@ -74,6 +74,7 @@ class FuncName(Enum):
     ABS = 'abs'
     INVERT = '~'
     EXISTS = 'exists'
+    NEXISTS = 'nexists'
     GETSLICE = 'getslice'
     SETSLICE = 'setslice'
     DELSLICE = 'delslice'
@@ -173,32 +174,43 @@ class FuncName(Enum):
 
 
 CONDITIONS = [  #: expression conditions.
-    FuncName.LT.value,
-    FuncName.LE.value,
-    FuncName.EQ.value,
-    FuncName.NE.value,
-    FuncName.GE.value,
-    FuncName.GT.value,
+
     FuncName.IS.value,
     FuncName.ISNOT.value,
-    FuncName.COUNT.value,
-    FuncName.LENGTH.value,
-    FuncName.AVG.value,
-    FuncName.MEAN.value,
-    FuncName.MAX.value,
-    FuncName.MIN.value,
-    FuncName.SUM.value,
+    FuncName.EQ.value,
+    FuncName.NE.value,
+
+    # numerical functions
+    FuncName.GT.value,
+    FuncName.GE.value,
+    FuncName.LT.value,
+    FuncName.LE.value,
+
+    FuncName.LIKE.value,
+
     FuncName.EXISTS.value,
+    FuncName.NEXISTS.value,
+
+    # remainders functions are not supported by the Expression methods
     FuncName.ISNULL.value,
     FuncName.BETWEEN.value,
     FuncName.IN.value,
+
+    # selection operators  TODO: might be migrated to the Read object...
     FuncName.HAVING.value,
     FuncName.UNION.value,
     FuncName.INTERSECT.value,
+
+    # request comparison
     FuncName.ALL.value,
     FuncName.ANY.value,
-    FuncName.COUNTOF.value,
-    FuncName.LIKE.value,
-    FuncName.INCLUDE.value,
+    FuncName.SOME.value,
+
+    # string operations
     FuncName.SOUNDEX.value,
+    FuncName.INSTR.value,
+
+    # array operations
+    FuncName.COUNTOF.value,
+    FuncName.INCLUDE.value
 ]

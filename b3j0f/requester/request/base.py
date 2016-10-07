@@ -83,6 +83,10 @@ class BaseElement(object):
 
     def __repr__(self):
 
+        return self.ctxname
+
+    def __str__(self):
+
         result = '{0}('.format(type(self).__name__)
 
         for slot in self.__slots__:

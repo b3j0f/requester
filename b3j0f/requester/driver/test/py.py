@@ -48,7 +48,9 @@ class CRUDTest(UTCase):
 
     def setUp(self):
 
-        self.items = [{'name': str(i), 'id': i} for i in range(5)]
+        self.items = list([{'name': str(i), 'id': i} for i in range(5)])
+
+        self.items[-1]['ext'] = None
 
 
 class CreateTest(CRUDTest):
@@ -199,17 +201,17 @@ class ProcessCRUDTest(CRUDTest):
 
 class ProcessQueryTest(CRUDTest):
 
-    def test_lt(self):
+    def test_is(self):
 
-        result = processquery(items=self.items, query=E.id < 2)
+        result = processquery(items=self.items, query=F.is_(E.id, 2))
 
-        self.assertEqual(result, self.items[:2])
+        self.assertEqual(result, [self.items[2]])
 
-    def test_le(self):
+    def test_isnot(self):
 
-        result = processquery(items=self.items, query=E.id <= 2)
+        result = processquery(items=self.items, query=F.isnot(E.id, 2))
 
-        self.assertEqual(result, self.items[:3])
+        self.assertEqual(result, self.items[:2] + self.items[3:])
 
     def test_eq(self):
 
@@ -223,24 +225,54 @@ class ProcessQueryTest(CRUDTest):
 
         self.assertEqual(result, self.items[1:])
 
-    def test_ge(self):
-
-        result = processquery(items=self.items, query=E.id >= 2)
-
-        self.assertEqual(result, self.items[2:])
-
     def test_gt(self):
 
         result = processquery(items=self.items, query=E.id > 2)
 
         self.assertEqual(result, self.items[3:])
 
-    def test_is(self):
+    def test_ge(self):
 
-        result = processquery(items=self.items, query=F.is_(E.id, 2))
+        result = processquery(items=self.items, query=E.id >= 2)
+
+        self.assertEqual(result, self.items[2:])
+
+    def test_lt(self):
+
+        result = processquery(items=self.items, query=E.id < 2)
 
         self.assertEqual(result, self.items[:2])
 
+    def test_le(self):
+
+        result = processquery(items=self.items, query=E.id <= 2)
+
+        self.assertEqual(result, self.items[:3])
+
+    def test_like(self):
+
+        result = processquery(items=self.items, query=E.name_ % '[1234]')
+
+        self.assertEqual(result, self.items[1:])
+
+    def test_exists(self):
+
+        result = processquery(items=self.items, query=F.exists(E.ext))
+
+        self.assertEqual(result, [self.items[-1]])
+
+    def test_nexists(self):
+
+        result = processquery(items=self.items, query=F.nexists(E.ext))
+
+        self.assertEqual(result, self.items[:-1])
+
+    def test_isnull(self):
+
+        result = processquery(items=self.items, query=F.isnull(E.ext))
+
+        self.assertEqual(result, [self.items[-1]])
+"""
     def test_or(self):
 
         result = processquery(items=self.items, query=(E.id < 2) & (E.id > 3))
@@ -252,6 +284,7 @@ class ProcessQueryTest(CRUDTest):
         result = processquery(items=self.items, query=(E.id > 2) & (E.id < 4))
 
         self.assertEqual(result, [self.items[2]])
+"""
 
 class PyDriverTest(UTCase):
 

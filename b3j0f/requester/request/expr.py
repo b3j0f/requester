@@ -464,6 +464,10 @@ class Expression(BaseElement):
 
         return self.alias or self.name or self.uuid
 
+    def __repr__(self):
+
+        return '{0}'.format(self.name)
+
 
 class Function(Expression):
     """A function is an expression with parameters called 'params'.
@@ -548,5 +552,15 @@ class Function(Expression):
             result = '{0}({1})'.format(
                 self.name, ','.join([str(param) for param in self.params])
             )
+
+        return result
+
+    def __repr__(self):
+
+        tojoin = ' {0} '.format(self.name)
+
+        params = tojoin.join([repr(expr) for expr in self.params])
+
+        result = '({0})'.format(params)
 
         return result

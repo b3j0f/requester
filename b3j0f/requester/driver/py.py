@@ -275,6 +275,43 @@ def processcrud(items, crud, ctx=None):
     return items
 
 
+def exists(obj, name):
+
+    result = True
+
+    names = name.split('.')
+
+    val = obj
+
+    for name in names:
+        if isinstance(val, dict):
+
+            if name in val:
+                val = val[name]
+                continue
+
+        elif hasattr(val, name):
+            val = getattr(val, name)
+            continue
+
+        result = False
+        break
+
+    return result
+
+
+def isnull(obj, name):
+
+    try:
+        val = getsubitem(name, obj, error=True)
+
+    except KeyError:
+        return False
+
+    else:
+        return val is None
+
+
 _OPERATORS_BY_NAME = {
     FuncName.LT.value: lt,
     FuncName.LE.value: le,
@@ -293,7 +330,7 @@ _OPERATORS_BY_NAME = {
     FuncName.INDEX.value: indexOf,
     FuncName.INVERT.value: invert,
     FuncName.MOD.value: mod,
-    FuncName.LIKE.value: match,
+    FuncName.LIKE.value: lambda x, y: match(y, x),
     FuncName.MUL.value: mul,
     FuncName.NEG.value: neg,
     FuncName.OR.value: or_,
@@ -333,8 +370,9 @@ _OPERATORS_BY_NAME = {
     FuncName.MAX.value: max,
     FuncName.MIN.value: min,
     FuncName.SUM.value: sum,
-    FuncName.EXISTS.value: contains,
-    FuncName.ISNULL.value: lambda data: data is None,
+    FuncName.EXISTS.value: exists,
+    FuncName.NEXISTS.value: lambda obj, name: not exists(obj, name),
+    FuncName.ISNULL.value: isnull,
     FuncName.BETWEEN.value: lambda data, inf, sup: inf <= data <= sup,
     FuncName.IN.value: contains,
     FuncName.HAVING.value: contains,
@@ -342,6 +380,7 @@ _OPERATORS_BY_NAME = {
     FuncName.INTERSECT.value: lambda seq1, seq2: set(seq1) & set(seq2),
     FuncName.ALL.value: all,
     FuncName.ANY.value: any,
+    FuncName.SOME.value: any,
     FuncName.VERSION.value: PyDriver.version,
     FuncName.CONCAT.value: str.__add__,
     FuncName.ICONCAT.value: str.__add__,
@@ -417,18 +456,22 @@ def processquery(query, items, ctx=None):
     return result
 
 
-def getsubitem(name, item):
+def getsubitem(name, item, error=False):
 
     names = name.split('.')
-
-    isdict = isinstance(item, dict)
 
     result = item
 
     for name in names:
-        result = item.get(name, None) if isdict else getattr(item, name, None)
-        if result is None:
-            break
+        try:
+            result = item[name]
+
+        except KeyError:
+            if error:
+                raise
+
+            else:
+                break
 
     return result
 
@@ -438,9 +481,20 @@ def condoperator(operator):
 
         first = query.params[0]
 
+        items = fparams[0]
+
+        if len(fparams) > 1:
+            fparams = fparams[1:]
+
+        else:
+            fparams = [query.params[0].name]
+
         return [
-            item for item in fparams[0]
-            if operator(getsubitem(first.name, item), *fparams[1:])
+            item for item in items
+            if operator(
+                getsubitem(first.name, item) if len(fparams) > 1 else item,
+                *fparams
+            )
         ]
 
     return result
