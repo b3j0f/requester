@@ -244,20 +244,20 @@ class Read(CRUDElement):
 
     def __repr__(self):
 
-        result = 'READ '
-
         if self._select:
             items = [repr(item) for item in self._select]
-            result += ', '.join(items)
+            select = ', '.join(items)
 
         else:
-            result += 'all '
+            select = 'all'
+
+        result = 'READ {0} '.format(select)
 
         if self._limit is not None:
-            result += 'limit {0}'.format(repr(self._limit))
+            result += 'limit {0} '.format(repr(self._limit))
 
         if self._offset is not None:
-            result += 'offset {0}'.format(repr(self._offset))
+            result += 'offset {0} '.format(repr(self._offset))
 
         if self._groupby:
             items = [repr(item) for item in self._groupby]
@@ -268,7 +268,7 @@ class Read(CRUDElement):
             result += 'order by {0} '.format(', '.join(items))
 
         if self.query:
-            result += 'where {0} '.format(repr(self.query))
+            result += 'where {0}'.format(repr(self.query))
 
         if result[-1] == ' ':
             result = result[:-1]
