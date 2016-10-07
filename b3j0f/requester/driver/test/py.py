@@ -134,7 +134,8 @@ class UpdateTest(CRUDTest):
 
         self.assertIs(result, self.items)
 
-        self.assertEqual(result, [{'name': 1, 'id': i} for i in range(5)])
+        self.assertEqual(result[:4], [{'name': 1, 'id': i} for i in range(4)])
+        self.assertEqual(result[4], {'name': 1, 'id': 4, 'ext': None})
 
 
 class DeleteTest(CRUDTest):
@@ -157,7 +158,8 @@ class DeleteTest(CRUDTest):
 
         self.assertIs(result, self.items)
 
-        self.assertEqual(result, [{'id': i} for i in range(5)])
+        self.assertEqual(result[:4], [{'id': i} for i in range(4)])
+        self.assertEqual(result[4], {'id': 4, 'ext': None})
 
 
 class ProcessCRUDTest(CRUDTest):
