@@ -35,7 +35,7 @@ class Update(CRUDElement):
 
     __slots__ = ['name', 'values'] + CRUDElement.__slots__
 
-    def __init__(self, name, values, *args, **kwargs):
+    def __init__(self, values, name='', *args, **kwargs):
         """
         :param str name: model name.
         :param dict values: values to update.
@@ -48,7 +48,7 @@ class Update(CRUDElement):
 
     def __repr__(self):
 
-        result = 'UPDATE ({0}, {1})'.format(repr(self.name), repr(self.values))
+        result = 'UPDATE {0}:{1}'.format(repr(self.name), repr(self.values))
 
         if self.query:
             result = '{0} where {1}'.format(result, repr(self.query))
