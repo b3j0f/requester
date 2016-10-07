@@ -52,6 +52,6 @@ class Delete(CRUDElement):
         result = 'DELETE {0}'.format(names or 'all')
 
         if self.query:
-            result = '{0} where {1}'.format(result, repr(self.query))
+            result += ' where {1}'.format(repr(self.query))
 
         return result

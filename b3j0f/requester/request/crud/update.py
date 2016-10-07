@@ -51,6 +51,6 @@ class Update(CRUDElement):
         result = 'UPDATE {0}:{1}'.format(repr(self.name), repr(self.values))
 
         if self.query:
-            result = '{0} where {1}'.format(result, repr(self.query))
+            result += ' where {1}'.format(repr(self.query))
 
         return result
