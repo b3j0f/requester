@@ -42,7 +42,7 @@ from re import match
 from .ctx import Context
 from .transaction import State
 
-from ..request.macro import FuncName, CONDITIONS
+from ..request.consts import FuncName, CONDITIONS
 from ..request.expr import Expression, Function
 from ..request.crud.create import Create
 from ..request.crud.read import Read

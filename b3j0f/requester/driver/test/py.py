@@ -199,12 +199,59 @@ class ProcessCRUDTest(CRUDTest):
 
 class ProcessQueryTest(CRUDTest):
 
-    def test(self):
+    def test_lt(self):
+
+        result = processquery(items=self.items, query=E.id < 2)
+
+        self.assertEqual(result, self.items[:2])
+
+    def test_le(self):
+
+        result = processquery(items=self.items, query=E.id <= 2)
+
+        self.assertEqual(result, self.items[:3])
+
+    def test_eq(self):
 
         result = processquery(items=self.items, query=E.name_ == '2')
 
         self.assertEqual(result, [self.items[2]])
 
+    def test_ne(self):
+
+        result = processquery(items=self.items, query=E.id != 0)
+
+        self.assertEqual(result, self.items[1:])
+
+    def test_ge(self):
+
+        result = processquery(items=self.items, query=E.id >= 2)
+
+        self.assertEqual(result, self.items[2:])
+
+    def test_gt(self):
+
+        result = processquery(items=self.items, query=E.id > 2)
+
+        self.assertEqual(result, self.items[3:])
+
+    def test_is(self):
+
+        result = processquery(items=self.items, query=F.is_(E.id, 2))
+
+        self.assertEqual(result, self.items[:2])
+
+    def test_or(self):
+
+        result = processquery(items=self.items, query=(E.id < 2) & (E.id > 3))
+
+        self.assertEqual(result, self.items[:2] + self.items[4:])
+
+    def test_and(self):
+
+        result = processquery(items=self.items, query=(E.id > 2) & (E.id < 4))
+
+        self.assertEqual(result, [self.items[2]])
 
 class PyDriverTest(UTCase):
 

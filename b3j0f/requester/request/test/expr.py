@@ -31,7 +31,7 @@ from b3j0f.utils.ut import UTCase
 
 from unittest import main
 
-from ..macro import FuncName
+from ..consts import FuncName
 from ..expr import Expression, Function
 
 from numbers import Number
@@ -50,7 +50,13 @@ class ExpressionTest(UTCase):
         self.assertEqual(name, expr.name)
         self.assertIsNone(expr.alias)
 
-    def test_getattr_cls(self):
+    def test_getattr_cls_reserved(self):
+
+        expr = Expression.is_
+
+        self.assertEqual(expr.name, 'is')
+
+    def test_getattr_cls_attr(self):
 
         expr = Expression.name_
 
@@ -62,11 +68,17 @@ class ExpressionTest(UTCase):
 
         self.assertEqual(expr.name, 'A.B.C')
 
-    def test_getattr_(self):
+    def test_getattr_attr(self):
 
         expr = Expression.A.name_
 
         self.assertEqual(expr.name, 'A.name')
+
+    def test_getattr_reserved(self):
+
+        expr = Expression.A.is_
+
+        self.assertEqual(expr.name, 'A.is')
 
     def _assertfunc(self, func, funcname, *params):
 

@@ -179,8 +179,6 @@ CONDITIONS = [  #: expression conditions.
     FuncName.NE.value,
     FuncName.GE.value,
     FuncName.GT.value,
-    FuncName.NOT.value,
-    FuncName.TRUTH.value,
     FuncName.IS.value,
     FuncName.ISNOT.value,
     FuncName.COUNT.value,

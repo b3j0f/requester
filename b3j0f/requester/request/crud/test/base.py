@@ -35,7 +35,7 @@ from ..base import CRUDElement
 from ....driver.base import Driver
 from ....driver.transaction import Transaction
 from ...expr import Expression as E, Function as F
-from ...macro import FuncName as FN
+from ...consts import FuncName as FN
 
 
 class CRUDTest(UTCase):

@@ -36,7 +36,7 @@ from enum import Enum, unique
 
 from .base import BaseElement
 
-from .macro import FuncName
+from .consts import FuncName
 from ..utils import tostr
 
 __all__ = ['Expression', 'Function', 'MetaExpression']
@@ -48,7 +48,7 @@ class MetaExpression(type):
     def __getattr__(cls, key):
         """Instanciate a new cls expression for not existing attribute."""
 
-        if key[-1] == '_' and key[:-1] in cls.__slots__:
+        if key[-1] == '_':
             key = key[:-1]
 
         return cls(name=key)
@@ -98,13 +98,14 @@ class Expression(BaseElement):
         """Generate a new expression where name is the concatenation of this
         name and key with a dot.
 
-        If the key is one of this attribute name, such as 'name', then you have
-        to add '_' at the end of key.
+        If the key is one of this attribute name or reserved word, such as
+        'name' or 'is', then you have to add '_' at the end of key.
 
         Example:
 
         - assert Expression.A.name == 'A.name'
         - assert Expression.A.name_.name == 'A.name'
+        - assert Expression.A.is_ == 'A.is'
 
         :param str key: key to concat to this name. If you want to generate an
             expression where end name is the same as self attribute name, you
@@ -113,7 +114,7 @@ class Expression(BaseElement):
         :rtype: Expression
         """
 
-        if key[-1] == '_' and hasattr(self, key[:-1]):
+        if key[-1] == '_':
             key = key[:-1]
 
         return type(self)(name='{0}.{1}'.format(self.name, key))

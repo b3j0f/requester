@@ -31,7 +31,7 @@ from b3j0f.utils.ut import UTCase
 
 from unittest import main
 
-from ..macro import FuncName
+from ..consts import FuncName
 
 
 class FuncNameTest(UTCase):

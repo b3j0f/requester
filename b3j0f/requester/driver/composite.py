@@ -29,7 +29,7 @@
 from .base import Driver
 
 from ..request.expr import Expression, Function
-from ..request.macro import FuncName
+from ..request.consts import FuncName
 from ..request.crud.create import Create
 from ..request.crud.read import Read
 from ..request.crud.update import Update
