@@ -268,7 +268,7 @@ class Read(CRUDElement):
             result += 'order by {0} '.format(', '.join(items))
 
         if self.query:
-            result += 'where {1} '.format(repr(self.query))
+            result += 'where {0} '.format(repr(self.query))
 
         if result[-1] == ' ':
             result = result[:-1]
