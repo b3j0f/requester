@@ -311,6 +311,17 @@ class ProcessQueryTest(CRUDTest):
 
         self.assertEqual(result, self.items[2:])
 
+    def test_some(self):
+
+        result = processquery(items=self.items, query=E.some(E.id, E('>'), [1, 2]))
+
+        self.assertEqual(result, self.items[2:])
+
+        result = processquery(items=self.items, query=E.some(E.id, '>', [1, 2]))
+
+        self.assertEqual(result, self.items[2:])
+
+
 """
     def test_or(self):
 

@@ -202,13 +202,5 @@ CONDITIONS = [  #: expression conditions.
     # request comparison
     FuncName.ALL.value,
     FuncName.ANY.value,
-    FuncName.SOME.value,
-
-    # string operations
-    FuncName.SOUNDEX.value,
-    FuncName.INSTR.value,
-
-    # array operations
-    FuncName.COUNTOF.value,
-    FuncName.INCLUDE.value
+    FuncName.SOME.value
 ]
