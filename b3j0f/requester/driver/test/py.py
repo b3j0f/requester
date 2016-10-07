@@ -32,7 +32,8 @@ from b3j0f.utils.ut import UTCase
 from unittest import main
 
 from ..py import (
-    PyDriver, processcrud, create, read, update, delete, processquery
+    PyDriver, processcrud, create, read, update, delete, processquery,
+    getsubitem
 )
 from ..generator import func2crudprocessing, obj2driver, DriverAnnotation
 from ..transaction import Transaction
@@ -334,6 +335,37 @@ class ProcessQueryTest(CRUDTest):
         result = processquery(items=self.items, query=(E.id > 2) & (E.id < 4))
 
         self.assertEqual(result, [self.items[2]])
+
+
+class GetSubItemTest(UTCase):
+
+    def setUp(self):
+
+        self.item = {'test': {'test': {'test': None}}}
+
+    def test_one(self):
+
+        subitem = getsubitem(item=self.item, name='test')
+
+        self.assertIs(subitem, self.item['test'])
+
+    def test_two(self):
+
+        subitem = getsubitem(item=self.item, name='test.test')
+
+        self.assertIs(subitem, self.item['test']['test'])
+
+    def test_falseerror(self):
+
+        subitem = getsubitem(item=self.item, name='a')
+
+        self.assertIsNone(subitem)
+
+    def test_error(self):
+
+        self.assertRaises(
+            KeyError, getsubitem, item=self.item, name='a', error=True
+        )
 
 
 class PyDriverTest(UTCase):

@@ -28,6 +28,8 @@
 
 from .base import Driver
 
+from b3j0f.utils.path import lookup
+
 from operator import (
     lt, le, eq, ne, ge, gt, not_, truth, is_, is_not, abs, add, floordiv,
     truediv, invert, mod, mul, neg, or_, pow, rshift, lshift, sub,
@@ -60,6 +62,8 @@ from time import time
 from datetime import datetime
 
 from six import iteritems
+
+from .utils import FunctionChooser
 
 __all__ = [
     'PyDriver', 'processcrud', 'processquery',
@@ -521,13 +525,14 @@ def getsubitem(item, name, error=False):
 
     for name in names:
         try:
-            result = item[name]
+            result = result[name]
 
         except KeyError:
             if error:
                 raise
 
             else:
+                result = None
                 break
 
     return result
@@ -555,39 +560,38 @@ for condition in CONDITIONS:
     _ENRICHEDOPERATORSBYNAME[condition] = condoperator(_OPERATORS_BY_NAME[condition])
 
 
-class FunctionChooser(object):
+class PyFunctionChooser(FunctionChooser):
 
-    def __init__(self, functionsbyname, *args, **kwargs):
+    def getfunction(self, name, *args, **kwargs):
 
-        super(FunctionChooser, self).__init__(*args, **kwargs)
+        if name in _ENRICHEDOPERATORSBYNAME:
+            return _ENRICHEDOPERATORSBYNAME[name]
 
-        self.functionsbyname = functionsbyname
+        else:
+            try:
+                return lookup(name)
 
-    def applyfunction(self, query, ctx, fparams=None):
+            except ImportError:
+                pass
 
-        try:
-            function = self.functionsbyname[query.name]
+FUNCTIONCHOOSER = PyFunctionChooser()
 
-            if fparams is None:
-                fparams = [ctx.get(param, param) for param in query.params]
 
-            return function(query=query, fparams=fparams, ctx=ctx)
+def applyfunction(query, ctx, fparams=None, functionchooser=FUNCTIONCHOOSER):
 
-        except KeyError:
-            raise NotImplementedError(
-                'Function {0} is not implented by {1}'.format(query, self)
-            )
+    try:
+        function = functionchooser.getfunction(name=query.name)
+
+        if fparams is None:
+            fparams = [ctx.get(param, param) for param in query.params]
+
+        return function(query=query, fparams=fparams, ctx=ctx)
+
+    except KeyError:
+        raise NotImplementedError(
+            'Function {0} is not implented by {1}'.format(query, self)
+        )
 
     def __repr__(self):
 
         return 'FunctionChooser({0})'.format(self.functionsbyname)
-
-
-_PYFUNCTIONCHOOSER = FunctionChooser(functionsbyname=_ENRICHEDOPERATORSBYNAME)
-
-
-def applyfunction(query, ctx, fparams):
-
-    return _PYFUNCTIONCHOOSER.applyfunction(
-        query=query, ctx=ctx, fparams=fparams
-    )
