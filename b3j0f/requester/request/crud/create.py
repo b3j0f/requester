@@ -56,6 +56,9 @@ class Create(CRUDElement):
         result = 'CREATE {0}:{1}'.format(repr(self.name), repr(self.values))
 
         if self.query:
-            result += ' where {0}'.format(repr(self.query))
+            result += ' where ({0})'.format(repr(self.query))
+
+        if self.alias:
+            result += ' as {0}'.format(self.alias)
 
         return result
