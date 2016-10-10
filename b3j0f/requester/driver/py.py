@@ -177,9 +177,9 @@ def _namedelt(operator):
     return result
 
 
-def all_(query, item, name, fparams, ctx):
+def all_(query, item, name, params, ctx):
 
-    items = fparams[2]
+    items = params[2]
 
     result = len(items) > 0
 
@@ -198,9 +198,9 @@ def all_(query, item, name, fparams, ctx):
     return result
 
 
-def any_(query, item, name, fparams, ctx):
+def any_(query, item, name, params, ctx):
 
-    items = fparams[2]
+    items = params[2]
 
     result = False
 
@@ -372,9 +372,9 @@ _ENRICHEDOPERATORSBYNAME = {}
 
 
 for condition in CONDITIONS:
-    _condoperator = condoperator(_OPERATORS_BY_NAME[condition.value])
-    _condoperator.__name__ = condition.name
-    _ENRICHEDOPERATORSBYNAME[condition.value] = _condoperator
+    _condoperator = condoperator(_OPERATORS_BY_NAME[condition])
+    _condoperator.__name__ = condition
+    _ENRICHEDOPERATORSBYNAME[condition] = _condoperator
 
 
 class PyFunctionChooser(object):
@@ -501,7 +501,7 @@ class PyDriver(Driver):
 
         func = self.getfunction(function=function, ctx=ctx)
 
-        isor = function.name == FuncName.OR
+        isor = function.name == FuncName.OR.value
 
         result = []
 
@@ -511,15 +511,15 @@ class PyDriver(Driver):
 
             fitems = list(items) if isor else items
 
-            param = self.processquery(
+            presult = self.processquery(
                 query=param, ctx=ctx, items=fitems, **kwargs
             )
-
+            print(param, fitems, presult)
             if isor:
-                result += param
+                result += presult
 
             else:
-                params.append(param)
+                params.append(presult)
 
         if func is None:
 
@@ -531,7 +531,7 @@ class PyDriver(Driver):
                         )
                     )
 
-        else:
+        elif function.name not in CONDITIONS or function.params:
             return func(function=function, ctx=ctx, params=params, **kwargs)
 
     def processexpr(self, expr, ctx=None, **kwargs):
@@ -552,7 +552,7 @@ class PyDriver(Driver):
 
             else:
                 result.append(item)
-        print(result)
+
         if not result:  # if not item match, try to lookup the expression
             try:
                 result = lookup(expr.name)
