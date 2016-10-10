@@ -32,7 +32,7 @@ from b3j0f.utils.ut import UTCase
 from unittest import main
 
 from ..base import Driver
-from ..generator import (
+from ..custom import (
     func2crudprocessing, obj2driver, DriverAnnotation, FunctionalDriver
 )
 from ..ctx import Context

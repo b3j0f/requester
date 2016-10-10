@@ -24,682 +24,283 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Python driver module."""
+"""Driver generator module."""
+
+from b3j0f.annotation import Annotation
+from b3j0f.schema import data2schema, data2schemacls, Schema
+from b3j0f.schema.lang.python import FunctionSchema
+
+from six import string_types
 
 from .base import Driver
-
-from b3j0f.utils.path import lookup
-
-from operator import (
-    lt, le, eq, ne, ge, gt, not_, truth, is_, is_not, abs, add, floordiv,
-    truediv, invert, mod, mul, neg, or_, pow, rshift, lshift, sub,
-    xor, concat, countOf, indexOf, repeat, sequenceIncludes, iadd, iand,
-    getitem, setitem, delitem, getslice, setslice, delslice, iconcat,
-    ifloordiv, ilshift, imod, imul, ior, ipow, irepeat, irshift, isub,
-    itruediv, ixor, contains
-)
-
-from re import match
-
-from .ctx import Context
-from .transaction import State
-
-from ..request.base import BaseElement
-from ..request.consts import FuncName, CONDITIONS
-from ..request.expr import Expression, Function
+from .py import processread
+from ..request.crud.base import CRUD
 from ..request.crud.create import Create
 from ..request.crud.read import Read
-from ..request.crud.join import applyjoin, Join
 from ..request.crud.update import Update
 from ..request.crud.delete import Delete
 
-from random import random
-
-from soundex import getInstance
-
-from md5 import md5
-
-from time import time
-from datetime import datetime
-
-from six import iteritems
-
-from .utils import FunctionChooser
-
 __all__ = [
-    'PyDriver', 'processcrud', 'processquery',
-    'create', 'read', 'update', 'delete', 'applyfunction', 'FunctionChooser'
+    'FunctionalDriver',
+    'func2crodprocessing', 'obj2driver', 'DriverAnnotation',
+    'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation', 'DeleteAnnotation'
 ]
 
-soundex = getInstance().soundex
 
-DATETIMEFORMAT = '%Y-%m-%d %H:%M:%S'
+class FunctionalDriver(Driver):
+    """Driver with fine grained implementation of crud functions.
 
+    This driver uses at most five set of functions for five respective crud
+    types.
 
-class CustomDriver(Driver):
+    The processing execute the right function for all request crud objects.
 
-    def __init__(self, functionchooser, *args, **kwargs):
+    Functions must takes in parameters a 'crud' object, a 'request' object and
+    kwargs for specific driver uses (like explain for example).
 
-        super(CustomDriver, self).__init__(*args, **kwargs)
+    Functions must return a request."""
 
-        self.functionchooser = functionchooser
+    def __init__(
+            self, creates=None, reads=None, updates=None, deletes=None,
+            functions=None, *args, **kwargs
+    ):
+        """
+        :param list creates: creation functions. Take in parameters a request,
+            a crud operation and specific kwargs. Return created item
+            with additional fields such as id.
+        :param list reads: reading functions. Take in parameters a request,
+            a crud operation and specific kwargs. Return read items.
+        :param list updates: updating functions. Take in parameters a request,
+            a crud operation and specific kwargs. Return updated items.
+        :param list deletes: deletion functions. Take in parameters a request,
+            a crud operation and specific kwargs. Return deleted items.
+        :param dict functions: function to process for specific query functions.
+        """
 
-    def _process(self, transaction, **kwargs):
+        super(FunctionalDriver, self).__init__(*args, **kwargs)
+
+        self.creates = [] if creates is None else creates
+        self.reads = [] if reads is None else reads
+        self.updates = [] if updates is None else updates
+        self.deletes = [] if deletes is None else deletes
+        self.functions = {} if functions is None else functions
+
+    def _process(self, transaction, crud, **kwargs):
 
         result = transaction
 
-        if transaction.state is State.COMMITTING:
+        crudname = type(crud).__name__.lower()
 
-            for crud in transaction.cruds:
+        funcs = getattr(self, '{0}s'.format(crudname))
 
-                self.processcrud(ctx=transaction.ctx, crud=crud, **kwargs)
-
-        return result
-
-    def processcrud(self, crud, ctx=None, **kwargs):
-        """Apply the right rule.
-
-        :param CRUDElement crud: crud rule to apply.
-        :param Context ctx: context where to store the processing result.
-            Default is None.
-
-        :rtype: list
-        :return: list"""
-
-        if ctx is None:
-            ctx = Context()
-
-        result = items
-
-        if crud in ctx:
-            result = ctx[crud]
+        if funcs:
+            for func in funcs:
+                result = func(crud=crud, transaction=result, **kwargs)
 
         else:
-            if isinstance(crud, Create):
-                result = self.processcreate(create=crud, ctx=ctx, **kwargs)
-
-            elif isinstance(crud, Read):
-                result = self.processread(read=crud, ctx=ctx, **kwargs)
-
-            elif isinstance(crud, Update):
-                result = self.processupdate(update=crud, ctx=ctx, **kwargs)
-
-            elif isinstance(crud, Delete):
-                result = self.processdelete(delete=crud, ctx=ctx, **kwargs)
-
-            ctx[crud] = result
+            raise NotImplementedError(
+                'No implementation found for {0}'.format(crudname)
+            )
 
         return result
 
-    def processquery(self, query, ctx=None, **kwargs):
-        """Process input query related to items and ctx."""
+    def _processquery(self, query, ctx):
 
-        result = query
-
-        if ctx is None:
-            ctx = Context()
-
-        if query in ctx:  # is query calculated already ?
+        if query in ctx:
             result = ctx[query]
 
-        elif isinstance(query, BaseElement):
-
-            if isinstance(query, Function):
-
-                self.processfunction(function=query, ctx=ctx, **kwargs)
-
-            elif isinstance(query, Expression):
-
-                self.processexpr(epr=query, ctx=ctx, **kwargs)
-
-            elif isinstance(query, CRUDElement):
-
-                result = self.processcrud(crud=query, ctx=ctx, **kwargs)
-
-            ctx[query] = result
-
-        return result
-
-    def processfunction(self, function, ctx=None, **kwargs):
-
-        isor = query.name == FuncName.OR
-
-        if isor:
-            result = []
-
-        pqueries = []
-
-        for param in query.params:
-            fitems = list(items) if isor else items
-            pquery = self.processquery(
-                query=param, items=fitems, ctx=ctx, **kwargs
-            )
-            pqueries.append(pquery)
-
-            if isor:
-                result += pquery
-
-        if query.name not in [FuncName.AND.value, FuncName.OR.value]:
-
-            function = self.getfunction(name=query.name)
-
-            if function is None:
-                raise NotImplementedError(
-                    'Function {0} is not implented by {1}'.format(query, self)
-                )
-
-            if fparams is None:
-                fparams = [ctx.get(param, param) for param in query.params]
-
-            if fparams:
-                result = function(query=query, params=params, ctx=ctx)
-
-        return result
-
-    def processexpr(self, expr, items, ctx=None):
-
-        result = []
-
-        for item in items:
-            try:
-                getsubitem(item, query.name, error=True)
-
-            except KeyError:
-                pass
-
-            else:
-                result.append(item)
-
-        if not result:
-            try:
-                result = lookup(query.name)
-
-            except ImportError:
-                items[:] = result
-                pass
-
         else:
-            items[:] = result
-
-    def processcreate(self, create, ctx=None, **kwargs):
-        """Apply input Create element to items.
-
-        :param Create create: data to add to input items.
-        :return: created item.
-        :rtype: list"""
-
-        if ctx is None:
-            ctx = Context()
-
-        items = self.processquery(query=create.query, ctx=ctx, **kwargs)
-
-        values = {}
-
-        for key, query in iteritems(create.values):
-
-            value = self.processquery(query=query, ctx=ctx, **kwargs)
-            values[key] = value
-
-        items.append(values)
-
-        return items
-
-    def processread(self, read, ctx=None, **kwargs):
-        """Return application of input Read to items.
-
-        :param list items: items to read.
-        :param Read read: read resource to apply on items.
-        :return: read list.
-        :rtype: list
-        """
-
-        if ctx is None:
-            ctx = Context()
-
-        items = self.processquery(query=read.query, ctx=ctx, **kwargs)
-
-        result = list(items)
-
-        if read.select():
-            result = []
-            for item in list(items):
-                fitem = {}
-                for sel in read.select():
-                    if sel in item:
-                        fitem[sel] = item[sel]
-                result.append(fitem)
-
-        if read.offset():
-            result = result[read.offset():]
-
-        if read.limit():
-            result = result[:read.limit()]
-
-        if read.orderby():
-            for orderby in read.orderby():
-                result.sort(key=lambda item: item.get(orderby))
-
-        if read.groupby():
-            raise NotImplementedError()
-            groupbyresult = {}
-            _groupbyresult = []
-            for groupby in read.groupby():
-                if _groupbyresult:
-                    for item in _groupbyresult:
-                        pass
-                _groupbyresult = {groupby: []}
-
-                for res in result:
-                    if groupby in res:
-                        groupbyresult[groupby] = res.pop(groupby)
-
-                #FIX: do the same for sub groupby...
-
-        if read.join() not in ('FULL', None):
-            raise NotImplementedError(
-                'read function does not support join {0}'.format(
-                    read.join()
-                )
-            )
-
-        return result
-
-    def processupdate(self, update, ctx=None, **kwargs):
-        """Apply update to items.
-
-        :param Update update: update rule.
-        :return: updated items.
-        :rtype: list"""
-
-        if ctx is None:
-            ctx = Context()
-
-        items = self.processquery(query=update.query, ctx=ctx, **kwargs)
-
-        values = {}
-
-        for key in list(update.values):
-
-            value = self.processquery(
-                items=items, query=update.values[key], ctx=ctx, **kwargs
-            )
-            values[key] = value
-
-        for item in items:
-            for name, value in iteritems(values):
-
-                if callable(value):
-                    value(name, item)
-
-                else:
-                    item[name] = value
-
-        return items
-
-    def processdelete(self, delete, ctx=None, **kwargs):
-        """Apply deletion rule to items.
-
-        :param list items: items to modify.
-        :param Delete delete: deletion rule.
-        :rtype: list
-        :return: modified/deleted items."""
-
-        if ctx is None:
-            ctx = Context()
-
-        items = processquery(query=delete.query, ctx=ctx, **kwargs)
-
-        if delete.names:
-
-            names = [
-                self.processquery(query=name, ctx=ctx, items=items, **kwargs)
-                for name in delete.names
-            ]
-
-            for name in names:
-                for item in items:
-                    if name in item:
-                        del item[name]
-
-        else:
-            items[:] = []
-
-        return items
+            pass
 
 
-class PyDriver(CustomDriver):
-    """In charge of accessing to data from a list of dictionaries or objects."""
+def func2crudprocessing(func=None):
 
-    version = '0.1'
-    name = 'py'  # driver name
+    if func is not None and not isinstance(func, Schema):
+        func = data2schema(func)
 
-    def __init__(self, values=None, *args, **kwargs):
-        """
-        :param list values: list of data. Data are dictionaries. Default is [].
-        """
+    def _processing(crud, transaction, _func=func, **kwargs):
 
-        super(PyDriver, self).__init__(*args, **kwargs)
+        funckwargs = {}
+        funcvarargs = []
 
-        self.values = [] if values is None else values
+        if isinstance(crud, (Create, Update)):
+            funckwargs.update(crud.values)
+            # todo : specific _func args
+
+        for param in _func.params:
+
+            if param.name in transaction.ctx:
+
+                funckwargs[param.name] = transaction.ctx[param.name]
+
+        funcresult = list(_func(*funcvarargs, **funckwargs))
+
+        if isinstance(crud, Read):
+            read(read=crud, items=funcresult)
+
+        transaction.ctx[crud] = funcresult
+
+        return transaction
+
+    return _processing
 
 
-_GLOBAL_PYDRIVER = PyDriver()
+def obj2driver(
+        obj, name=None,
+        creates=None, reads=None, updates=None, deletes=None, functions=None
+):
+    """Convert an object to a driver.
 
-
-def processcreate(items, create, ctx=None):
-    """Apply input Create element to items.
-
-    :param list items: items to process with input Create.
-    :param Create create: data to add to input items.
-    :return: created item.
-    :rtype: list"""
-
-    return _GLOBAL_PYDRIVER.processcreate(create=create, ctx=ctx, items=items)
-
-
-def processread(items, read, ctx=None):
-    """Return application of input Read to items.
-
-    :param list items: items to read.
-    :param Read read: read resource to apply on items.
-    :return: read list.
-    :rtype: list
+    :param str name: driver name. obj type name by default.
+    :param list creates: create function names to retrieve from the obj.
+    :param list reads: read function names to retrieve from the obj.
+    :param list updates: update function names to retrieve from the obj.
+    :param list deletes: delete function names to retrieve from the obj.
+    :param dict functions: fuctions by name. obj functions by default.
+    :rtype: FunctionalDriver
     """
 
-    return _GLOBAL_PYDRIVER.processread(read=read, ctx=ctx, items=items)
+    fname = type(obj).__name__ if name is None else name
 
-
-def processupdate(update, ctx=None):
-
-    return _GLOBAL_PYDRIVER.processupdate(update=update, ctx=ctx)
-
-
-def processdelete(delete, ctx=None):
-
-    return _GLOBAL_PYDRIVER.processdelete(delete=delete, ctx=ctx)
-
-
-def processcrud(crud, ctx=None):
-
-    return _GLOBAL_PYDRIVER.processcrud(crud=crud, ctx=ctx)
-
-
-def exists(query, item, name, fparams, ctx):
-
-    result = True
-
-    names = name.split('.')
-
-    val = item
-
-    for name in names:
-        if isinstance(val, dict):
-
-            if name in val:
-                val = val[name]
-                continue
-
-        elif hasattr(val, name):
-            val = getattr(val, name)
-            continue
-
-        result = False
-        break
-
-    return result
-
-
-def isnull(query, item, name, fparams, ctx):
-
-    try:
-        val = getsubitem(item, name, error=True)
-
-    except KeyError:
-        return False
+    # build obj schema if necessary
+    if not isinstance(obj, Schema):
+        fobj = data2schema(obj)
 
     else:
-        return val is None
+        fobj = obj
+
+    fcreates = []
+    freads = []
+    fupdates = []
+    fdeletes = []
+
+    _locals = locals()
+    # start to get information from annotations
+    crudannotations = set(
+        _CRUDAnnotation.get_annotations(obj) +
+        _CRUDAnnotation.get_annotations(fobj)
+    )
+    for crudannotation in crudannotations:
+        for target in crudannotation.targets:
+            targetname = targetname
+            fobjtarget = getattr(fobj, targetname)
+            _locals['f{0}s'.format(crudannotation.name)].append(fobjtarget)
+
+    # then parse function parameters
+    for crudname in (crudname.lower() for crudname in  CRUD.__members__):
+
+        cruds = _locals['{0}s'.format(crudname)]
+
+        for crud in cruds:
+
+            crudfunc = getattr(fobj, crud)
+
+            fcrudfunc = func2crudprocessing(crudfunc)
+
+            _locals['f{0}s'.format(crudname)].append(fcrudfunc)
+
+    ffunctions = {} if functions is None else functions
+
+    for schema in obj.getschemas():
+
+        if isinstance(schema, FunctionSchema):
+            ffunctions[schema.name] = schema
+
+    return FunctionalDriver(
+        name=fname,
+        creates=fcreates,
+        reads=freads,
+        updates=fupdates,
+        deletes=fdeletes,
+        functions=ffunctions
+    )
 
 
-def _namedelt(operator):
+class DriverAnnotation(Annotation):
+    """Generate a deriver from class content."""
 
-    def result(query, item, name, fparams, ctx):
+    def __init__(
+            self,
+            name=None, creates=None, reads=None, updates=None, deletes=None,
+            *args, **kwargs
+    ):
+        """
+        :param str name: driver name to generate. Default target type name.
+        :param list creates: create function names. Related functions must
+            return created objects with additional fields such as the id.
+        :param list reads: read function names. Related functions must return
+            list of read objects.
+        :param list updates: update function names. Related functions must
+            return updated data.
+        :param list deletes: delete function names. Related functions must
+            return deleted objects."""
 
-        subitem = getsubitem(item, name)
+        super(DriverAnnotation, self).__init__(*args, **kwargs)
 
-        return operator(subitem, *fparams[1:])
+        self.name = name
+        self.creates = creates
+        self.reads = reads
+        self.updates = updates
+        self.deletes = deletes
 
-    return result
+    def getdriver(self, obj):
+        """Get a driver corresponding to input target instance related
+        to this attributes.
 
+        :param obj: instance to transform to a functional driver.
+        :rtype: FunctionalDriver"""
 
-def all_(query, item, name, fparams, ctx):
+        kwargs = {'name': self.name}
 
-    items = fparams[2]
+        for crud in (crud.lower() for crud in CRUD.__members__):
 
-    result = len(items) > 0
+            fcrud = '{0}s'.format(crud)
 
-    operator = query.params[1]
+            funcnames = getattr(self, fcrud)
 
-    if isinstance(operator, Expression):
-        operator = operator.name
+            for funcname in funcnames:
+                func = getattr(obj, funcname)
 
-    func = _OPERATORS_BY_NAME[operator]
+                kwargs.setdefault(fcrud, []).append(func)
 
-    for _item in items:
-        if not func(query.params[0], item, name, [items, _item], ctx):
-            result = False
-            break
-
-    return result
-
-
-def any_(query, item, name, fparams, ctx):
-
-    items = fparams[2]
-
-    result = False
-
-    operator = query.params[1]
-
-    if isinstance(operator, Expression):
-        operator = operator.name
-
-    func = _OPERATORS_BY_NAME[operator]
-
-    for _item in items:
-        if func(query.params[0], item, name, [items, _item], ctx):
-            result = True
-            break
-
-    return result
+        return obj2driver(**kwargs)
 
 
-_OPERATORS_BY_NAME = {
-    FuncName.LT.value: _namedelt(lt),
-    FuncName.LE.value: _namedelt(le),
-    FuncName.EQ.value: _namedelt(eq),
-    FuncName.NE.value: _namedelt(ne),
-    FuncName.GE.value: _namedelt(ge),
-    FuncName.GT.value: _namedelt(gt),
-    FuncName.NOT.value: not_,
-    FuncName.TRUTH.value: truth,
-    FuncName.IS.value: _namedelt(is_),
-    FuncName.ISNOT.value: _namedelt(is_not),
-    FuncName.ABS.value: abs,
-    FuncName.ADD.value: add,
-    FuncName.FLOORDIV.value: floordiv,
-    FuncName.DIV.value: truediv,
-    FuncName.INDEX.value: indexOf,
-    FuncName.INVERT.value: invert,
-    FuncName.MOD.value: mod,
-    FuncName.LIKE.value: _namedelt(lambda val, msg: match(msg, val)),
-    FuncName.MUL.value: mul,
-    FuncName.NEG.value: neg,
-    FuncName.OR.value: or_,
-    FuncName.POW.value: pow,
-    FuncName.RSHIFT.value: rshift,
-    FuncName.LSHIFT.value: lshift,
-    FuncName.SUB.value: sub,
-    FuncName.XOR.value: xor,
-    FuncName.CONCAT.value: concat,
-    FuncName.COUNTOF.value: countOf,
-    FuncName.REPEAT.value: repeat,
-    FuncName.INCLUDE.value: sequenceIncludes,
-    FuncName.IADD.value: iadd,
-    FuncName.IAND.value: iand,
-    FuncName.IOR.value: ior,
-    FuncName.IXOR.value: ixor,
-    FuncName.GETITEM.value: getitem,
-    FuncName.SETITEM.value: setitem,
-    FuncName.DELITEM.value: delitem,
-    FuncName.GETSLICE.value: getslice,
-    FuncName.SETSLICE.value: setslice,
-    FuncName.DELSLICE.value: delslice,
-    FuncName.ICONCAT.value: iconcat,
-    FuncName.IDIV.value: itruediv,
-    FuncName.IFLOORDIV.value: ifloordiv,
-    FuncName.ILSHIFT.value: ilshift,
-    FuncName.IMOD.value: imod,
-    FuncName.IMUL.value: imul,
-    FuncName.IPOW.value: ipow,
-    FuncName.IREPEAT.value: irepeat,
-    FuncName.IRSHIFT.value: irshift,
-    FuncName.ISUB.value: isub,
-    FuncName.COUNT.value: len,
-    FuncName.LENGTH.value: len,
-    FuncName.AVG.value: lambda v: sum(v) / (len(v) or 1),
-    FuncName.MEAN.value: lambda v: sum(v) / (len(v) or 1),
-    FuncName.MAX.value: max,
-    FuncName.MIN.value: min,
-    FuncName.SUM.value: sum,
-    FuncName.EXISTS.value: exists,
-    FuncName.NEXISTS.value:
-        lambda query, item, name, *_: not exists(query, item, name, *_),
-    FuncName.ISNULL.value: isnull,
-    FuncName.BETWEEN.value: _namedelt(lambda val, inf, sup: inf <= val <= sup),
-    FuncName.IN.value: _namedelt(lambda x, y: contains(y, x)),
-    FuncName.HAVING.value: lambda query, item, name, fparams, ctx: fparams[0],
-    FuncName.UNION.value: lambda seq1, seq2: set(seq1) + set(seq2),
-    FuncName.INTERSECT.value: lambda seq1, seq2: set(seq1) & set(seq2),
-    FuncName.ALL.value: all_,
-    FuncName.ANY.value: any_,
-    FuncName.SOME.value: any_,
-    FuncName.VERSION.value: PyDriver.version,
-    FuncName.CONCAT.value: str.__add__,
-    FuncName.ICONCAT.value: str.__add__,
-    FuncName.REPLACE.value: str.replace,
-    FuncName.SOUNDEX.value: soundex,
-    FuncName.SUBSTRING.value: lambda data, start, end=None: data[start:end],
-    FuncName.LEFT.value: lambda data, count: str[:-count],
-    FuncName.RIGHT.value: lambda data, count: str[count:],
-    FuncName.REVERSE.value: reversed,
-    FuncName.TRIM.value: str.strip,
-    FuncName.LTRIM.value: str.lstrip,
-    FuncName.RTRIM.value: str.rstrip,
-    FuncName.LPAD.value: str.ljust,
-    FuncName.RPAD.value: str.rjust,
-    FuncName.UPPER.value: str.upper,
-    FuncName.LOWER.value: str.lower,
-    FuncName.UCASE.value: str.upper,
-    FuncName.LCASE.value: str.lower,
-    FuncName.LOCATE.value: lambda val, data, *args: str.find(
-        data, val, *args
-    ) + 1,
-    FuncName.INSTR.value: lambda val, data, *args: str.find(
-        data, val, *args
-    ) + 1,
-    FuncName.RAND.value: random,
-    FuncName.ROUND.value: round,
-    FuncName.MD5.value: lambda data: md5(data).digest(),
-    FuncName.NOW.value: lambda: datetime.now().strftime(DATETIMEFORMAT),
-    FuncName.SEC_TO_TIME.value: lambda date: datetime.fromtimestamp(date).strftime(DATETIMEFORMAT),
-    FuncName.DATEDIFF.value: lambda date1, date2: datetime.strpformat(date1, DATETIMEFORMAT) - datetime.strpformat(date2, DATETIMEFORMAT),
-    FuncName.MONTH.value: lambda date=None: datetime.strpformat(date, DATETIMEFORMAT).month,
-    FuncName.YEAR.value: lambda date=None: datetime.strpformat(date, DATETIMEFORMAT).year,
-}
+class _CRUDAnnotation(Annotation):
+
+    def __init__(self, crud, *args, **kwargs):
+        """
+        :param str crud: crud name.
+        """
+
+        super(_CRUDAnnotation, self).__init__(self)
+
+        self.crud = crud.name if isinstance(crud, CRUDElement) else crud
 
 
-def processquery(query, items, ctx=None):
+class CreateAnnotation(_CRUDAnnotation):
 
-    return _GLOBAL_PYDRIVER.processquery(query=query, ctx=ctx)
+    def __init__(self, crud=CRUD.READ, *args, **kwargs):
 
-
-def getsubitem(item, name, error=False):
-
-    names = name.split('.')
-
-    result = item
-
-    for name in names:
-        try:
-            result = result[name]
-
-        except KeyError:
-            if error:
-                raise
-
-            else:
-                result = None
-                break
-
-    return result
-
-def condoperator(operator):
-
-    def result(query, fparams, ctx):
-
-        items = fparams[0]
-
-        name = query.params[0].name
-
-        return [
-            item for item in fparams[0]
-            if operator(query, item, name, fparams, ctx)
-        ]
-
-    return result
+        super(CreateAnnotation, self).__init__(crud=crud, *args, **kwargs)
 
 
-_ENRICHEDOPERATORSBYNAME = {}
+class ReadAnnotation(_CRUDAnnotation):
+
+    def __init__(self, crud=CRUD.READ, *args, **kwargs):
+
+        super(ReadAnnotation, self).__init__(crud=crud, *args, **kwargs)
 
 
-for condition in CONDITIONS:
-    _ENRICHEDOPERATORSBYNAME[condition] = condoperator(_OPERATORS_BY_NAME[condition])
+class UpdateAnnotation(_CRUDAnnotation):
+
+    def __init__(self, crud=CRUD.UPDATE, *args, **kwargs):
+
+        super(UpdateAnnotation, self).__init__(crud=crud, *args, **kwargs)
 
 
-class PyFunctionChooser(FunctionChooser):
+class DeleteAnnotation(_CRUDAnnotation):
 
-    def getfunction(self, name, *args, **kwargs):
+    def __init__(self, crud=CRUD.DELETE, *args, **kwargs):
 
-        if name in _ENRICHEDOPERATORSBYNAME:
-            return _ENRICHEDOPERATORSBYNAME[name]
-
-        else:
-            try:
-                return lookup(name)
-
-            except ImportError:
-                pass
-
-FUNCTIONCHOOSER = PyFunctionChooser()
-
-
-def applyfunction(query, ctx, fparams=None, functionchooser=FUNCTIONCHOOSER):
-
-    try:
-        function = functionchooser.getfunction(name=query.name)
-
-        if fparams is None:
-            fparams = [ctx.get(param, param) for param in query.params]
-
-        if fparams:
-            return function(query=query, fparams=fparams, ctx=ctx)
-
-    except KeyError:
-        raise NotImplementedError(
-            'Function {0} is not implented by {1}'.format(query, self)
-        )
-
-    def __repr__(self):
-
-        return 'FunctionChooser({0})'.format(self.functionsbyname)
+        super(DeleteAnnotation, self).__init__(crud=crud, *args, **kwargs)

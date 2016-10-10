@@ -39,6 +39,8 @@ from operator import (
     itruediv, ixor, contains
 )
 
+from functools import wraps
+
 from re import match
 
 from .ctx import Context
@@ -351,15 +353,16 @@ def getsubitem(item, name, error=False):
 
 def condoperator(operator):
 
-    def result(query, fparams, ctx):
+    @wraps(operator)
+    def result(function, params, ctx):
 
-        items = fparams[0]
+        items = params[0]
 
-        name = query.params[0].name
+        name = function.params[0].name
 
         return [
-            item for item in fparams[0]
-            if operator(query, item, name, fparams, ctx)
+            item for item in params[0]
+            if operator(function, item, name, params, ctx)
         ]
 
     return result
@@ -369,7 +372,9 @@ _ENRICHEDOPERATORSBYNAME = {}
 
 
 for condition in CONDITIONS:
-    _ENRICHEDOPERATORSBYNAME[condition] = condoperator(_OPERATORS_BY_NAME[condition])
+    _condoperator = condoperator(_OPERATORS_BY_NAME[condition.value])
+    _condoperator.__name__ = condition.name
+    _ENRICHEDOPERATORSBYNAME[condition.value] = _condoperator
 
 
 class PyFunctionChooser(object):
@@ -476,11 +481,11 @@ class PyDriver(Driver):
 
             if isinstance(query, Function):
 
-                self.processfunction(function=query, ctx=ctx, **kwargs)
+                result = self.processfunction(function=query, ctx=ctx, **kwargs)
 
             elif isinstance(query, Expression):
 
-                self.processexpr(expr=query, ctx=ctx, **kwargs)
+                result = self.processexpr(expr=query, ctx=ctx, **kwargs)
 
             elif isinstance(query, CRUDElement):
 
@@ -494,7 +499,7 @@ class PyDriver(Driver):
 
         items = kwargs.pop('items', self.items)
 
-        func = self.getfunction(name=function, ctx=ctx)
+        func = self.getfunction(function=function, ctx=ctx)
 
         isor = function.name == FuncName.OR
 
@@ -502,12 +507,12 @@ class PyDriver(Driver):
 
         params = []
 
-        for param in query.params:
+        for param in function.params:
 
             fitems = list(items) if isor else items
 
             param = self.processquery(
-                query=param, ctx=ctx, fitems=items, **kwargs
+                query=param, ctx=ctx, items=fitems, **kwargs
             )
 
             if isor:
@@ -518,39 +523,47 @@ class PyDriver(Driver):
 
         if func is None:
 
-            raise NotImplementedError(
-                    'Function {0} is not implented by {1}'.format(
-                        function, self
+            if function.name not in [FuncName.AND.value, FuncName.OR.value]:
+
+                raise NotImplementedError(
+                        'Function {0} is not implented by {1}'.format(
+                            function, self
+                        )
                     )
-                )
 
-        return func(function=function, ctx=ctx, params=params, **kwargs)
+        else:
+            return func(function=function, ctx=ctx, params=params, **kwargs)
 
-    def processexpr(self, expr, items, ctx=None):
+    def processexpr(self, expr, ctx=None, **kwargs):
 
         result = []
+
+        if ctx is None:
+            ctx = Context()
 
         items = kwargs.setdefault('items', self.items)
 
         for item in items:
             try:
-                getsubitem(item, query.name, error=True)
+                getsubitem(item, expr.name, error=True)
 
             except KeyError:
                 pass
 
             else:
                 result.append(item)
-
-        if not result:
+        print(result)
+        if not result:  # if not item match, try to lookup the expression
             try:
-                result = lookup(query.name)
+                result = lookup(expr.name)
 
             except ImportError:
                 items[:] = result
 
         else:
             items[:] = result
+
+        ctx[expr] = result
 
         return result
 
@@ -711,7 +724,7 @@ class PyDriver(Driver):
 
         return result
 
-    def getfunction(function, ctx=None):
+    def getfunction(self, function, ctx=None):
 
         return ctx.get(function, self.funcchooser.get(function.name))
 

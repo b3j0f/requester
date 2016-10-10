@@ -207,7 +207,7 @@ class ProcessCRUDTest(CRUDTest):
 
 class ProcessQueryTest(CRUDTest):
 
-    def test_item(self):
+    def test_expr(self):
 
         result = processquery(items=self.items, query=E.ext)
 
