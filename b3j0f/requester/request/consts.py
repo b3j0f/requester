@@ -86,6 +86,7 @@ class FuncName(Enum):
     ISNULL = 'isnull'
     BETWEEN = 'between'
     IN = 'in'
+    NIN = 'nin'
 
     # selection operators  TODO: might be migrated to the Read object...
     HAVING = 'having'

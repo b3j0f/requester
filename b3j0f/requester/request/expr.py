@@ -271,6 +271,10 @@ class Expression(BaseElement):
 
         return Function(FuncName.ABS)(self)
 
+    def __contains__(self, other):
+        
+        return Function(FuncName.IN)(self, other)
+
     def __pow__(self, other):
 
         self._checktype(other, Number)
