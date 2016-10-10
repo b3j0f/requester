@@ -33,7 +33,7 @@ from b3j0f.schema.lang.python import FunctionSchema
 from six import string_types
 
 from .base import Driver
-from .py import read
+from .py import processread
 from ..request.crud.base import CRUD
 from ..request.crud.create import Create
 from ..request.crud.read import Read

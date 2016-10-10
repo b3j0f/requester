@@ -44,6 +44,7 @@ from re import match
 from .ctx import Context
 from .transaction import State
 
+from ..request.base import BaseElement
 from ..request.consts import FuncName, CONDITIONS
 from ..request.expr import Expression, Function
 from ..request.crud.create import Create
@@ -67,59 +68,18 @@ from .utils import FunctionChooser
 
 __all__ = [
     'PyDriver', 'processcrud', 'processquery',
-    'create', 'read', 'update', 'delete', 'applyfunction', 'FunctionChooser'
+    'processcreate', 'processread', 'processupdate', 'processdelete',
+    'applyfunction', 'FunctionChooser'
 ]
+
+VERSION = '0.1'  #: python driver version.
 
 soundex = getInstance().soundex
 
 DATETIMEFORMAT = '%Y-%m-%d %H:%M:%S'
 
 
-class PyDriver(Driver):
-    """In charge of accessing to data from a list of dictionaries or objects."""
-
-    version = '0.1'
-    name = 'py'  # driver name
-
-    def __init__(self, values=None, *args, **kwargs):
-        """
-        :param list values: list of data. Data are dictionaries. Default is [].
-        """
-
-        super(PyDriver, self).__init__(*args, **kwargs)
-
-        self.values = [] if values is None else values
-
-    def _process(self, transaction, **kwargs):
-
-        if kwargs:
-            raise ValueError(
-                'Driver {0} does not support additional arguments {1}'.format(
-                    self, kwargs
-                )
-            )
-
-        if transaction.state is not State.COMMITTING:
-            return
-
-        for crud in transaction.cruds:
-
-            self._processquery(query=crud.query, ctx=transaction.ctx)
-
-            processcrud(ctx=transaction.ctx, items=self.values, crud=crud)
-
-        return transaction
-
-    def _processquery(self, query, ctx):
-
-        if query in ctx:
-            return ctx[query]
-
-        else:
-            ctx[query] = query
-
-
-def create(items, create, ctx=None):
+def processcreate(items, create, ctx=None, **kwargs):
     """Apply input Create element to items.
 
     :param list items: items to process with input Create.
@@ -127,19 +87,12 @@ def create(items, create, ctx=None):
     :return: created item.
     :rtype: list"""
 
-    values = {}
-
-    for key in list(create.values):
-
-        value = processquery(items=create.values[key], query=name, ctx=ctx)
-        values[key] = value
-
-    items.append(values)
-
-    return items
+    return _GLOBALPYDRIVER.processcreate(
+        create=create, ctx=ctx, items=items, **kwargs
+    )
 
 
-def read(items, read, ctx=None):
+def processread(items, read, ctx=None, **kwargs):
     """Return application of input Read to items.
 
     :param list items: items to read.
@@ -148,135 +101,30 @@ def read(items, read, ctx=None):
     :rtype: list
     """
 
-    result = list(items)
-
-    if read.select():
-        result = []
-        for item in list(items):
-            fitem = {}
-            for sel in read.select():
-                if sel in item:
-                    fitem[sel] = item[sel]
-            result.append(fitem)
-
-    if read.offset():
-        result = result[read.offset():]
-
-    if read.limit():
-        result = result[:read.limit()]
-
-    if read.orderby():
-        for orderby in read.orderby():
-            result.sort(key=lambda item: item.get(orderby))
-
-    if read.groupby():
-        raise NotImplementedError()
-        groupbyresult = {}
-        _groupbyresult = []
-        for groupby in read.groupby():
-            if _groupbyresult:
-                for item in _groupbyresult:
-                    pass
-            _groupbyresult = {groupby: []}
-
-            for res in result:
-                if groupby in res:
-                    groupbyresult[groupby] = res.pop(groupby)
-
-            #FIX: do the same for sub groupby...
-
-    if read.join() not in ('FULL', None):
-        raise NotImplementedError(
-            'read function does not support join {0}'.format(
-                read.join()
-            )
-        )
-
-    return result
+    return _GLOBALPYDRIVER.processread(
+        read=read, ctx=ctx, items=items, **kwargs
+    )
 
 
-def update(items, update, ctx=None):
-    """Apply update to items.
+def processupdate(items, update, ctx=None, **kwargs):
 
-    :param list items: items to update.
-    :param Update update: update rule.
-    :return: updated items.
-    :rtype: list"""
-
-    values = {}
-
-    for key in list(update.values):
-
-        value = processquery(items=items, query=update.values[key], ctx=ctx)
-        values[key] = value
-
-    for item in items:
-        for name, value in iteritems(values):
-
-            if callable(value):
-                value(name, item)
-
-            else:
-                item[name] = value
-
-    return items
+    return _GLOBALPYDRIVER.processupdate(
+        items=items, update=update, ctx=ctx, **kwargs
+    )
 
 
-def delete(items, delete, ctx=None):
-    """Apply deletion rule to items.
+def processdelete(items, delete, ctx=None, **kwargs):
 
-    :param list items: items to modify.
-    :param Delete delete: deletion rule.
-    :rtype: list
-    :return: modified/deleted items."""
-
-    if delete.names:
-
-        names = [
-            processquery(query=name, ctx=ctx, items=items)
-            for name in delete.names
-        ]
-
-        for name in names:
-            for item in items:
-                if name in item:
-                    del item[name]
-
-    else:
-        items[:] = []
-
-    return items
+    return _GLOBALPYDRIVER.processdelete(
+        items=items, delete=delete, ctx=ctx, **kwargs
+    )
 
 
-def processcrud(items, crud, ctx=None):
-    """Apply the right rule on input items.
+def processcrud(items, crud, ctx=None, **kwargs):
 
-    :param list items: items to process.
-    :param CRUDElement crud: crud rule to apply.
-    :param Context ctx: context where to store the processing result. Default is
-        None.
-
-    :rtype: list
-    :return: list"""
-
-    if ctx is None:
-        ctx = Context()
-
-    if isinstance(crud, Create):
-        processresult = create(items=items, create=crud, ctx=ctx)
-
-    elif isinstance(crud, Read):
-        processresult = read(items=items, read=crud, ctx=ctx)
-
-    elif isinstance(crud, Update):
-        processresult = update(items=items, update=crud, ctx=ctx)
-
-    elif isinstance(crud, Delete):
-        processresult = delete(items=items, delete=crud, ctx=ctx)
-
-    ctx[crud] = processresult
-
-    return items
+    return _GLOBALPYDRIVER.processcrud(
+        items=items, crud=crud, ctx=ctx, **kwargs
+    )
 
 
 def exists(query, item, name, fparams, ctx):
@@ -439,7 +287,7 @@ _OPERATORS_BY_NAME = {
     FuncName.ALL.value: all_,
     FuncName.ANY.value: any_,
     FuncName.SOME.value: any_,
-    FuncName.VERSION.value: PyDriver.version,
+    FuncName.VERSION.value: VERSION,
     FuncName.CONCAT.value: str.__add__,
     FuncName.ICONCAT.value: str.__add__,
     FuncName.REPLACE.value: str.replace,
@@ -474,67 +322,11 @@ _OPERATORS_BY_NAME = {
 }
 
 
-def processquery(query, items, ctx=None):
-    """Process input query related to items and ctx."""
+def processquery(query, items, ctx=None, **kwargs):
 
-    result = query
-
-    if ctx is None:
-        ctx = Context()
-
-    if query not in ctx:  # is query calculated already ?
-
-        if isinstance(query, Function):
-
-            isor = query.name == FuncName.OR
-
-            if isor:
-                result = []
-
-            pqueries = []
-            for param in query.params:
-                fitems = list(items) if isor else items
-                pquery = processquery(query=param, items=fitems, ctx=ctx)
-                pqueries.append(pquery)
-
-                if isor:
-                    result += pquery
-
-            if query.name not in [FuncName.AND.value, FuncName.OR.value]:
-
-                result = applyfunction(query=query, ctx=ctx, fparams=pqueries)
-
-        elif isinstance(query, Expression):
-
-            result = []
-
-            for item in items:
-                try:
-                    getsubitem(item, query.name, error=True)
-
-                except KeyError:
-                    pass
-
-                else:
-                    result.append(item)
-
-            if not result:
-                try:
-                    result = lookup(query.name)
-
-                except ImportError:
-                    items[:] = result
-                    pass
-
-            else:
-                items[:] = result
-
-    else:
-        result = ctx[query]
-
-    ctx[query] = result
-
-    return result
+    return _GLOBALPYDRIVER.processquery(
+        query=query, ctx=ctx, items=items, **kwargs
+    )
 
 
 def getsubitem(item, name, error=False):
@@ -580,9 +372,9 @@ for condition in CONDITIONS:
     _ENRICHEDOPERATORSBYNAME[condition] = condoperator(_OPERATORS_BY_NAME[condition])
 
 
-class PyFunctionChooser(FunctionChooser):
+class PyFunctionChooser(object):
 
-    def getfunction(self, name, *args, **kwargs):
+    def get(self, name):
 
         if name in _ENRICHEDOPERATORSBYNAME:
             return _ENRICHEDOPERATORSBYNAME[name]
@@ -594,25 +386,333 @@ class PyFunctionChooser(FunctionChooser):
             except ImportError:
                 pass
 
-FUNCTIONCHOOSER = PyFunctionChooser()
 
+class PyDriver(Driver):
+    """In charge of accessing to data from a list of dictionaries or objects."""
 
-def applyfunction(query, ctx, fparams=None, functionchooser=FUNCTIONCHOOSER):
+    name = 'py'  # driver name
 
-    try:
-        function = functionchooser.getfunction(name=query.name)
+    def __init__(
+            self, items=None, funcchooser=PyFunctionChooser(), *args, **kwargs
+    ):
+        """
+        :param list items: list of data. Data are dictionaries. Default is [].
+        """
 
-        if fparams is None:
-            fparams = [ctx.get(param, param) for param in query.params]
+        super(PyDriver, self).__init__(*args, **kwargs)
 
-        if fparams:
-            return function(query=query, fparams=fparams, ctx=ctx)
+        self.items = [] if items is None else items
+        self.funcchooser = funcchooser
 
-    except KeyError:
-        raise NotImplementedError(
-            'Function {0} is not implented by {1}'.format(query, self)
-        )
+    def _process(self, transaction, **kwargs):
 
-    def __repr__(self):
+        result = transaction
 
-        return 'FunctionChooser({0})'.format(self.functionsbyname)
+        if kwargs:
+            raise ValueError(
+                'Driver {0} does not support additional arguments {1}'.format(
+                    self, kwargs
+                )
+            )
+
+        if transaction.state is State.COMMITTING:
+
+            for crud in transaction.cruds:
+
+                self.processcrud(ctx=transaction.ctx, crud=crud, **kwargs)
+
+        return result
+
+    def processcrud(self, crud, ctx=None, **kwargs):
+        """Apply the right rule.
+
+        :param CRUDElement crud: crud rule to apply.
+        :param Context ctx: context where to store the processing result.
+            Default is None.
+
+        :rtype: list
+        :return: list"""
+
+        result = kwargs.setdefault('items', self.items)
+
+        if ctx is None:
+            ctx = Context()
+
+        if crud in ctx:  # is crud already calculated
+            result = ctx[crud]
+
+        else:
+            if isinstance(crud, Create):
+                result = self.processcreate(create=crud, ctx=ctx, **kwargs)
+
+            elif isinstance(crud, Read):
+                result = self.processread(read=crud, ctx=ctx, **kwargs)
+
+            elif isinstance(crud, Update):
+                result = self.processupdate(update=crud, ctx=ctx, **kwargs)
+
+            elif isinstance(crud, Delete):
+                result = self.processdelete(delete=crud, ctx=ctx, **kwargs)
+
+            else:
+                raise TypeError('{0} is not a crud element.'.format(crud))
+
+            ctx[crud] = result
+
+        return result
+
+    def processquery(self, query, ctx=None, **kwargs):
+        """Process input query related to items and ctx."""
+
+        result = query
+
+        if ctx is None:
+            ctx = Context()
+
+        if query in ctx:  # is query calculated already ?
+            result = ctx[query]
+
+        elif isinstance(query, BaseElement):
+
+            if isinstance(query, Function):
+
+                self.processfunction(function=query, ctx=ctx, **kwargs)
+
+            elif isinstance(query, Expression):
+
+                self.processexpr(expr=query, ctx=ctx, **kwargs)
+
+            elif isinstance(query, CRUDElement):
+
+                result = self.processcrud(crud=query, ctx=ctx, items=items)
+
+            ctx[query] = result
+
+        return result
+
+    def processfunction(self, function, ctx=None, **kwargs):
+
+        items = kwargs.pop('items', self.items)
+
+        func = self.getfunction(name=function, ctx=ctx)
+
+        isor = function.name == FuncName.OR
+
+        result = []
+
+        params = []
+
+        for param in query.params:
+
+            fitems = list(items) if isor else items
+
+            param = self.processquery(
+                query=param, ctx=ctx, fitems=items, **kwargs
+            )
+
+            if isor:
+                result += param
+
+            else:
+                params.append(param)
+
+        if func is None:
+
+            raise NotImplementedError(
+                    'Function {0} is not implented by {1}'.format(
+                        function, self
+                    )
+                )
+
+        return func(function=function, ctx=ctx, params=params, **kwargs)
+
+    def processexpr(self, expr, items, ctx=None):
+
+        result = []
+
+        items = kwargs.setdefault('items', self.items)
+
+        for item in items:
+            try:
+                getsubitem(item, query.name, error=True)
+
+            except KeyError:
+                pass
+
+            else:
+                result.append(item)
+
+        if not result:
+            try:
+                result = lookup(query.name)
+
+            except ImportError:
+                items[:] = result
+
+        else:
+            items[:] = result
+
+        return result
+
+    def processcreate(self, create, ctx=None, **kwargs):
+        """Apply input Create element to items.
+
+        :param Create create: data to add to input items.
+        :return: created item.
+        :rtype: list"""
+
+        result = items = kwargs.setdefault('items', self.items)
+
+        if ctx is None:
+            ctx = Context()
+
+        if create.query is not None:
+            result = self.processquery(query=create.query, ctx=ctx, **kwargs)
+
+        values = create.values
+
+        for key, query in iteritems(create.values):
+
+            value = self.processquery(query=query, ctx=ctx, **kwargs)
+            values[key] = value
+
+        result.append(values)
+
+        return result
+
+    def processread(self, read, ctx=None, **kwargs):
+        """Return application of input Read to items.
+
+        :param list items: items to read.
+        :param Read read: read resource to apply on items.
+        :return: read list.
+        :rtype: list
+        """
+
+        result = items = kwargs.setdefault('items', self.items)
+
+        if ctx is None:
+            ctx = Context()
+
+        if read.query is not None:
+            result = self.processquery(query=read.query, ctx=ctx, **kwargs)
+
+        result = list(items)
+
+        if read.select():
+            result = []
+            for item in list(items):
+                fitem = {}
+                for sel in read.select():
+                    if sel in item:
+                        fitem[sel] = item[sel]
+                result.append(fitem)
+
+        if read.offset():
+            result = result[read.offset():]
+
+        if read.limit():
+            result = result[:read.limit()]
+
+        if read.orderby():
+            for orderby in read.orderby():
+                result.sort(key=lambda item: item.get(orderby))
+
+        if read.groupby():
+            raise NotImplementedError()
+            groupbyresult = {}
+            _groupbyresult = []
+            for groupby in read.groupby():
+                if _groupbyresult:
+                    for item in _groupbyresult:
+                        pass
+                _groupbyresult = {groupby: []}
+
+                for res in result:
+                    if groupby in res:
+                        groupbyresult[groupby] = res.pop(groupby)
+
+                #FIX: do the same for sub groupby...
+
+        if read.join() not in ('FULL', None):
+            raise NotImplementedError(
+                'read function does not support join {0}'.format(
+                    read.join()
+                )
+            )
+
+        return result
+
+    def processupdate(self, update, ctx=None, **kwargs):
+        """Apply update to items.
+
+        :param Update update: update rule.
+        :return: updated items.
+        :rtype: list"""
+
+        if ctx is None:
+            ctx = Context()
+
+        result = kwargs.setdefault('items', self.items)
+
+        if update.query is not None:
+            result = self.processquery(query=update.query, ctx=ctx, **kwargs)
+
+        values = {}
+
+        for key in list(update.values):
+
+            value = self.processquery(
+                query=update.values[key], ctx=ctx, **kwargs
+            )
+            values[key] = value
+
+        for item in result:
+            for name, value in iteritems(values):
+
+                if callable(value):
+                    value(name, item)
+
+                else:
+                    item[name] = value
+
+        return result
+
+    def processdelete(self, delete, ctx=None, **kwargs):
+        """Apply deletion rule to items.
+
+        :param list items: items to modify.
+        :param Delete delete: deletion rule.
+        :rtype: list
+        :return: modified/deleted items."""
+
+        result = kwargs.setdefault('items', self.items)
+
+        if ctx is None:
+            ctx = Context()
+
+        if delete.query is not None:
+            result = self.processquery(query=delete.query, ctx=ctx, **kwargs)
+
+        if delete.names:
+
+            names = [
+                self.processquery(query=name, ctx=ctx, **kwargs)
+                for name in delete.names
+            ]
+
+            for name in names:
+                for item in result:
+                    if name in item:
+                        del item[name]
+
+        else:
+            result[:] = []
+
+        return result
+
+    def getfunction(function, ctx=None):
+
+        return ctx.get(function, self.funcchooser.get(function.name))
+
+_GLOBALPYDRIVER = PyDriver()
