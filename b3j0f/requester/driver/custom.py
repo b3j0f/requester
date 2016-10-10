@@ -41,13 +41,13 @@ from ..request.crud.update import Update
 from ..request.crud.delete import Delete
 
 __all__ = [
-    'FunctionalDriver',
+    'CustomDriver',
     'func2crodprocessing', 'obj2driver', 'DriverAnnotation',
     'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation', 'DeleteAnnotation'
 ]
 
 
-class FunctionalDriver(Driver):
+class CustomDriver(Driver):
     """Driver with fine grained implementation of crud functions.
 
     This driver uses at most five set of functions for five respective crud
@@ -77,7 +77,7 @@ class FunctionalDriver(Driver):
         :param dict functions: function to process for specific query functions.
         """
 
-        super(FunctionalDriver, self).__init__(*args, **kwargs)
+        super(CustomDriver, self).__init__(*args, **kwargs)
 
         self.creates = [] if creates is None else creates
         self.reads = [] if reads is None else reads
@@ -157,7 +157,7 @@ def obj2driver(
     :param list updates: update function names to retrieve from the obj.
     :param list deletes: delete function names to retrieve from the obj.
     :param dict functions: fuctions by name. obj functions by default.
-    :rtype: FunctionalDriver
+    :rtype: CustomDriver
     """
 
     fname = type(obj).__name__ if name is None else name
@@ -206,7 +206,7 @@ def obj2driver(
         if isinstance(schema, FunctionSchema):
             ffunctions[schema.name] = schema
 
-    return FunctionalDriver(
+    return CustomDriver(
         name=fname,
         creates=fcreates,
         reads=freads,
@@ -248,7 +248,7 @@ class DriverAnnotation(Annotation):
         to this attributes.
 
         :param obj: instance to transform to a functional driver.
-        :rtype: FunctionalDriver"""
+        :rtype: CustomDriver"""
 
         kwargs = {'name': self.name}
 
