@@ -49,16 +49,20 @@ class CRUDElement(BaseElement):
 
     __slots__ = ['transaction', 'query'] + BaseElement.__slots__
 
-    def __init__(self, query=None, transaction=None, *args, **kwargs):
+    def __init__(
+            self, query=None, transaction=None, dparams=None, *args, **kwargs
+    ):
         """
         :param Expression query: query.
         :param Transaction transaction: related transaction.
+        :param dict dparams: driver params.
         """
 
         super(CRUDElement, self).__init__(*args, **kwargs)
 
         self.query = query
         self.transaction = transaction
+        self.dparams = dparams
 
     def __call__(self, **kwargs):
         """Execute this CRUD element.
