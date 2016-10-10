@@ -119,6 +119,10 @@ class Expression(BaseElement):
 
         return type(self)(name='{0}.{1}'.format(self.name, key))
 
+    def __not__(self, other):
+
+        return Function(FuncName.NOT)(self, other)
+
     def __and__(self, other):
 
         return Function(FuncName.AND)(self, other)
