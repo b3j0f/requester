@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,12 @@ class Update(CRUDElement):
 
     def __repr__(self):
 
-        result = 'UPDATE {0}:{1}'.format(repr(self.name), repr(self.values))
+        result = 'UPDATE '
+
+        if self.name:
+            result += '{0}:'.format(repr(self.name))
+
+        result += repr(self.values)
 
         if self.query:
             result += ' where ({0})'.format(repr(self.query))
