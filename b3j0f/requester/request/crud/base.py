@@ -47,7 +47,7 @@ class CRUDElement(BaseElement):
 
     Can be associated to a transaction."""
 
-    __slots__ = ['transaction', 'query'] + BaseElement.__slots__
+    __slots__ = ['transaction', 'query', 'dparams'] + BaseElement.__slots__
 
     def __init__(
             self, query=None, transaction=None, dparams=None, *args, **kwargs

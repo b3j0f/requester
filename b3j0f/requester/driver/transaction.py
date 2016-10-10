@@ -54,11 +54,13 @@ class Transaction(object):
     """Request execution context."""
 
     __slots__ = [
-        'driver', 'parent', 'cruds', 'autocommit', 'uuid', 'state', 'ctx'
+        'driver', 'parent', 'cruds', 'autocommit', 'uuid', 'state', 'ctx',
+        'dparams'
     ]
 
     def __init__(
-            self, driver, parent=None, autocommit=False, ctx=None, cruds=None,
+            self, driver,
+            parent=None, autocommit=False, ctx=None, cruds=None, dparams=None,
             *args, **kwargs
     ):
         """
@@ -68,6 +70,7 @@ class Transaction(object):
             operation is processed by this transaction.
         :param Context ctx: CRUD execution context.
         :param list cruds: crud operations.
+        :param dict dparams: driver specific parameters.
         """
 
         super(Transaction, self).__init__(*args, **kwargs)
@@ -79,6 +82,7 @@ class Transaction(object):
         self.state = State.PENDING
         self.autocommit = autocommit
         self.ctx = Context() if ctx is None else ctx
+        self.dparams = dparams
 
     def __enter__(self):
 
