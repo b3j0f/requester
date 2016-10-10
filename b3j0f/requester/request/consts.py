@@ -175,32 +175,32 @@ class FuncName(Enum):
 
 CONDITIONS = [  #: expression conditions.
 
-    FuncName.IS.value,
-    FuncName.ISNOT.value,
-    FuncName.EQ.value,
-    FuncName.NE.value,
+    FuncName.IS,
+    FuncName.ISNOT,
+    FuncName.EQ,
+    FuncName.NE,
 
     # numerical functions
-    FuncName.GT.value,
-    FuncName.GE.value,
-    FuncName.LT.value,
-    FuncName.LE.value,
+    FuncName.GT,
+    FuncName.GE,
+    FuncName.LT,
+    FuncName.LE,
 
-    FuncName.LIKE.value,
+    FuncName.LIKE,
 
-    FuncName.EXISTS.value,
-    FuncName.NEXISTS.value,
+    FuncName.EXISTS,
+    FuncName.NEXISTS,
 
     # remainders functions are not supported by the Expression methods
-    FuncName.ISNULL.value,
-    FuncName.BETWEEN.value,
-    FuncName.IN.value,
+    FuncName.ISNULL,
+    FuncName.BETWEEN,
+    FuncName.IN,
 
     # selection operators  TODO: might be migrated to the Read object...
-    FuncName.HAVING.value,
+    FuncName.HAVING,
 
     # request comparison
-    FuncName.ALL.value,
-    FuncName.ANY.value,
-    FuncName.SOME.value
+    FuncName.ALL,
+    FuncName.ANY,
+    FuncName.SOME
 ]
