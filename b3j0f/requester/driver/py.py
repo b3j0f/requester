@@ -30,17 +30,17 @@ from datetime import datetime
 
 from functools import wraps
 
-from md5 import md5
+from hashlib import md5
 
 from operator import (
-    abs as abs_, add, concat, contains, countOf, delitem, delslice, eq,
-    floordiv, ge, getitem, getslice, gt, iadd, iand, iconcat, ifloordiv,
+    abs as abs_, add, concat, contains, countOf, delitem, eq,
+    floordiv, ge, getitem, gt, iadd, iand, iconcat, ifloordiv,
     ilshift, imod, imul, indexOf, invert,
 
-    ior, ipow, irepeat, irshift, is_, is_not, isub,
+    ior, ipow, irshift, is_, is_not, isub,
     itruediv, ixor,
-    le, lshift, lt, mod, mul, ne, neg, not_, pow as pow_, repeat, rshift,
-    sequenceIncludes, setitem, setslice, sub, truediv, truth, xor,
+    le, lshift, lt, mod, mul, ne, neg, not_, pow as pow_, rshift,
+    setitem, sub, truediv, truth, xor,
 )
 
 from random import random
@@ -256,8 +256,8 @@ _OPERATORS_BY_NAME = {
     FuncName.XOR.value: xor,
     FuncName.CONCAT.value: concat,
     FuncName.COUNTOF.value: countOf,
-    FuncName.REPEAT.value: repeat,
-    FuncName.INCLUDE.value: sequenceIncludes,
+    FuncName.REPEAT.value: mul,
+    FuncName.INCLUDE.value: contains,
     FuncName.IADD.value: iadd,
     FuncName.IAND.value: iand,
     FuncName.IOR.value: ior,
@@ -265,9 +265,9 @@ _OPERATORS_BY_NAME = {
     FuncName.GETITEM.value: getitem,
     FuncName.SETITEM.value: setitem,
     FuncName.DELITEM.value: delitem,
-    FuncName.GETSLICE.value: getslice,
-    FuncName.SETSLICE.value: setslice,
-    FuncName.DELSLICE.value: delslice,
+    FuncName.GETSLICE.value: getitem,
+    FuncName.SETSLICE.value: setitem,
+    FuncName.DELSLICE.value: delitem,
     FuncName.ICONCAT.value: iconcat,
     FuncName.IDIV.value: itruediv,
     FuncName.IFLOORDIV.value: ifloordiv,
@@ -275,7 +275,7 @@ _OPERATORS_BY_NAME = {
     FuncName.IMOD.value: imod,
     FuncName.IMUL.value: imul,
     FuncName.IPOW.value: ipow,
-    FuncName.IREPEAT.value: irepeat,
+    FuncName.IREPEAT.value: imul,
     FuncName.IRSHIFT.value: irshift,
     FuncName.ISUB.value: isub,
     FuncName.COUNT.value: len,

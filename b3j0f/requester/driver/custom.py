@@ -155,7 +155,7 @@ def obj2driver(
 
     # build obj schema if necessary
     if not isinstance(obj, Schema):
-        fobj = data2schema(obj)
+        fobj = data2schema(obj, _force=True)
 
     else:
         fobj = obj
@@ -173,7 +173,7 @@ def obj2driver(
     )
     for crudannotation in crudannotations:
         for target in crudannotation.targets:
-            targetname = target
+            targetname = target.__name__
             fobjtarget = getattr(fobj, targetname)
             _locals['f{0}s'.format(crudannotation.name)].append(fobjtarget)
 
@@ -181,6 +181,9 @@ def obj2driver(
     for crudname in (crudname.lower() for crudname in CRUD.__members__):
 
         cruds = _locals['{0}s'.format(crudname)]
+
+        if cruds is None:
+            cruds = []
 
         for crud in cruds:
 
@@ -192,7 +195,7 @@ def obj2driver(
 
     ffunctions = {} if functions is None else functions
 
-    for schema in obj.getschemas():
+    for schema in fobj.getschemas():
 
         if isinstance(schema, FunctionSchema):
             ffunctions[schema.name] = schema
@@ -264,9 +267,12 @@ class _CRUDAnnotation(Annotation):
         :param str crud: crud name.
         """
 
-        super(_CRUDAnnotation, self).__init__(self)
+        super(_CRUDAnnotation, self).__init__(*args, **kwargs)
 
-        self.crud = crud.name if isinstance(crud, CRUDElement) else crud
+        if isinstance(crud, CRUD):
+            crud = crud.name.lower()
+
+        self.name = crud
 
 
 class CreateAnnotation(_CRUDAnnotation):
