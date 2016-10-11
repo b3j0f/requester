@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,8 @@
 # --------------------------------------------------------------------
 
 """join execution module."""
+
+from copy import deepcopy
 
 from enum import IntEnum, unique
 
@@ -128,6 +130,7 @@ def naturaljoin(litems, ritems):
                     result.append(item)
 
     return result
+
 
 def unionjoin(litems, ritems):
 

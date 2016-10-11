@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,13 +27,17 @@
 """Driver module."""
 
 try:
-    from threading import thread
+    from threading import Thread
 
 except ImportError:
     from dummy_threading import Thread
 
+from .transaction import State, Transaction
 
-from .transaction import Transaction, State
+from ..request.crud.create import Create
+from ..request.crud.delete import Delete
+from ..request.crud.read import Read
+from ..request.crud.update import Update
 
 __all__ = ['Driver']
 
@@ -68,32 +72,27 @@ class Driver(object):
         )
 
     def process(
-            self, transaction,
-            explain=DEFAULT_EXPLAIN, async=DEFAULT_ASYNC, callback=None,
+            self, transaction, async=DEFAULT_ASYNC, callback=None,
             **kwargs
     ):
         """Process input transaction and crud element.
 
         :param Request transaction: transaction to process.
-        :param bool explain: give additional information about the transaction
-            execution.
         :param bool async: if True (default False), execute input crud in a
             separated thread.
-        :param callable callback: callable function which takes in parameter the
-            function result. Commonly used with async equals True.
+        :param callable callback: callable function which takes in parameter
+            the function result. Commonly used with async equals True.
         :param dict kwargs: additional parameters specific to the driver.
         :return: transaction.
         :rtype: Request
         """
 
-        def process(
-                transaction=transaction, explain=explain, callback=callback,
-                **kwargs
-        ):
+        def process(transaction=transaction, callback=callback, **kwargs):
 
-            result = self._process(
-                transaction=transaction, explain=explain, **kwargs
-            )
+            if transaction.dparams is not None:
+                kwargs.update(transaction.dparams)
+
+            result = self._process(transaction=transaction, **kwargs)
 
             if callback is not None:
                 callback(result)
@@ -101,19 +100,18 @@ class Driver(object):
             return result
 
         if transaction.state == State.COMMITTING:
+
             if async:
                 Thread(target=process).start()
 
             else:
                 return process()
 
-    def _process(self, transaction, explain=False, **kwargs):
+    def _process(self, transaction, **kwargs):
         """Generic method to override in order to crud input data related to
         transaction and kwargs.
 
         :param Transaction transaction: transaction to process.
-        :param bool explain: give additional information about the transaction
-            execution.
         :param dict kwargs: additional parameters specific to the driver.
         :return: transaction.
         :rtype: Request
@@ -145,7 +143,7 @@ class Driver(object):
 
         transaction = self.open(autocommit=True)
 
-        crud = cls(transaction=transcation, **kwargs)
+        crud = cls(transaction=transaction, **kwargs)
 
         return crud()
 
@@ -159,24 +157,21 @@ class Driver(object):
 
         :param tuple select: selection fields.
         :param dict kwargs: additional selection parameters (limit, etc.).
-        :rtype: Cursor
-        """
+        :rtype: Cursor"""
 
         return self._getcrud(cls=Read, **kwargs)
 
-    def update(self, **values):
+    def update(self, **kwargs):
         """Apply input updates.
 
-        :param tuple updates: updates to apply.
-        """
+        :param tuple updates: updates to apply."""
 
         return self._getcrud(cls=Update, **kwargs)
 
-    def delete(self, *names):
+    def delete(self, **kwargs):
         """Delete input deletes.
 
         :param tuple names: model name to delete.
-        :return: number of deleted deletes.
-        """
+        :return: number of deleted deletes."""
 
         return self._getcrud(cls=Delete, **kwargs)

@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,22 +26,19 @@
 
 """Module which specifices a composite of drivers."""
 
+from copy import deepcopy
+
+from b3j0f.schema import Schema, data2schema
+
 from .base import Driver
 
-from ..request.expr import Expression, Function
 from ..request.consts import FuncName
 from ..request.crud.create import Create
+from ..request.crud.delete import Delete
 from ..request.crud.read import Read
 from ..request.crud.update import Update
-from ..request.crud.delete import Delete
+from ..request.expr import Expression, Function
 
-from b3j0f.schema import data2schema, Schema
-
-try:
-    from threading import Thread
-
-except ImportError:
-    from dummy_threading import Thread
 
 __all__ = ['DriverComposite']
 
@@ -66,11 +63,13 @@ class DriverComposite(Driver):
 
     def _process(self, transaction, crud, **kwargs):
 
-        result = self._processquery(query=query, ctx=transaction.ctx, **kwargs)
+        result = self._processquery(query=crud, ctx=transaction.ctx, **kwargs)
 
         if isinstance(crud, (Create, Update)):
             if isinstance(crud.name, Expression):
-                ctx = self._processquery(query=crud.name, ctx=ctx).ctx
+                transaction = self._processquery(
+                    query=crud.name, ctx=transaction.ctx
+                )
                 names = [crud.name.name]
 
             else:
@@ -83,7 +82,7 @@ class DriverComposite(Driver):
 
             for item in items:
                 if isinstance(item, Expression):
-                    ctx = self._processquery(query=item, ctx=ctx)
+                    ctx = self._processquery(query=item, ctx=transaction.ctx)
                     names.append(item.name)
 
                 else:
@@ -95,8 +94,8 @@ class DriverComposite(Driver):
             if driver is None:
 
                 processingdrivers = [
-                    driver for driver in self.drivers.values()
-                    if names[0] in driver.getschemas()
+                    _driver for _driver in self.drivers.values()
+                    if names[0] in _driver.getschemas()
                 ]
 
             else:
@@ -112,9 +111,12 @@ class DriverComposite(Driver):
 
         transaction.ctx = ctx
 
+        return result
+
     def _processquery(self, query, ctx, _lastquery=None, **kwargs):
         """Parse deeply the query from the left to the right and aggregates
-        queries which refers to the same system without any intermediary system.
+        queries which refers to the same system without any intermediate system
+        .
 
         :param Expression query: query to process.
         :param Context ctx: context execution.
@@ -165,14 +167,14 @@ class DriverComposite(Driver):
             if lastdriver is None:
 
                 processingdrivers = [
-                    driver for driver in self.drivers.values()
-                    if names[0] in driver.getschemas()
+                    _driver for _driver in self.drivers.values()
+                    if names[0] in _driver.getschemas()
                 ]
 
             else:
                 processingdrivers = [lastdriver]
 
-            transaction = Request(query=query, ctx=ctx)
+            transaction = driver.open(cruds=[query], ctx=ctx)
 
             for processingdriver in processingdrivers:
 
@@ -188,7 +190,9 @@ class DriverComposite(Driver):
 
                 transaction.cruds = [crud]
 
-                transaction = processingdriver.process(transaction=transaction, **kwargs)
+                transaction = processingdriver.process(
+                    transaction=transaction, **kwargs
+                )
 
                 ctx = transaction.ctx
 

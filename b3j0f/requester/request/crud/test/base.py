@@ -4,7 +4,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,15 +27,15 @@
 
 """conf file driver UTs."""
 
-from b3j0f.utils.ut import UTCase
-
 from unittest import main
 
+from b3j0f.utils.ut import UTCase
+
 from ..base import CRUDElement
+from ...consts import FuncName
+from ...expr import Expression
 from ....driver.base import Driver
 from ....driver.transaction import Transaction
-from ...expr import Expression as E, Function as F
-from ...consts import FuncName as FN
 
 
 class CRUDTest(UTCase):
@@ -86,13 +86,13 @@ class CRUDTest(UTCase):
 
     def test_and_query(self):
 
-        self.crudelt.query = E.A
+        self.crudelt.query = Expression.A
 
         self.assertEqual(self.crudelt.query.name, 'A')
 
-        self.crudelt.query &= E.B
+        self.crudelt.query &= Expression.B
 
-        self.assertEqual(self.crudelt.query.name, FN.AND.value)
+        self.assertEqual(self.crudelt.query.name, FuncName.AND.value)
         self.assertEqual(
             self.crudelt.query.params[0].name,
             'A'
@@ -104,13 +104,13 @@ class CRUDTest(UTCase):
 
     def test_or_query(self):
 
-        self.crudelt.query = E.A
+        self.crudelt.query = Expression.A
 
         self.assertEqual(self.crudelt.query.name, 'A')
 
-        self.crudelt.query |= E.B
+        self.crudelt.query |= Expression.B
 
-        self.assertEqual(self.crudelt.query.name, FN.OR.value)
+        self.assertEqual(self.crudelt.query.name, FuncName.OR.value)
         self.assertEqual(
             self.crudelt.query.params[0].name,
             'A'
@@ -122,15 +122,15 @@ class CRUDTest(UTCase):
 
     def test_and__query(self):
 
-        self.crudelt.query = E.A
+        self.crudelt.query = Expression.A
 
         self.assertEqual(self.crudelt.query.name, 'A')
 
-        request = self.crudelt.where(E.B)
+        request = self.crudelt.where(Expression.B)
 
         self.assertIs(request, self.crudelt)
 
-        self.assertEqual(self.crudelt.query.name, FN.AND.value)
+        self.assertEqual(self.crudelt.query.name, FuncName.AND.value)
         self.assertEqual(
             self.crudelt.query.params[0].name,
             'A'
@@ -142,15 +142,15 @@ class CRUDTest(UTCase):
 
     def test_or__query(self):
 
-        self.crudelt.query = E.A
+        self.crudelt.query = Expression.A
 
         self.assertEqual(self.crudelt.query.name, 'A')
 
-        request = self.crudelt.orwhere(E.B)
+        request = self.crudelt.orwhere(Expression.B)
 
         self.assertIs(request, self.crudelt)
 
-        self.assertEqual(self.crudelt.query.name, FN.OR.value)
+        self.assertEqual(self.crudelt.query.name, FuncName.OR.value)
         self.assertEqual(
             self.crudelt.query.params[0].name,
             'A'

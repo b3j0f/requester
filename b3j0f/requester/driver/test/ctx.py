@@ -4,7 +4,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,14 +27,14 @@
 
 """request.base UTs."""
 
-from b3j0f.utils.ut import UTCase
+from collections import Hashable
 
 from unittest import main
 
-from ...request.crud.base import BaseElement
-from ..ctx import Context, getctxname
+from b3j0f.utils.ut import UTCase
 
-from collections import Hashable
+from ..ctx import Context, getctxname
+from ...request.crud.base import BaseElement
 
 
 class GetCtxNameTest(UTCase):
@@ -68,6 +68,7 @@ class GetCtxNameTest(UTCase):
         self.assertIsInstance(getctxname(elt), Hashable)
 
         self.assertEqual(getctxname(elt), getctxname(list(elt)))
+
 
 class ContextTest(UTCase):
 

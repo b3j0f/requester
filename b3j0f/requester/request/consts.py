@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -157,10 +157,6 @@ class FuncName(Enum):
     CONVERT = 'convert'
     GROUPCONCAT = 'groupconcat'
 
-    # update
-    IRSHIFT = '<<='
-    ILSHIFT = '>>='
-
     @staticmethod
     def contains(value):
 
@@ -175,6 +171,9 @@ class FuncName(Enum):
 
 
 CONDITIONS = [  #: expression conditions.
+
+    FuncName.OR.value,
+    FuncName.AND.value,
 
     FuncName.IS.value,
     FuncName.ISNOT.value,

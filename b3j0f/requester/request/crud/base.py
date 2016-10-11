@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,9 @@
 
 """Base crud module."""
 
-from ..expr import BaseElement
-
 from enum import IntEnum, unique
+
+from ..expr import BaseElement
 
 __all__ = ['CRUDElement', 'CRUD']
 
@@ -47,18 +47,22 @@ class CRUDElement(BaseElement):
 
     Can be associated to a transaction."""
 
-    __slots__ = ['transaction', 'query'] + BaseElement.__slots__
+    __slots__ = ['transaction', 'query', 'dparams'] + BaseElement.__slots__
 
-    def __init__(self, query=None, transaction=None, *args, **kwargs):
+    def __init__(
+            self, query=None, transaction=None, dparams=None, *args, **kwargs
+    ):
         """
         :param Expression query: query.
         :param Transaction transaction: related transaction.
+        :param dict dparams: driver params.
         """
 
         super(CRUDElement, self).__init__(*args, **kwargs)
 
         self.query = query
         self.transaction = transaction
+        self.dparams = dparams
 
     def __call__(self, **kwargs):
         """Execute this CRUD element.

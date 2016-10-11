@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,18 +26,16 @@
 
 """Transaction module."""
 
-from enum import IntEnum, unique
-
 from uuid import uuid4 as uuid
 
 from .ctx import Context
-from ..utils import tostr
 
 from ..request.crud.create import Create
+from ..request.crud.delete import Delete
 from ..request.crud.read import Read
 from ..request.crud.update import Update
-from ..request.crud.delete import Delete
 
+from ..utils import tostr
 
 __all__ = ['Transaction', 'State']
 
@@ -54,11 +52,13 @@ class Transaction(object):
     """Request execution context."""
 
     __slots__ = [
-        'driver', 'parent', 'cruds', 'autocommit', 'uuid', 'state', 'ctx'
+        'driver', 'parent', 'cruds', 'autocommit', 'uuid', 'state', 'ctx',
+        'dparams'
     ]
 
     def __init__(
-            self, driver, parent=None, autocommit=False, ctx=None, cruds=None,
+            self, driver,
+            parent=None, autocommit=False, ctx=None, cruds=None, dparams=None,
             *args, **kwargs
     ):
         """
@@ -68,6 +68,7 @@ class Transaction(object):
             operation is processed by this transaction.
         :param Context ctx: CRUD execution context.
         :param list cruds: crud operations.
+        :param dict dparams: driver specific parameters.
         """
 
         super(Transaction, self).__init__(*args, **kwargs)
@@ -79,6 +80,7 @@ class Transaction(object):
         self.state = State.PENDING
         self.autocommit = autocommit
         self.ctx = Context() if ctx is None else ctx
+        self.dparams = dparams
 
     def __enter__(self):
 
@@ -139,7 +141,7 @@ class Transaction(object):
         self.cruds += cruds
 
         if self.autocommit:
-            this.state = State.COMMITTING
+            self.state = State.COMMITTING
 
         else:
             return self.driver.process(transaction=self, **kwargs)
