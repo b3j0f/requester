@@ -28,6 +28,8 @@
 
 from uuid import uuid4 as uuid
 
+from enum import IntEnum, unique
+
 from .ctx import Context
 
 from ..request.crud.create import Create
@@ -40,7 +42,8 @@ from ..utils import tostr
 __all__ = ['Transaction', 'State']
 
 
-class State(object):
+@unique
+class State(IntEnum):
     """Transaction state."""
 
     PENDING = 1
@@ -77,7 +80,7 @@ class Transaction(object):
         self.uuid = uuid()
         self.parent = parent
         self.cruds = [] if cruds is None else cruds
-        self.state = State.PENDING
+        self.state = State.COMMITTING if autocommit else State.PENDING
         self.autocommit = autocommit
         self.ctx = Context() if ctx is None else ctx
         self.dparams = dparams
@@ -93,7 +96,7 @@ class Transaction(object):
 
         else:
             self.rollback()
-            raise exc_value
+            raise
 
     def __repr__(self):
 
@@ -110,7 +113,8 @@ class Transaction(object):
 
         result = self.driver.process(transaction=self, **kwargs)
 
-        self.state = State.PENDING
+        if not self.autocommit:
+            self.state = State.PENDING
 
         return result
 
@@ -127,7 +131,7 @@ class Transaction(object):
 
         result = self.driver.process(transaction=self, **kwargs)
 
-        self.state = State.PENDING
+        self.state = State.COMMITTING if self.autocommit else State.PENDING
 
         return result
 
@@ -146,7 +150,10 @@ class Transaction(object):
         else:
             return self.driver.process(transaction=self, **kwargs)
 
-    def open(self, autocommit=False, cruds=None):
+    def open(self, autocommit=None, cruds=None):
+
+        if autocommit is None:
+            autocommit = self.autocommit
 
         return Transaction(
             driver=self.driver, parent=self, ctx=self.ctx,

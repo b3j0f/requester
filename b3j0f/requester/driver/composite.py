@@ -46,8 +46,11 @@ __all__ = ['DriverComposite']
 class DriverComposite(PyDriver):
     """In charge of distributing a request to several drivers."""
 
-    def __init__(self, drivers, *args, **kwargs):
-        """:param list drivers: drivers to use."""
+    def __init__(self, drivers, default=None, *args, **kwargs):
+        """
+        :param list drivers: drivers to use.
+        :param Driver default: default driver to use if no driver found.
+        """
         super(DriverComposite, self).__init__(*args, **kwargs)
 
         self.drivers = {}
@@ -57,6 +60,8 @@ class DriverComposite(PyDriver):
                 driver = data2schema(driver, name=driver.name, _force=True)
 
             self.drivers[driver.name] = driver
+
+        self.default = default
 
     def getdrivers(self, name, maxdepth=3):
         """Get a list of drivers and models which correspond to the input name.
@@ -118,9 +123,18 @@ class DriverComposite(PyDriver):
 
         return result
 
-    def processdeeply(self, elt, ctx, _elts=None):
+    def _process(self, transaction, **kwargs):
+
+        for crud in transaction.cruds:
+            self.processdeeply(crud, transaction.ctx)
+
+        return transaction
+
+    def processdeeply(self, elt, transaction, _elts=None, **kwargs):
         """Parse input elt and return its evaluation."""
         result = elt
+
+        ctx = transaction.ctx
 
         if elt in ctx:
             result = ctx[elt]
@@ -136,6 +150,7 @@ class DriverComposite(PyDriver):
                 driverswmodel = self.getdrivers(elt.name)
 
                 if len(driverswmodel) > 1:
+                    print(driverswmodel)
                     raise ValueError(
                         'Too many drivers found for elt {0}. {1}'.format(
                             elt, driverswmodel
@@ -159,56 +174,86 @@ class DriverComposite(PyDriver):
 
             if isinstance(elt, Function):
                 for param in elt.params:
-                    self.processdeeply(elt=param, ctx=ctx, _elts=_elts)
+                    self.processdeeply(
+                        elt=param, ctx=ctx, _elts=_elts, **kwargs
+                    )
 
             elif isinstance(elt, CRUDElement):
 
-                self.processdeeply(elt.query, ctx=ctx, _elts=_elts)
+                self.processdeeply(elt.query, ctx=ctx, _elts=_elts, **kwargs)
 
                 if isinstance(elt, (Create, Update)):
-                    self.processdeeply(elt=elt.name, ctx=ctx, _elts=_elts)
+                    self.processdeeply(
+                        elt=elt.name, ctx=ctx, _elts=_elts, **kwargs
+                    )
                     for name, value in iteritems(elt.values):
-                        self.processdeeply(elt=name, ctx=ctx, _elts=_elts)
-                        self.processdeeply(elt=value, ctx=ctx, _elts=_elts)
+                        self.processdeeply(
+                            elt=name, ctx=ctx, _elts=_elts, **kwargs
+                        )
+                        self.processdeeply(
+                            elt=value, ctx=ctx, _elts=_elts, **kwargs
+                        )
 
                 elif isinstance(elt, Read):
-                    self.processdeeply(elt=elt.name, ctx=ctx, _elts=_elts)
+                    self.processdeeply(
+                        elt=elt.name, ctx=ctx, _elts=_elts, **kwargs
+                    )
                     for select in elt.select:
-                        self.processdeeply(elt=select, ctx=ctx, _elts=_elts)
+                        self.processdeeply(
+                            elt=select, ctx=ctx, _elts=_elts, **kwargs
+                        )
 
                     for groupby in elt.groupby:
-                        self.processdeeply(elt=groupby, ctx=ctx, _elts=_elts)
+                        self.processdeeply(
+                            elt=groupby, ctx=ctx, _elts=_elts, **kwargs
+                        )
 
                     for orderby in elt.orderby:
-                        self.processdeeply(elt=orderby, ctx=ctx, _elts=_elts)
+                        self.processdeeply(
+                            elt=orderby, ctx=ctx, _elts=_elts, **kwargs
+                        )
 
-                    self.processdeeply(elt=elt.join, ctx=ctx, _elts=_elts)
-                    self.processdeeply(elt=elt.limit, ctx=ctx, _elts=_elts)
-                    self.processdeeply(elt=elt.offset, ctx=ctx, _elts=_elts)
+                    self.processdeeply(
+                        elt=elt.join, ctx=ctx, _elts=_elts, **kwargs
+                    )
+                    self.processdeeply(
+                        elt=elt.limit, ctx=ctx, _elts=_elts, **kwargs
+                    )
+                    self.processdeeply(
+                        elt=elt.offset, ctx=ctx, _elts=_elts, **kwargs
+                    )
 
                 elif isinstance(elt, Delete):
 
                     for name in elt.names:
-                        self.processdeeply(elt=name, ctx=ctx, _elts=_elts)
+                        self.processdeeply(
+                            elt=name, ctx=ctx, _elts=_elts, **kwargs
+                        )
 
             if _elts[-1][2] == elt:
 
                 driver, model, _ = _elts.pop()
 
                 if driver is None:
-                    raise ValueError('No driver found to process {0}'.format(elt))
+                    driver = self.default
+
+                if driver is None:
+                    raise ValueError(
+                        'No driver found to process {0}'.format(elt)
+                    )
+
+                if isinstance(elt, Expression):
+                    crud = Read(query=elt)
 
                 else:
-                    if isinstance(elt, Expression):
-                        crud = Read(query=elt)
+                    crud = elt
 
-                    else:
-                        crud = elt
+                crudcopy = crud.copy()
+                self.updateelt(elt=crudcopy, driver=driver)
 
-                    crudcopy = crud.copy()
-                    self.updateelt(elt=crudcopy, driver=driver)
-
-                    result = driver.open(cruds=[crudcopy], ctx=ctx).commit()
+                result = transaction.open(cruds=[crudcopy], ctx=ctx).commit(
+                    **kwargs
+                )
 
         ctx[elt] = result
 

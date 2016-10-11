@@ -38,7 +38,7 @@ class DriverTest(UTCase):
 
     def setUp(self):
 
-        self.requests = []
+        self.transactions = []
         self.lkwargs = []
 
         self_ = self
@@ -47,15 +47,17 @@ class DriverTest(UTCase):
 
             name = 'test'
 
-            def process(self, request, **kwargs):
+            def _process(self, transaction, **kwargs):
 
-                self_.requests.append(request)
+                self_.transactions.append(transaction)
                 self_.lkwargs.append(kwargs)
 
-                return request
+                return transaction
 
         self.drivercls = TestDriver
         self.driver = TestDriver()
+
+        self.transaction = self.driver.open(autocommit=True)
 
     def test_class_name(self):
 
@@ -69,9 +71,9 @@ class DriverTest(UTCase):
 
         kwargs = {'bar': 'foo'}
 
-        self.driver.process(request=True, **kwargs)
+        self.driver.process(transaction=self.transaction, **kwargs)
 
-        self.assertEqual(self.requests, [True])
+        self.assertEqual(self.transactions, [self.transaction])
         self.assertEqual(self.lkwargs, [kwargs])
 
 if __name__ == '__main__':

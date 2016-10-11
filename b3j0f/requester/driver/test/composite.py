@@ -68,21 +68,30 @@ class DriverCompositeTest(UTCase):
 
     def setUp(self):
 
-        self.drivers = [TestDriver(name='s{0}'.format(i)) for i in range(3)]
+        self.drivers = [TestDriver(name='s{0}'.format(i)) for i in range(4)]
 
         self.s0 = self.drivers[0]
         self.s1 = self.drivers[1]
         self.s2 = self.drivers[2]
+        self.s3 = self.drivers[3]
 
-        self.driver = DriverComposite(drivers=self.drivers)
+        self.driver = DriverComposite(drivers=self.drivers, default=self.s3)
 
         self.transaction = self.driver.open()
 
     def test_expr(self):
 
+        self.driver.default = None
+
         expr = Expression.A
 
-        self.assertRaises(ValueError, self.transaction.process(cruds=[expr]))
+        self.assertRaises(ValueError, self.transaction.process, cruds=[expr])
+
+    def test_default_expr(self):
+
+        expr = Expression.A
+
+        self.assertRaises(ValueError, self.transaction.process, cruds=[expr])
 
 if __name__ == '__main__':
     main()
