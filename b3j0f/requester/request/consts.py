@@ -156,10 +156,6 @@ class FuncName(Enum):
     CONVERT = 'convert'
     GROUPCONCAT = 'groupconcat'
 
-    # update
-    IRSHIFT = '<<='
-    ILSHIFT = '>>='
-
     @staticmethod
     def contains(value):
 
