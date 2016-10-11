@@ -175,6 +175,9 @@ class FuncName(Enum):
 
 CONDITIONS = [  #: expression conditions.
 
+    FuncName.OR.value,
+    FuncName.AND.value,
+
     FuncName.IS.value,
     FuncName.ISNOT.value,
     FuncName.EQ.value,

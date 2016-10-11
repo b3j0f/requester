@@ -392,8 +392,8 @@ class ProcessQueryTest(CRUDTest):
         result = processquery(
             items=self.items, query=(Expression.id > 2) & (Expression.id < 4)
         )
-        print(result)
-        self.assertEqual(result, [self.items[2]])
+
+        self.assertEqual(result, [self.items[3]])
 
     def test_not(self):
 

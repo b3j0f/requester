@@ -366,10 +366,14 @@ def condoperator(operator):
 
         name = function.params[0].name
 
-        return [
+        result = [
             item for item in params[0]
             if operator(function, item, name, params, ctx)
         ]
+
+        params[0][:] = result
+
+        return result
 
     return result
 
@@ -504,7 +508,6 @@ class PyDriver(Driver):
     def processfunction(self, function, ctx=None, **kwargs):
 
         items = kwargs.pop('items', self.items)
-        print('start', function, items)
 
         func = self.getfunction(function=function, ctx=ctx)
 
@@ -514,6 +517,7 @@ class PyDriver(Driver):
         params = []
 
         fitems = presult = items
+        fctx = ctx
 
         if isor:
             result = []
@@ -522,20 +526,15 @@ class PyDriver(Driver):
 
             if isor:
                 fitems = list(items)
+                fctx = Context(ctx=ctx)
 
             elif isand:
                 fitems = presult
-                print(fitems, presult)
 
             presult = self.processquery(
-                query=param, ctx=ctx, items=fitems, **kwargs
+                query=param, ctx=fctx, items=fitems, **kwargs
             )
-            if function.name == FuncName.AND.value:
-                print(function)
-                print('param', param)
-                print('fitems', fitems)
-                print('param', param)
-                print('presult', presult)
+
             params.append(presult)
 
             if isand:
@@ -558,8 +557,6 @@ class PyDriver(Driver):
 
         ctx[function] = result
 
-        print('result', function, params, result)
-
         return result
 
     def processexpr(self, expr, ctx=None, **kwargs):
@@ -570,8 +567,6 @@ class PyDriver(Driver):
             ctx = Context()
 
         items = kwargs.setdefault('items', self.items)
-
-        print('expr', items)
 
         for item in items:
             try:
