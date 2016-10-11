@@ -182,6 +182,9 @@ def obj2driver(
 
         cruds = _locals['{0}s'.format(crudname)]
 
+        if cruds is None:
+            cruds = []
+
         for crud in cruds:
 
             crudfunc = getattr(fobj, crud)
