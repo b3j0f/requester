@@ -301,6 +301,14 @@ class ExpressionTest(UTCase):
 
         self._assertfunc(func, FuncName.ABS, expr)
 
+    def test__contains__(self):
+
+        expr = Expression(name='')
+
+        func = expr.__contains__('')
+
+        self._assertfunc(func, FuncName.IN, expr, '')
+
     def test__mod__(self):
 
         expr = Expression(name='')
