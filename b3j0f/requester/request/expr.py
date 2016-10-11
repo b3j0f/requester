@@ -36,7 +36,7 @@ from enum import Enum, unique
 
 from .base import BaseElement
 
-from .consts import FuncName
+from .consts import FuncName, CONDITIONS
 from ..utils import tostr
 
 __all__ = ['Expression', 'Function', 'MetaExpression']
@@ -567,17 +567,26 @@ class Function(Expression):
     def __repr__(self):
 
         if len(self.params) > 1:
-            params = [repr(expr) for expr in self.params]
-            tojoin = ' {0} '.format(self.name)
-            sparams = tojoin.join([repr(expr) for expr in self.params])
 
-            result = '({0})'.format(sparams)
+            if self.name in (
+                [FuncName.AND.value, FuncName.OR.value] + CONDITIONS
+            ):
+
+                params = [repr(expr) for expr in self.params]
+                tojoin = ' {0} '.format(self.name)
+                sparams = tojoin.join([repr(expr) for expr in self.params])
+
+                result = '({0})'.format(sparams)
+
+            else:
+                sparams = ', '.join([repr(expr) for expr in self.params])
+                result = '{0}({1})'.format(self.name, sparams)
 
         elif self.params:
             result = '{0}({1})'.format(self.name, repr(self.params[0]))
 
         else:
-            result = '{0}'.format(self.name)
+            result = '{0}()'.format(self.name)
 
         if self.alias:
             result += '{0} as {1}'.format(result, self.alias)

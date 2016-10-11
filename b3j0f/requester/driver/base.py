@@ -68,15 +68,12 @@ class Driver(object):
         )
 
     def process(
-            self, transaction,
-            explain=DEFAULT_EXPLAIN, async=DEFAULT_ASYNC, callback=None,
+            self, transaction, async=DEFAULT_ASYNC, callback=None,
             **kwargs
     ):
         """Process input transaction and crud element.
 
         :param Request transaction: transaction to process.
-        :param bool explain: give additional information about the transaction
-            execution.
         :param bool async: if True (default False), execute input crud in a
             separated thread.
         :param callable callback: callable function which takes in parameter the
@@ -86,14 +83,12 @@ class Driver(object):
         :rtype: Request
         """
 
-        def process(
-                transaction=transaction, explain=explain, callback=callback,
-                **kwargs
-        ):
+        def process(transaction=transaction, callback=callback, **kwargs):
 
-            result = self._process(
-                transaction=transaction, explain=explain, **kwargs
-            )
+            if transaction.dparams is not None:
+                kwargs.update(transaction.dparams)
+
+            result = self._process(transaction=transaction, **kwargs)
 
             if callback is not None:
                 callback(result)
@@ -101,19 +96,18 @@ class Driver(object):
             return result
 
         if transaction.state == State.COMMITTING:
+
             if async:
                 Thread(target=process).start()
 
             else:
                 return process()
 
-    def _process(self, transaction, explain=False, **kwargs):
+    def _process(self, transaction, **kwargs):
         """Generic method to override in order to crud input data related to
         transaction and kwargs.
 
         :param Transaction transaction: transaction to process.
-        :param bool explain: give additional information about the transaction
-            execution.
         :param dict kwargs: additional parameters specific to the driver.
         :return: transaction.
         :rtype: Request

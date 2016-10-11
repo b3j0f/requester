@@ -32,8 +32,8 @@ from b3j0f.utils.ut import UTCase
 from unittest import main
 
 from ..base import Driver
-from ..generator import (
-    func2crudprocessing, obj2driver, DriverAnnotation, FunctionalDriver
+from ..custom import (
+    func2crudprocessing, obj2driver, DriverAnnotation, CustomDriver
 )
 from ..ctx import Context
 from ..transaction import Transaction
@@ -78,7 +78,7 @@ class FunctionalDriverTest(UTCase):
             )
             count += 1
 
-        driver = FunctionalDriver(**kwargs)
+        driver = CustomDriver(**kwargs)
 
         kwargs = {'foo': 'bar'}
 

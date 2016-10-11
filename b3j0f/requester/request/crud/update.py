@@ -33,22 +33,28 @@ __all__ = ['Update']
 
 class Update(CRUDElement):
 
-    __slots__ = ['name', 'values'] + CRUDElement.__slots__
+    __slots__ = ['name', 'values', 'upsert'] + CRUDElement.__slots__
 
-    def __init__(self, values, name='', *args, **kwargs):
+    def __init__(self, values, name='', upsert=False, *args, **kwargs):
         """
         :param str name: model name.
         :param dict values: values to update.
+        :param bool upsert: if True (False by default), tries to create an
+            the related object if the query is empty.
         """
 
         super(Update, self).__init__(*args, **kwargs)
 
         self.name = name
         self.values = values
+        self.upsert = upsert
 
     def __repr__(self):
 
         result = 'UPDATE {0}:{1}'.format(repr(self.name), repr(self.values))
+
+        if self.upsert:
+            result += ' (upsert)'
 
         if self.query:
             result += ' where ({0})'.format(repr(self.query))

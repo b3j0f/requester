@@ -34,7 +34,7 @@ from unittest import main
 from ..base import Driver
 from ..py import PyDriver
 from ..composite import DriverComposite
-from ..generator import func2crudprocessing, obj2driver, DriverAnnotation
+from ..custom import func2crudprocessing, obj2driver, DriverAnnotation
 from ..transaction import Transaction
 from ..ctx import Context
 from ...request.expr import Expression as E, Function as F

@@ -32,8 +32,10 @@ from b3j0f.utils.ut import UTCase
 from unittest import main
 
 from ..py import (
-    PyDriver, processcrud, create, read, update, delete, processquery,
-    getsubitem, applyfunction
+    PyDriver,
+    processcrud, processcreate, processread, processupdate, processdelete,
+    processquery,
+    getsubitem
 )
 from ..generator import func2crudprocessing, obj2driver, DriverAnnotation
 from ..transaction import Transaction
@@ -60,11 +62,12 @@ class CreateTest(CRUDTest):
 
         crud = Create(name='test', values={})
 
-        result = create(items=self.items, create=crud)
+        result = processcreate(items=self.items, create=crud)
 
         self.assertIn(crud.values, self.items)
 
         self.assertIs(result, self.items)
+
 
 class ReadTest(CRUDTest):
 
@@ -72,7 +75,7 @@ class ReadTest(CRUDTest):
 
         crud = Read()
 
-        result = read(items=self.items, read=crud)
+        result = processread(items=self.items, read=crud)
 
         self.assertEqual(result, self.items)
 
@@ -82,7 +85,7 @@ class ReadTest(CRUDTest):
 
         crud = Read(select=['id'])
 
-        result = read(items=self.items, read=crud)
+        result = processread(items=self.items, read=crud)
 
         self.assertEqual(result, [{'id': i} for i in range(5)])
 
@@ -92,7 +95,7 @@ class ReadTest(CRUDTest):
 
         crud = Read(offset=1)
 
-        result = read(items=self.items, read=crud)
+        result = processread(items=self.items, read=crud)
 
         self.assertEqual(result, self.items[1:])
 
@@ -102,7 +105,7 @@ class ReadTest(CRUDTest):
 
         crud = Read(limit=1)
 
-        result = read(items=self.items, read=crud)
+        result = processread(items=self.items, read=crud)
 
         self.assertEqual(result, self.items[:1])
 
@@ -113,7 +116,7 @@ class ReadTest(CRUDTest):
         crud = Read(groupby=['a'])
 
         self.assertRaises(
-            NotImplementedError, read, items=self.items, read=crud
+            NotImplementedError, processread, items=self.items, read=crud
         )
 
     def test_join(self):
@@ -121,7 +124,7 @@ class ReadTest(CRUDTest):
         crud = Read(join='')
 
         self.assertRaises(
-            NotImplementedError, read, items=self.items, read=crud
+            NotImplementedError, processread, items=self.items, read=crud
         )
 
 
@@ -131,7 +134,7 @@ class UpdateTest(CRUDTest):
 
         crud = Update(name='', values={'name': 1})
 
-        result = update(items=self.items, update=crud)
+        result = processupdate(items=self.items, update=crud)
 
         self.assertIs(result, self.items)
 
@@ -145,7 +148,7 @@ class DeleteTest(CRUDTest):
 
         crud = Delete()
 
-        result = delete(items=self.items, delete=crud)
+        result = processdelete(items=self.items, delete=crud)
 
         self.assertIs(result, self.items)
 
@@ -155,7 +158,7 @@ class DeleteTest(CRUDTest):
 
         crud = Delete(names=('name', ))
 
-        result = delete(items=self.items, delete=crud)
+        result = processdelete(items=self.items, delete=crud)
 
         self.assertIs(result, self.items)
 
@@ -204,7 +207,7 @@ class ProcessCRUDTest(CRUDTest):
 
 class ProcessQueryTest(CRUDTest):
 
-    def test_item(self):
+    def test_expr(self):
 
         result = processquery(items=self.items, query=E.ext)
 
