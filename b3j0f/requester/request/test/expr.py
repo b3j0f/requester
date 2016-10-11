@@ -4,7 +4,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -304,6 +304,14 @@ class ExpressionTest(UTCase):
         func = abs(expr)
 
         self._assertfunc(func, FuncName.ABS, expr)
+
+    def test__contains__(self):
+
+        expr = Expression(name='')
+
+        func = expr.__contains__('')
+
+        self._assertfunc(func, FuncName.IN, expr, '')
 
     def test__mod__(self):
 
