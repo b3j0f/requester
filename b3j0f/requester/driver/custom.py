@@ -155,7 +155,7 @@ def obj2driver(
 
     # build obj schema if necessary
     if not isinstance(obj, Schema):
-        fobj = data2schema(obj)
+        fobj = data2schema(obj, _force=True)
 
     else:
         fobj = obj
