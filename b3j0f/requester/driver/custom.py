@@ -267,7 +267,7 @@ class _CRUDAnnotation(Annotation):
         :param str crud: crud name.
         """
 
-        super(_CRUDAnnotation, self).__init__(self)
+        super(_CRUDAnnotation, self).__init__(*args, **kwargs)
 
         self.crud = crud.name if isinstance(crud, CRUDElement) else crud
 
