@@ -30,7 +30,7 @@ from datetime import datetime
 
 from functools import wraps
 
-from md5 import md5
+from hashlib import md5
 
 from operator import (
     abs as abs_, add, concat, contains, countOf, delitem, delslice, eq,
