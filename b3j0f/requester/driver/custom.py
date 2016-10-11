@@ -173,7 +173,7 @@ def obj2driver(
     )
     for crudannotation in crudannotations:
         for target in crudannotation.targets:
-            targetname = target
+            targetname = target.__name__
             fobjtarget = getattr(fobj, targetname)
             _locals['f{0}s'.format(crudannotation.name)].append(fobjtarget)
 
