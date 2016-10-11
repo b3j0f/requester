@@ -169,11 +169,11 @@ def isnull(query, item, name, fparams, ctx):
 
 def _namedelt(operator):
 
-    def result(query, item, name, fparams, ctx):
+    def result(query, item, name, params, ctx):
 
         subitem = getsubitem(item, name)
 
-        return operator(subitem, *fparams[1:])
+        return operator(subitem, *params[1:])
 
     return result
 
@@ -192,7 +192,7 @@ def all_(query, item, name, params, ctx):
     func = _OPERATORS_BY_NAME[operator]
 
     for _item in items:
-        if not func(query.params[0], item, name, [items, _item], ctx):
+        if not func(function=query.params[0], ctx=ctx, params=[[items], _item]):
             result = False
             break
 
@@ -213,7 +213,13 @@ def any_(query, item, name, params, ctx):
     func = _OPERATORS_BY_NAME[operator]
 
     for _item in items:
-        if func(query.params[0], item, name, [items, _item], ctx):
+        params = [[item], _item]
+
+        function = query.params[1].copy()(query.params[1])
+
+        params = [[item], _item]
+
+        if func(function=function, ctx=ctx, params=params):
             result = True
             break
 
@@ -364,14 +370,19 @@ def condoperator(operator):
     @wraps(operator)
     def result(function, params, ctx):
 
-        name = function.params[0].name
+        if params:
 
-        result = [
-            item for item in params[0]
-            if operator(function, item, name, params, ctx)
-        ]
+            name = function.params[0].name
 
-        params[0][:] = result
+            result = [
+                item for item in params[0]
+                if operator(function, item, name, params, ctx)
+            ]
+
+            params[0][:] = result
+
+        else:
+            result = function
 
         return result
 
