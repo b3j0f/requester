@@ -31,86 +31,58 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
-from ..composite import DriverComposite
+from ..composite import DriverComposite, updatename
 
+from ..base import Driver
 from ..ctx import Context
-from ..py import PyDriver
 from ..transaction import Transaction
 from ...request.expr import Expression, Function
+from ...request.crud.create import Create
+from ...request.crud.delete import Delete
+from ...request.crud.read import Read
+from ...request.crud.update import Update
 
 
-class TestDriver(PyDriver):
+class TestDriver(Driver):
+    """Test driver."""
 
     def __init__(self, *args, **kwargs):
 
         super(TestDriver, self).__init__(*args, **kwargs)
 
-        self.requests = []
+        self.transactions = []
 
-        for i in range(10):
-            value = {'name': self.name, 'id': i, 'even': (i & 1) is 0}
-            self.values.append(value)
+    def process(self, transaction, *args, **kwargs):
 
-    def process(self, request, **kwargs):
+        result = super(TestDriver, self).process(
+            transaction=transaction, *args, **kwargs
+        )
 
-        result = super(TestDriver, self).process(request=request, **kwargs)
-
-        self.requests.append((request, kwargs))
+        self.transactions.append((transaction, kwargs))
 
         return result
 
 
 class DriverCompositeTest(UTCase):
+    """Tests for the driver composite."""
 
     def setUp(self):
 
         self.drivers = [TestDriver(name='s{0}'.format(i)) for i in range(3)]
 
+        self.s0 = self.drivers[0]
+        self.s1 = self.drivers[1]
+        self.s2 = self.drivers[2]
+
         self.driver = DriverComposite(drivers=self.drivers)
 
-        self.ctx = Context()
+        self.transaction = self.driver.open()
 
-        self.request = Transaction(driver=None, ctx=self.ctx)
+    def test_expr(self):
 
-    def test__processquery_no_system(self):
+        expr = Expression.A
 
-        query = Expression.a
-
-        self.driver._processquery(query, ctx=self.request.ctx)
-
-        self.assertFalse(self.request.ctx)
-
-    def test__processquery_s0(self):
-
-        query = Expression.s0
-
-        self.driver._processquery(query, ctx=self.request.ctx)
-
-        self.assertIn(query, self.request.ctx)
-        self.assertEqual(
-            self.driver.drivers['s0'].values,
-            self.request.ctx[query]
-        )
-
-    def test__processquery_s0_property(self):
-
-        query = Expression.s0.name_
-
-        self.driver._processquery(query, ctx=self.request.ctx)
-
-        self.assertIn(query, self.request.ctx)
-        values = [{'name': 's0'}] * 10
-        self.assertEqual(self.request.ctx[query], values)
-
-    def test__processquery_none_s0(self):
-
-        expr = Expression.s0
-        query = Function.A(expr)
-
-        self.driver._processquery(query=query, ctx=self.request.ctx)
-
-        self.assertIn(expr, self.request.ctx)
-        self.assertIn(query, self.request.ctx)
+        self.assertRaises(ValueError, self.transaction.process(cruds=[expr]))
 
 if __name__ == '__main__':
     main()
