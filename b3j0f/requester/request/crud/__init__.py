@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,8 @@
 
 from .base import CRUDElement
 from .create import Create
-from .read import Read, Cursor
-from .update import Update
 from .delete import Delete
+from .read import Cursor, Read
+from .update import Update
+
+__all__ = ['CRUDElement', 'Create', 'Read', 'Cursor', 'Update', 'Delete']

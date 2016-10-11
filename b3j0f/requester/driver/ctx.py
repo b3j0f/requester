@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,12 @@
 
 """Context module."""
 
-from ..request.base import BaseElement
-from ..request.crud.join import applyjoin, Join
+from collections import Hashable, Iterable
 
 from six import iteritems
 
-from collections import Hashable, Iterable
+from ..request.base import BaseElement
+from ..request.crud.join import Join, applyjoin
 
 __all__ = ['Context', 'getctxname']
 

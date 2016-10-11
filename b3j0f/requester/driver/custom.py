@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,23 +27,21 @@
 """Driver generator module."""
 
 from b3j0f.annotation import Annotation
-from b3j0f.schema import data2schema, data2schemacls, Schema
+from b3j0f.schema import Schema, data2schema
 from b3j0f.schema.lang.python import FunctionSchema
-
-from six import string_types
 
 from .base import Driver
 from .py import processread
-from ..request.crud.base import CRUD
+from ..request.crud.base import CRUD, CRUDElement
 from ..request.crud.create import Create
 from ..request.crud.read import Read
 from ..request.crud.update import Update
-from ..request.crud.delete import Delete
 
 __all__ = [
     'CustomDriver',
-    'func2crodprocessing', 'obj2driver', 'DriverAnnotation',
-    'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation', 'DeleteAnnotation'
+    'func2crudprocessing', 'obj2driver', 'DriverAnnotation',
+    'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation',
+    'DeleteAnnotation'
 ]
 
 
@@ -74,7 +72,8 @@ class CustomDriver(Driver):
             a crud operation and specific kwargs. Return updated items.
         :param list deletes: deletion functions. Take in parameters a request,
             a crud operation and specific kwargs. Return deleted items.
-        :param dict functions: function to process for specific query functions.
+        :param dict functions: function to process for specific query functions
+        .
         """
 
         super(CustomDriver, self).__init__(*args, **kwargs)
@@ -104,14 +103,6 @@ class CustomDriver(Driver):
 
         return result
 
-    def _processquery(self, query, ctx):
-
-        if query in ctx:
-            result = ctx[query]
-
-        else:
-            pass
-
 
 def func2crudprocessing(func=None):
 
@@ -136,7 +127,7 @@ def func2crudprocessing(func=None):
         funcresult = list(_func(*funcvarargs, **funckwargs))
 
         if isinstance(crud, Read):
-            read(read=crud, items=funcresult)
+            processread(read=crud, items=funcresult)
 
         transaction.ctx[crud] = funcresult
 
@@ -182,12 +173,12 @@ def obj2driver(
     )
     for crudannotation in crudannotations:
         for target in crudannotation.targets:
-            targetname = targetname
+            targetname = target
             fobjtarget = getattr(fobj, targetname)
             _locals['f{0}s'.format(crudannotation.name)].append(fobjtarget)
 
     # then parse function parameters
-    for crudname in (crudname.lower() for crudname in  CRUD.__members__):
+    for crudname in (crudname.lower() for crudname in CRUD.__members__):
 
         cruds = _locals['{0}s'.format(crudname)]
 

@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,16 +28,14 @@
 
 from __future__ import division
 
-from six import add_metaclass, string_types, PY3
-
 from numbers import Number
 
-from enum import Enum, unique
+from six import add_metaclass, string_types
 
 from .base import BaseElement
 
-from .consts import FuncName, CONDITIONS
-from ..utils import tostr
+from .consts import CONDITIONS, FuncName
+
 
 __all__ = ['Expression', 'Function', 'MetaExpression']
 
@@ -45,13 +43,13 @@ __all__ = ['Expression', 'Function', 'MetaExpression']
 class MetaExpression(type):
     """Meta class for function."""
 
-    def __getattr__(cls, key):
+    def __getattr__(self, key):
         """Instanciate a new cls expression for not existing attribute."""
 
         if key[-1] == '_':
             key = key[:-1]
 
-        return cls(name=key)
+        return self(name=key)
 
 
 @add_metaclass(MetaExpression)
@@ -135,7 +133,9 @@ class Expression(BaseElement):
 
         if not isinstance(other, types + (Expression,)):
             raise TypeError(
-                'Wrong type {0}. {1}, Expression expected.'.format(other, types)
+                'Wrong type {0}. {1}, Expression expected.'.format(
+                    other, types
+                )
             )
 
     def __mod__(self, other):
@@ -440,7 +440,8 @@ class Expression(BaseElement):
                 elif isinstance(value, list):
 
                     fvalue = [
-                        item.copy() if isinstance(item, Expression) else item
+                        value.copy()
+                        if isinstance(value, Expression) else value
                     ]
 
                 kwargs[slot] = fvalue
@@ -564,11 +565,7 @@ class Function(Expression):
 
         if len(self.params) > 1:
 
-            if self.name in (
-                [FuncName.AND.value, FuncName.OR.value] + CONDITIONS
-            ):
-
-                params = [repr(expr) for expr in self.params]
+            if self.name in CONDITIONS:
                 tojoin = ' {0} '.format(self.name)
                 sparams = tojoin.join([repr(expr) for expr in self.params])
 

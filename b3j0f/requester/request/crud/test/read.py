@@ -4,7 +4,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,9 +27,9 @@
 
 """conf file driver UTs."""
 
-from b3j0f.utils.ut import UTCase
-
 from unittest import main
+
+from b3j0f.utils.ut import UTCase
 
 from ..read import Read
 
@@ -77,12 +77,12 @@ class ReadTest(UTCase):
         groupby = 0
         join = 0
 
-        #self.assertRaises(TypeError, Read, select=select)
+        self.assertRaises(TypeError, Read, select=select)
         self.assertRaises(TypeError, Read, offset=offset)
         self.assertRaises(TypeError, Read, limit=limit)
-        #self.assertRaises(TypeError, Read, orderby=orderby)
-        #self.assertRaises(TypeError, Read, groupby=groupby)
-        #&self.assertRaises(TypeError, Read, join=join)
+        self.assertRaises(TypeError, Read, orderby=orderby)
+        self.assertRaises(TypeError, Read, groupby=groupby)
+        self.assertRaises(TypeError, Read, join=join)
 
     def test_chaining(self):
 

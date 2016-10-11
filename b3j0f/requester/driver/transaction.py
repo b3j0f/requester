@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,18 +26,16 @@
 
 """Transaction module."""
 
-from enum import IntEnum, unique
-
 from uuid import uuid4 as uuid
 
 from .ctx import Context
-from ..utils import tostr
 
 from ..request.crud.create import Create
+from ..request.crud.delete import Delete
 from ..request.crud.read import Read
 from ..request.crud.update import Update
-from ..request.crud.delete import Delete
 
+from ..utils import tostr
 
 __all__ = ['Transaction', 'State']
 
@@ -143,7 +141,7 @@ class Transaction(object):
         self.cruds += cruds
 
         if self.autocommit:
-            this.state = State.COMMITTING
+            self.state = State.COMMITTING
 
         else:
             return self.driver.process(transaction=self, **kwargs)

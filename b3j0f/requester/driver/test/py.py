@@ -4,7 +4,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,24 +27,22 @@
 
 """conf file driver UTs."""
 
-from b3j0f.utils.ut import UTCase
-
 from unittest import main
 
+from b3j0f.utils.ut import UTCase
+
+from ..ctx import Context
 from ..py import (
     PyDriver,
-    processcrud, processcreate, processread, processupdate, processdelete,
-    processquery,
-    getsubitem
+    getsubitem,
+    processcreate, processcrud, processdelete, processquery, processread,
+    processupdate
 )
-from ..generator import func2crudprocessing, obj2driver, DriverAnnotation
-from ..transaction import Transaction
-from ..ctx import Context
-from ...request.expr import Expression as E, Function as F
 from ...request.crud.create import Create
+from ...request.crud.delete import Delete
 from ...request.crud.read import Read
 from ...request.crud.update import Update
-from ...request.crud.delete import Delete
+from ...request.expr import Expression, Function
 
 
 class CRUDTest(UTCase):
@@ -209,152 +207,201 @@ class ProcessQueryTest(CRUDTest):
 
     def test_expr(self):
 
-        result = processquery(items=self.items, query=E.ext)
+        result = processquery(items=self.items, query=Expression.ext)
 
         self.assertEqual(result, [self.items[-1]])
 
     def test_lookup(self):
 
-        result = processquery(items=self.items, query=E.b3j0f.utils.ut.UTCase)
+        result = processquery(
+            items=self.items, query=Expression.b3j0f.utils.ut.UTCase
+        )
 
         self.assertIs(result, UTCase)
         self.assertTrue(self.items)
 
     def test_is(self):
 
-        result = processquery(items=self.items, query=F.is_(E.id, 2))
+        result = processquery(
+            items=self.items, query=Function.is_(Expression.id, 2)
+        )
 
         self.assertEqual(result, [self.items[2]])
 
     def test_isnot(self):
 
-        result = processquery(items=self.items, query=F.isnot(E.id, 2))
+        result = processquery(
+            items=self.items, query=Function.isnot(Expression.id, 2)
+        )
 
         self.assertEqual(result, self.items[:2] + self.items[3:])
 
     def test_eq(self):
 
-        result = processquery(items=self.items, query=E.name_ == '2')
+        result = processquery(items=self.items, query=Expression.name_ == '2')
 
         self.assertEqual(result, [self.items[2]])
 
     def test_ne(self):
 
-        result = processquery(items=self.items, query=E.id != 0)
+        result = processquery(items=self.items, query=Expression.id != 0)
 
         self.assertEqual(result, self.items[1:])
 
     def test_gt(self):
 
-        result = processquery(items=self.items, query=E.id > 2)
+        result = processquery(items=self.items, query=Expression.id > 2)
 
         self.assertEqual(result, self.items[3:])
 
     def test_ge(self):
 
-        result = processquery(items=self.items, query=E.id >= 2)
+        result = processquery(items=self.items, query=Expression.id >= 2)
 
         self.assertEqual(result, self.items[2:])
 
     def test_lt(self):
 
-        result = processquery(items=self.items, query=E.id < 2)
+        result = processquery(items=self.items, query=Expression.id < 2)
 
         self.assertEqual(result, self.items[:2])
 
     def test_le(self):
 
-        result = processquery(items=self.items, query=E.id <= 2)
+        result = processquery(items=self.items, query=Expression.id <= 2)
 
         self.assertEqual(result, self.items[:3])
 
     def test_like(self):
 
-        result = processquery(items=self.items, query=E.name_ % '[1234]')
+        result = processquery(
+            items=self.items, query=Expression.name_ % '[1234]'
+        )
 
         self.assertEqual(result, self.items[1:])
 
     def test_exists(self):
 
-        result = processquery(items=self.items, query=E.exists(E.ext))
+        result = processquery(
+            items=self.items, query=Expression.exists(Expression.ext)
+        )
 
         self.assertEqual(result, [self.items[-1]])
 
     def test_nexists(self):
 
-        result = processquery(items=self.items, query=E.nexists(E.ext))
+        result = processquery(
+            items=self.items, query=Expression.nexists(Expression.ext)
+        )
 
         self.assertEqual(result, self.items[:-1])
 
     def test_isnull(self):
 
-        result = processquery(items=self.items, query=E.isnull(E.ext))
+        result = processquery(
+            items=self.items, query=Expression.isnull(Expression.ext)
+        )
 
         self.assertEqual(result, [self.items[-1]])
 
     def test_between(self):
 
-        result = processquery(items=self.items, query=E.between(E.id, 1, 2))
+        result = processquery(
+            items=self.items, query=Expression.between(Expression.id, 1, 2)
+        )
 
         self.assertEqual(result, self.items[1:3])
 
     def test_in(self):
 
-        result = processquery(items=self.items, query=E.in_(E.id, [1, 2]))
+        result = processquery(
+            items=self.items, query=Expression.in_(Expression.id, [1, 2])
+        )
 
         self.assertEqual(result, self.items[1:3])
 
     def test_having(self):
 
-        result = processquery(items=self.items, query=E.having(E.in_(E.id, [1, 2])))
+        result = processquery(
+            items=self.items, query=Expression.having(
+                Expression.in_(Expression.id, [1, 2])
+            )
+        )
 
         self.assertEqual(result, self.items[1:3])
 
     def test_all(self):
 
-        result = processquery(items=self.items, query=E.all(E.id, F('>'), [1, 2]))
+        result = processquery(
+            items=self.items, query=Expression.all(
+                Expression.id, Function('>'), [1, 2]
+            )
+        )
 
         self.assertEqual(result, self.items[3:])
 
-        result = processquery(items=self.items, query=E.all(E.id, '>', [1, 2]))
+        result = processquery(
+            items=self.items, query=Expression.all(Expression.id, '>', [1, 2])
+        )
 
         self.assertEqual(result, self.items[3:])
 
     def test_any(self):
 
-        result = processquery(items=self.items, query=E.any(E.id, F('>'), [1, 2]))
+        result = processquery(
+            items=self.items,
+            query=Expression.any(Expression.id, Function('>'), [1, 2])
+        )
 
         self.assertEqual(result, self.items[2:])
 
-        result = processquery(items=self.items, query=E.any(E.id, '>', [1, 2]))
+        result = processquery(
+            items=self.items,
+            query=Expression.any(Expression.id, '>', [1, 2])
+        )
 
         self.assertEqual(result, self.items[2:])
 
     def test_some(self):
 
-        result = processquery(items=self.items, query=E.some(E.id, F('>'), [1, 2]))
+        result = processquery(
+            items=self.items,
+            query=Expression.some(Expression.id, Function('>'), [1, 2])
+        )
 
         self.assertEqual(result, self.items[2:])
 
-        result = processquery(items=self.items, query=E.some(E.id, '>', [1, 2]))
+        result = processquery(
+            items=self.items,
+            query=Expression.some(Expression.id, '>', [1, 2])
+        )
 
         self.assertEqual(result, self.items[2:])
 
     def test_or(self):
 
-        result = processquery(items=self.items, query=(E.id < 2) | (E.id > 3))
+        result = processquery(
+            items=self.items,
+            query=(Expression.id < 2) | (Expression.id > 3)
+        )
 
         self.assertEqual(result, self.items[:2] + self.items[4:])
 
     def test_and(self):
 
-        result = processquery(items=self.items, query=(E.id > 2) & (E.id < 4))
-
+        result = processquery(
+            items=self.items, query=(Expression.id > 2) & (Expression.id < 4)
+        )
+        print(result)
         self.assertEqual(result, [self.items[2]])
 
     def test_not(self):
 
-        result = processquery(items=self.items, query=F.not_(True))
+        result = processquery(items=self.items, query=Function.not_(True))
+
+        raise NotImplementedError()
+
+        return result
 
 
 class GetSubItemTest(UTCase):

@@ -4,7 +4,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,16 +27,12 @@
 
 """conf file driver UTs."""
 
-from b3j0f.utils.ut import UTCase
-
 from unittest import main
+
+from b3j0f.utils.ut import UTCase
 
 from ..consts import FuncName
 from ..expr import Expression, Function
-
-from numbers import Number
-
-from six import iteritems
 
 
 class ExpressionTest(UTCase):
@@ -331,30 +327,6 @@ class ExpressionTest(UTCase):
 
         self._assertfunc(func, FuncName.IPOW, expr, 1)
         self._asserttype(expr, '__ipow__')
-
-    def test__rand__(self):
-
-        expr = Expression(name='')
-
-        func = 1 & expr
-
-        self._assertfunc(func, FuncName.AND, 1, expr)
-
-    def test__ror__(self):
-
-        expr = Expression(name='')
-
-        func = 1 | expr
-
-        self._assertfunc(func, FuncName.OR, 1, expr)
-
-    def test__rxor__(self):
-
-        expr = Expression(name='')
-
-        func = 1 ^ expr
-
-        self._assertfunc(func, FuncName.XOR, 1, expr)
 
     def test__radd__(self):
 

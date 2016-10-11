@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,59 +26,60 @@
 
 """Python driver module."""
 
-from .base import Driver
-
-from b3j0f.utils.path import lookup
-
-from operator import (
-    lt, le, eq, ne, ge, gt, not_, truth, is_, is_not, abs, add, floordiv,
-    truediv, invert, mod, mul, neg, or_, pow, rshift, lshift, sub,
-    xor, concat, countOf, indexOf, repeat, sequenceIncludes, iadd, iand,
-    getitem, setitem, delitem, getslice, setslice, delslice, iconcat,
-    ifloordiv, ilshift, imod, imul, ior, ipow, irepeat, irshift, isub,
-    itruediv, ixor, contains
-)
+from datetime import datetime
 
 from functools import wraps
 
+from md5 import md5
+
+from operator import (
+    abs as abs_, add, concat, contains, countOf, delitem, delslice, eq,
+    floordiv, ge, getitem, getslice, gt, iadd, iand, iconcat, ifloordiv,
+    ilshift, imod, imul, indexOf, invert,
+
+    ior, ipow, irepeat, irshift, is_, is_not, isub,
+    itruediv, ixor,
+    le, lshift, lt, mod, mul, ne, neg, not_, pow as pow_, repeat, rshift,
+    sequenceIncludes, setitem, setslice, sub, truediv, truth, xor,
+)
+
+from random import random
+
 from re import match
+
+from b3j0f.utils.path import lookup
+
+from six import iteritems
+
+from soundex import getInstance
+
+
+from .base import Driver
 
 from .ctx import Context
 from .transaction import State
 
-from ..request.base import BaseElement
-from ..request.consts import FuncName, CONDITIONS
-from ..request.expr import Expression, Function
-from ..request.crud.create import Create
-from ..request.crud.read import Read
-from ..request.crud.join import applyjoin, Join
-from ..request.crud.update import Update
-from ..request.crud.delete import Delete
-
-from random import random
-
-from soundex import getInstance
-
-from md5 import md5
-
-from time import time
-from datetime import datetime
-
-from six import iteritems
-
 from .utils import FunctionChooser
+from ..request.base import BaseElement
+from ..request.consts import CONDITIONS, FuncName
+from ..request.crud.base import CRUDElement
+from ..request.crud.create import Create
+from ..request.crud.delete import Delete
+from ..request.crud.read import Read
+from ..request.crud.update import Update
+from ..request.expr import Expression, Function
 
 __all__ = [
     'PyDriver', 'processcrud', 'processquery',
     'processcreate', 'processread', 'processupdate', 'processdelete',
-    'applyfunction', 'FunctionChooser'
+    'FunctionChooser'
 ]
 
 VERSION = '0.1'  #: python driver version.
 
 soundex = getInstance().soundex
 
-DATETIMEFORMAT = '%Y-%m-%d %H:%M:%S'
+DTF = '%Y-%m-%d %H:%M:%S'  #: date time format
 
 
 def processcreate(items, create, ctx=None, **kwargs):
@@ -220,6 +221,8 @@ def any_(query, item, name, params, ctx):
 
 
 _OPERATORS_BY_NAME = {
+    FuncName.AND.value: lambda function, params, ctx: reduce(add, params),
+    FuncName.OR.value: lambda function, params, ctx: reduce(add, params),
     FuncName.LT.value: _namedelt(lt),
     FuncName.LE.value: _namedelt(le),
     FuncName.EQ.value: _namedelt(eq),
@@ -230,7 +233,7 @@ _OPERATORS_BY_NAME = {
     FuncName.TRUTH.value: truth,
     FuncName.IS.value: _namedelt(is_),
     FuncName.ISNOT.value: _namedelt(is_not),
-    FuncName.ABS.value: abs,
+    FuncName.ABS.value: abs_,
     FuncName.ADD.value: add,
     FuncName.FLOORDIV.value: floordiv,
     FuncName.DIV.value: truediv,
@@ -240,8 +243,7 @@ _OPERATORS_BY_NAME = {
     FuncName.LIKE.value: _namedelt(lambda val, msg: match(msg, val)),
     FuncName.MUL.value: mul,
     FuncName.NEG.value: neg,
-    FuncName.OR.value: or_,
-    FuncName.POW.value: pow,
+    FuncName.POW.value: pow_,
     FuncName.RSHIFT.value: rshift,
     FuncName.LSHIFT.value: lshift,
     FuncName.SUB.value: sub,
@@ -316,11 +318,16 @@ _OPERATORS_BY_NAME = {
     FuncName.RAND.value: random,
     FuncName.ROUND.value: round,
     FuncName.MD5.value: lambda data: md5(data).digest(),
-    FuncName.NOW.value: lambda: datetime.now().strftime(DATETIMEFORMAT),
-    FuncName.SEC_TO_TIME.value: lambda date: datetime.fromtimestamp(date).strftime(DATETIMEFORMAT),
-    FuncName.DATEDIFF.value: lambda date1, date2: datetime.strpformat(date1, DATETIMEFORMAT) - datetime.strpformat(date2, DATETIMEFORMAT),
-    FuncName.MONTH.value: lambda date=None: datetime.strpformat(date, DATETIMEFORMAT).month,
-    FuncName.YEAR.value: lambda date=None: datetime.strpformat(date, DATETIMEFORMAT).year,
+    FuncName.NOW.value: lambda: datetime.now().strftime(DTF),
+    FuncName.SEC_TO_TIME.value:
+        lambda date: datetime.fromtimestamp(date).strftime(DTF),
+    FuncName.DATEDIFF.value:
+        lambda date1, date2:
+            datetime.strpformat(date1, DTF) - datetime.strpformat(date2, DTF),
+    FuncName.MONTH.value:
+        lambda date=None: datetime.strpformat(date, DTF).month,
+    FuncName.YEAR.value:
+        lambda date=None: datetime.strpformat(date, DTF).year,
 }
 
 
@@ -351,12 +358,11 @@ def getsubitem(item, name, error=False):
 
     return result
 
+
 def condoperator(operator):
 
     @wraps(operator)
     def result(function, params, ctx):
-
-        items = params[0]
 
         name = function.params[0].name
 
@@ -368,21 +374,18 @@ def condoperator(operator):
     return result
 
 
-_ENRICHEDOPERATORSBYNAME = {}
-
-
 for condition in CONDITIONS:
     _condoperator = condoperator(_OPERATORS_BY_NAME[condition])
     _condoperator.__name__ = condition
-    _ENRICHEDOPERATORSBYNAME[condition] = _condoperator
+    _OPERATORS_BY_NAME[condition] = _condoperator
 
 
 class PyFunctionChooser(object):
 
     def get(self, name):
 
-        if name in _ENRICHEDOPERATORSBYNAME:
-            return _ENRICHEDOPERATORSBYNAME[name]
+        if name in _OPERATORS_BY_NAME:
+            return _OPERATORS_BY_NAME[name]
 
         else:
             try:
@@ -393,7 +396,8 @@ class PyFunctionChooser(object):
 
 
 class PyDriver(Driver):
-    """In charge of accessing to data from a list of dictionaries or objects."""
+    """In charge of accessing to data from a list of dictionaries or objects.
+    """
 
     name = 'py'  # driver name
 
@@ -481,7 +485,9 @@ class PyDriver(Driver):
 
             if isinstance(query, Function):
 
-                result = self.processfunction(function=query, ctx=ctx, **kwargs)
+                result = self.processfunction(
+                    function=query, ctx=ctx, **kwargs
+                )
 
             elif isinstance(query, Expression):
 
@@ -489,7 +495,7 @@ class PyDriver(Driver):
 
             elif isinstance(query, CRUDElement):
 
-                result = self.processcrud(crud=query, ctx=ctx, items=items)
+                result = self.processcrud(crud=query, ctx=ctx, **kwargs)
 
             ctx[query] = result
 
@@ -498,41 +504,63 @@ class PyDriver(Driver):
     def processfunction(self, function, ctx=None, **kwargs):
 
         items = kwargs.pop('items', self.items)
+        print('start', function, items)
 
         func = self.getfunction(function=function, ctx=ctx)
 
         isor = function.name == FuncName.OR.value
-
-        result = []
+        isand = function.name == FuncName.AND.value
 
         params = []
 
+        fitems = presult = items
+
+        if isor:
+            result = []
+
         for param in function.params:
 
-            fitems = list(items) if isor else items
+            if isor:
+                fitems = list(items)
+
+            elif isand:
+                fitems = presult
+                print(fitems, presult)
 
             presult = self.processquery(
                 query=param, ctx=ctx, items=fitems, **kwargs
             )
-            print(param, fitems, presult)
-            if isor:
-                result += presult
+            if function.name == FuncName.AND.value:
+                print(function)
+                print('param', param)
+                print('fitems', fitems)
+                print('param', param)
+                print('presult', presult)
+            params.append(presult)
 
-            else:
-                params.append(presult)
+            if isand:
+                result = presult
+
+            elif isor:
+                result += presult
 
         if func is None:
 
-            if function.name not in [FuncName.AND.value, FuncName.OR.value]:
+            raise NotImplementedError(
+                'Function {0} is not implented by {1}'.format(
+                    function, self
+                )
+            )
 
-                raise NotImplementedError(
-                        'Function {0} is not implented by {1}'.format(
-                            function, self
-                        )
-                    )
+        elif function.name not in [FuncName.AND.value, FuncName.OR.value]:
 
-        elif function.name not in CONDITIONS or function.params:
-            return func(function=function, ctx=ctx, params=params, **kwargs)
+            result = func(function=function, ctx=ctx, params=params, **kwargs)
+
+        ctx[function] = result
+
+        print('result', function, params, result)
+
+        return result
 
     def processexpr(self, expr, ctx=None, **kwargs):
 
@@ -542,6 +570,8 @@ class PyDriver(Driver):
             ctx = Context()
 
         items = kwargs.setdefault('items', self.items)
+
+        print('expr', items)
 
         for item in items:
             try:
@@ -574,7 +604,7 @@ class PyDriver(Driver):
         :return: created item.
         :rtype: list"""
 
-        result = items = kwargs.setdefault('items', self.items)
+        result = kwargs.setdefault('items', self.items)
 
         if ctx is None:
             ctx = Context()
@@ -645,7 +675,7 @@ class PyDriver(Driver):
                     if groupby in res:
                         groupbyresult[groupby] = res.pop(groupby)
 
-                #FIX: do the same for sub groupby...
+                # FIX: do the same for sub groupby...
 
         if read.join() not in ('FULL', None):
             raise NotImplementedError(

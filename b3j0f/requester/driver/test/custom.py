@@ -4,7 +4,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,22 +27,19 @@
 
 """conf file driver UTs."""
 
-from b3j0f.utils.ut import UTCase
-
 from unittest import main
 
-from ..base import Driver
-from ..custom import (
-    func2crudprocessing, obj2driver, DriverAnnotation, CustomDriver
-)
+from b3j0f.utils.ut import UTCase
+
 from ..ctx import Context
+from ..custom import CustomDriver, func2crudprocessing
 from ..transaction import Transaction
 from ...request.crud.base import CRUD
-from ...request.expr import Expression as E
 from ...request.crud.create import Create
+from ...request.crud.delete import Delete
 from ...request.crud.read import Read
 from ...request.crud.update import Update
-from ...request.crud.delete import Delete
+from ...request.expr import Expression
 
 
 class FunctionalDriverTest(UTCase):
@@ -189,10 +186,12 @@ class Func2CrudProcessingTest(UTCase):
 
         genfunc = func2crudprocessing(func)
 
-        query = E.func(1, 2, 3)
+        query = Expression.func(1, 2, 3)
         crud = Read(None)
 
-        transaction = Transaction(driver=None, query=query, ctx=Context({'b': 2}))
+        transaction = Transaction(
+            driver=None, query=query, ctx=Context({'b': 2})
+        )
 
         _request = genfunc(crud=crud, transaction=transaction)
 
@@ -208,7 +207,7 @@ class Func2CrudProcessingTest(UTCase):
 
                 return list(params)
 
-        query = E.test(1, 2, 3)
+        query = Expression.test(1, 2, 3)
 
         transaction = Transaction(
             driver=None, query=query, ctx=Context({'b': 1})

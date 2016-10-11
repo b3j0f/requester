@@ -4,7 +4,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,20 +27,19 @@
 
 """transaction.base UTs."""
 
-from b3j0f.utils.ut import UTCase
-
 from unittest import main
 
-from ...request.base import BaseElement
-from ..transaction import Transaction, State
-from ..ctx import Context
+from b3j0f.utils.ut import UTCase
+
 from ..base import Driver
-from ...request.expr import Expression as E, Function as F, FuncName as FN
+
+from ..transaction import State, Transaction
+
 from ...request.crud.base import CRUDElement
 from ...request.crud.create import Create
+from ...request.crud.delete import Delete
 from ...request.crud.read import Read
 from ...request.crud.update import Update
-from ...request.crud.delete import Delete
 
 
 class TransactionTest(UTCase):
@@ -50,14 +49,16 @@ class TransactionTest(UTCase):
         self.transactions = []
         self.states = []
 
+        self_ = self
+
         class TestDriver(Driver):
 
-            def process(_self, transaction, **kwargs):
+            def process(self, transaction, **kwargs):
 
-                self.states.append(transaction.state)
-                self.transactions.append(transaction)
+                self_.states.append(transaction.state)
+                self_.transactions.append(transaction)
                 for crud in transaction.cruds:
-                    self.transaction.ctx[crud] = crud
+                    self_.transaction.ctx[crud] = crud
 
         self.driver = TestDriver()
 

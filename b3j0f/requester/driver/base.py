@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,13 +27,17 @@
 """Driver module."""
 
 try:
-    from threading import thread
+    from threading import Thread
 
 except ImportError:
     from dummy_threading import Thread
 
+from .transaction import State, Transaction
 
-from .transaction import Transaction, State
+from ..request.crud.create import Create
+from ..request.crud.delete import Delete
+from ..request.crud.read import Read
+from ..request.crud.update import Update
 
 __all__ = ['Driver']
 
@@ -76,8 +80,8 @@ class Driver(object):
         :param Request transaction: transaction to process.
         :param bool async: if True (default False), execute input crud in a
             separated thread.
-        :param callable callback: callable function which takes in parameter the
-            function result. Commonly used with async equals True.
+        :param callable callback: callable function which takes in parameter
+            the function result. Commonly used with async equals True.
         :param dict kwargs: additional parameters specific to the driver.
         :return: transaction.
         :rtype: Request
@@ -139,7 +143,7 @@ class Driver(object):
 
         transaction = self.open(autocommit=True)
 
-        crud = cls(transaction=transcation, **kwargs)
+        crud = cls(transaction=transaction, **kwargs)
 
         return crud()
 
@@ -153,24 +157,21 @@ class Driver(object):
 
         :param tuple select: selection fields.
         :param dict kwargs: additional selection parameters (limit, etc.).
-        :rtype: Cursor
-        """
+        :rtype: Cursor"""
 
         return self._getcrud(cls=Read, **kwargs)
 
-    def update(self, **values):
+    def update(self, **kwargs):
         """Apply input updates.
 
-        :param tuple updates: updates to apply.
-        """
+        :param tuple updates: updates to apply."""
 
         return self._getcrud(cls=Update, **kwargs)
 
-    def delete(self, *names):
+    def delete(self, **kwargs):
         """Delete input deletes.
 
         :param tuple names: model name to delete.
-        :return: number of deleted deletes.
-        """
+        :return: number of deleted deletes."""
 
         return self._getcrud(cls=Delete, **kwargs)

@@ -4,7 +4,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,21 +27,16 @@
 
 """conf file driver UTs."""
 
-from b3j0f.utils.ut import UTCase
-
 from unittest import main
 
-from ..base import Driver
-from ..py import PyDriver
+from b3j0f.utils.ut import UTCase
+
 from ..composite import DriverComposite
-from ..custom import func2crudprocessing, obj2driver, DriverAnnotation
-from ..transaction import Transaction
+
 from ..ctx import Context
-from ...request.expr import Expression as E, Function as F
-from ...request.crud.create import Create
-from ...request.crud.read import Read
-from ...request.crud.update import Update
-from ...request.crud.delete import Delete
+from ..py import PyDriver
+from ..transaction import Transaction
+from ...request.expr import Expression, Function
 
 
 class TestDriver(PyDriver):
@@ -79,7 +74,7 @@ class DriverCompositeTest(UTCase):
 
     def test__processquery_no_system(self):
 
-        query = E.a
+        query = Expression.a
 
         self.driver._processquery(query, ctx=self.request.ctx)
 
@@ -87,7 +82,7 @@ class DriverCompositeTest(UTCase):
 
     def test__processquery_s0(self):
 
-        query = E.s0
+        query = Expression.s0
 
         self.driver._processquery(query, ctx=self.request.ctx)
 
@@ -99,7 +94,7 @@ class DriverCompositeTest(UTCase):
 
     def test__processquery_s0_property(self):
 
-        query = E.s0.name_
+        query = Expression.s0.name_
 
         self.driver._processquery(query, ctx=self.request.ctx)
 
@@ -109,8 +104,8 @@ class DriverCompositeTest(UTCase):
 
     def test__processquery_none_s0(self):
 
-        expr = E.s0
-        query = F.A(expr)
+        expr = Expression.s0
+        query = Function.A(expr)
 
         self.driver._processquery(query=query, ctx=self.request.ctx)
 

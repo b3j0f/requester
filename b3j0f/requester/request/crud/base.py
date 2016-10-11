@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,9 @@
 
 """Base crud module."""
 
-from ..expr import BaseElement
-
 from enum import IntEnum, unique
+
+from ..expr import BaseElement
 
 __all__ = ['CRUDElement', 'CRUD']
 

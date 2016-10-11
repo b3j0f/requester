@@ -4,7 +4,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,9 +27,9 @@
 
 """conf file driver UTs."""
 
-from b3j0f.utils.ut import UTCase
-
 from unittest import main
+
+from b3j0f.utils.ut import UTCase
 
 from ..base import Driver
 
@@ -41,14 +41,16 @@ class DriverTest(UTCase):
         self.requests = []
         self.lkwargs = []
 
+        self_ = self
+
         class TestDriver(Driver):
 
             name = 'test'
 
-            def process(self_, request, **kwargs):
+            def process(self, request, **kwargs):
 
-                self.requests.append(request)
-                self.lkwargs.append(kwargs)
+                self_.requests.append(request)
+                self_.lkwargs.append(kwargs)
 
                 return request
 
@@ -67,7 +69,7 @@ class DriverTest(UTCase):
 
         kwargs = {'bar': 'foo'}
 
-        result = self.driver.process(request=True, **kwargs)
+        self.driver.process(request=True, **kwargs)
 
         self.assertEqual(self.requests, [True])
         self.assertEqual(self.lkwargs, [kwargs])
