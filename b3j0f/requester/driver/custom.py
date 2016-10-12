@@ -84,22 +84,21 @@ class CustomDriver(Driver):
         self.deletes = [] if deletes is None else deletes
         self.functions = {} if functions is None else functions
 
-    def _process(self, transaction, crud, **kwargs):
-
+    def _process(self, transaction, **kwargs):
         result = transaction
 
-        crudname = type(crud).__name__.lower()
+        for crud in transaction.cruds:
+            crudname = type(crud).__name__.lower()
+            funcs = getattr(self, '{0}s'.format(crudname))
 
-        funcs = getattr(self, '{0}s'.format(crudname))
+            if funcs:
+                for func in funcs:
+                    result = func(crud=crud, transaction=result, **kwargs)
 
-        if funcs:
-            for func in funcs:
-                result = func(crud=crud, transaction=result, **kwargs)
-
-        else:
-            raise NotImplementedError(
-                'No implementation found for {0}'.format(crudname)
-            )
+            else:
+                raise NotImplementedError(
+                    'No implementation found for {0}'.format(crudname)
+                )
 
         return result
 
@@ -277,7 +276,7 @@ class _CRUDAnnotation(Annotation):
 
 class CreateAnnotation(_CRUDAnnotation):
 
-    def __init__(self, crud=CRUD.READ, *args, **kwargs):
+    def __init__(self, crud=CRUD.CREATE, *args, **kwargs):
 
         super(CreateAnnotation, self).__init__(crud=crud, *args, **kwargs)
 
