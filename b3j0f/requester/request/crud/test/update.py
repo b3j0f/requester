@@ -31,6 +31,7 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
+from ...expr import Expression as E
 from ..update import Update
 
 
@@ -44,6 +45,59 @@ class UpdateTest(UTCase):
 
         self.assertEqual('test', update.name)
         self.assertEqual(values, update.values)
+
+    def test___repr__(self):
+        cases = [
+            {
+                'values': {},
+                'name': E.u,
+                'where': None,
+                'as': None,
+                'expected': "UPDATE u:{}",
+            },
+            {
+                'values': {E.key: 'value'},
+                'name': E.u,
+                'where': None,
+                'as': None,
+                'expected': "UPDATE u:{key: 'value'}",
+            },
+            {
+                'values': {E.k: 'v'},
+                'name': '',
+                'where': None,
+                'as': None,
+                'expected': "UPDATE {k: 'v'}",
+            },
+            {
+                'values': {E.k: 'v'},
+                'name': '',
+                'where': E.w,
+                'as': None,
+                'expected': "UPDATE {k: 'v'} where (w)",
+            },
+            {
+                'values': {E.k: 'v'},
+                'name': '',
+                'where': None,
+                'as': 'a',
+                'expected': "UPDATE {k: 'v'} as a",
+            },
+        ]
+
+        for test in cases:
+            u = Update(
+                values=test['values'],
+                name=test['name'],
+            )
+
+            if test['where']:
+                u = u.where(test['where'])
+
+            if test['as']:
+                u = u.as_(test['as'])
+
+            self.assertEqual(repr(u), test['expected'])
 
 if __name__ == '__main__':
     main()

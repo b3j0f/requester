@@ -31,6 +31,7 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
+from ...expr import Expression as E
 from ..delete import Delete
 
 
@@ -49,6 +50,46 @@ class DeleteTest(UTCase):
         delete = Delete(names=names)
 
         self.assertEqual(names, delete.names)
+
+    def test___repr__(self):
+        cases = [
+            {
+                'names': [E.d],
+                'where': None,
+                'as': None,
+                'expected': "DELETE d",
+            },
+            {
+                'names': [E.d1, E.d2],
+                'where': None,
+                'as': None,
+                'expected': "DELETE d1, d2",
+            },
+            {
+                'names': [E.d],
+                'where': E.w,
+                'as': None,
+                'expected': "DELETE d where (w)",
+            },
+            {
+                'names': [E.d],
+                'where': None,
+                'as': 'a',
+                'expected': "DELETE d as a",
+            },
+        ]
+
+        for test in cases:
+            d = Delete(names=test['names'])
+
+            if test['where']:
+                d = d.where(test['where'])
+
+            if test['as']:
+                d = d.as_(test['as'])
+
+            self.assertEqual(repr(d), test['expected'])
+
 
 if __name__ == '__main__':
     main()
