@@ -50,7 +50,7 @@ class FunctionalDriverTest(UTCase):
 
         def process(crud, count):
 
-            def _process(transaction, **kwargs):
+            def cprocess(transaction, **kwargs):
 
                 self.processed.setdefault(crud.name, []).append(kwargs)
 
@@ -58,7 +58,7 @@ class FunctionalDriverTest(UTCase):
 
                 return transaction
 
-            return [_process for _ in range(count)]
+            return [cprocess for _ in range(count)]
 
         self.process = process
 

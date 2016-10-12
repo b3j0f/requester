@@ -173,9 +173,11 @@ class DriverComposite(PyDriver):
                 elif olddriver != driver:
                         _elts.append([driver, model, elt])
 
-            if isinstance(elt, Function):
+            children = getchildren(elt)
 
-                isor = elt.name == FuncName.OR.value
+            isor = isinstance(elt, Function) and elt.name == FuncName.OR.value
+
+            for child in children:
 
                 if isor:
                     ctx = Context(transaction.ctx)
@@ -184,76 +186,13 @@ class DriverComposite(PyDriver):
                 else:
                     ftransaction == transaction
 
-                for param in elt.params:
-                    self.processdeeply(
-                        elt=param, transaction=ftransaction, _elts=_elts,
-                        **kwargs
-                    )
-
-                    if isor:
-                        transaction.ctx.fill(ftransaction.ctx)
-
-            elif isinstance(elt, CRUDElement):
-
                 self.processdeeply(
-                    elt=elt.query, transaction=transaction, _elts=_elts,
+                    elt=child, transaction=ftransaction, _elts=_elts,
                     **kwargs
                 )
 
-                if isinstance(elt, (Create, Update)):
-                    self.processdeeply(
-                        elt=elt.name, transaction=transaction, _elts=_elts,
-                        **kwargs
-                    )
-                    for name, value in iteritems(elt.values):
-                        self.processdeeply(
-                            elt=name, transaction=transaction, _elts=_elts,
-                            **kwargs
-                        )
-                        self.processdeeply(
-                            elt=value, transaction=transaction, _elts=_elts,
-                            **kwargs
-                        )
-
-                elif isinstance(elt, Read):
-                    for select in elt.select():
-                        self.processdeeply(
-                            elt=select, transaction=transaction, _elts=_elts,
-                            **kwargs
-                        )
-
-                    for groupby in elt.groupby():
-                        self.processdeeply(
-                            elt=groupby, transaction=transaction, _elts=_elts,
-                            **kwargs
-                        )
-
-                    for orderby in elt.orderby():
-                        self.processdeeply(
-                            elt=orderby, transaction=transaction, _elts=_elts,
-                            **kwargs
-                        )
-
-                    self.processdeeply(
-                        elt=elt.join(), transaction=transaction, _elts=_elts,
-                        **kwargs
-                    )
-                    self.processdeeply(
-                        elt=elt.limit(), transaction=transaction, _elts=_elts,
-                        **kwargs
-                    )
-                    self.processdeeply(
-                        elt=elt.offset(), transaction=transaction, _elts=_elts,
-                        **kwargs
-                    )
-
-                elif isinstance(elt, Delete):
-
-                    for name in elt.names():
-                        self.processdeeply(
-                            elt=name, transaction=transaction, _elts=_elts,
-                            **kwargs
-                        )
+                if isor:
+                    transaction.ctx.fill(ftransaction.ctx)
 
             if _elts[-1][2] == elt:
 
@@ -289,6 +228,46 @@ class DriverComposite(PyDriver):
         return 'CompositeDriver({0}, {1}, {2})'.format(
             self.name, self.drivers, self.default
         )
+
+
+def getchildren(elt):
+    """Get children element from the request tree.
+
+    :param BaseElement elt: element from where get children.
+    :rtype: list
+    """
+    result = []
+
+    if isinstance(elt, Function):
+
+        result = elt.params
+
+    elif isinstance(elt, CRUDElement):
+
+        result.append(elt.query)
+
+        if isinstance(elt, (Create, Update)):
+
+            result.append(elt.name)
+
+            for name, value in iteritems(elt.values):
+                result.append(name)
+                result.append(value)
+
+        elif isinstance(elt, Read):
+
+            result += elt.select()
+            result += elt.groupby()
+            result += elt.orderby()
+            result.append(elt.join())
+            result.append(elt.limit())
+            result.append(elt.offset())
+
+        elif isinstance(elt, Delete):
+
+            result += elt.names()
+
+    return result
 
 
 def updatename(elt, driver):

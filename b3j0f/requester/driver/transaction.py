@@ -176,7 +176,7 @@ class Transaction(object):
         )
 
     def _process(self, cls, **kwargs):
-
+        """Custom processing."""
         crud = cls(transaction=self, **kwargs)
 
         self.process(cruds=[crud])
@@ -184,17 +184,17 @@ class Transaction(object):
         return self
 
     def create(self, **kwargs):
-
+        """Quick creation."""
         return self._process(cls=Create, **kwargs)
 
     def read(self, **kwargs):
-
+        """Quick reading."""
         return self._process(cls=Read, **kwargs)
 
     def update(self, **kwargs):
-
+        """Quick updating."""
         return self._process(cls=Update, **kwargs)
 
     def delete(self, **kwargs):
-
+        """Quick deletion."""
         return self._process(cls=Delete, **kwargs)

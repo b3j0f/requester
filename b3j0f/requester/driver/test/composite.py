@@ -33,6 +33,7 @@ from b3j0f.utils.ut import UTCase
 
 from ..composite import DriverComposite, updatename
 
+from ..py import PyDriver
 from ..base import Driver
 from ..ctx import Context
 from ..transaction import Transaction
@@ -43,7 +44,7 @@ from ...request.crud.read import Read
 from ...request.crud.update import Update
 
 
-class TestDriver(Driver):
+class TestDriver(PyDriver):
     """Test driver."""
 
     def __init__(self, *args, **kwargs):
@@ -52,7 +53,15 @@ class TestDriver(Driver):
 
         self.transactions = []
 
+        self.items = [
+            {'d{0}'.format(self.name): i, 'id': i} for i in range(5)
+        ]
+
     def _process(self, transaction, *args, **kwargs):
+
+        super(TestDriver, self)._process(
+            transaction=transaction, *args, **kwargs
+        )
 
         transaction.ctx.setdefault('test', [self])
 
@@ -66,7 +75,11 @@ class DriverCompositeTest(UTCase):
 
     def setUp(self):
 
-        self.drivers = [TestDriver(name='d{0}'.format(i)) for i in range(4)]
+        self.drivers = [
+            TestDriver(
+                name='d{0}'.format(i)
+            ) for i in range(4)
+        ]
 
         self.d0 = self.drivers[0]
         self.d1 = self.drivers[1]
@@ -110,9 +123,16 @@ class DriverCompositeTest(UTCase):
 
         self.assertEqual(len(self.d0.transactions), 1)
 
-from sys import setrecursionlimit
+    def test_d0_dd0(self):
 
-setrecursionlimit(100)
+        expr = Expression.d0.dd0
+
+        self.driver.open(cruds=[expr]).commit()
+
+        for driver in self.drivers[1:]:
+            self.assertFalse(driver.transactions)
+
+        self.assertEqual(len(self.d0.transactions), 1)
 
 if __name__ == '__main__':
     main()

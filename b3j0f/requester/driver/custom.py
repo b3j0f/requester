@@ -88,7 +88,7 @@ class CustomDriver(Driver):
         self.deletes = [] if deletes is None else deletes
         self.functions = {} if functions is None else functions
 
-    def _process(self, transaction, **kwargs):
+    def pprocess(self, transaction, **kwargs):
 
         result = transaction
 
