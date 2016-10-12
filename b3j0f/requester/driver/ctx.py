@@ -41,8 +41,8 @@ def getctxname(obj):
 
     :param obj: object from where get a context name.
     :return: obj context name.
-    :rtype: str:"""
-
+    :rtype: str
+    """
     result = obj
 
     if obj is not None:

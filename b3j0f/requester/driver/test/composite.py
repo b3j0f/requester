@@ -52,7 +52,7 @@ class TestDriver(Driver):
 
         self.transactions = []
 
-    def process(self, transaction, *args, **kwargs):
+    def _process(self, transaction, *args, **kwargs):
 
         result = super(TestDriver, self).process(
             transaction=transaction, *args, **kwargs
@@ -77,21 +77,23 @@ class DriverCompositeTest(UTCase):
 
         self.driver = DriverComposite(drivers=self.drivers, default=self.s3)
 
-        self.transaction = self.driver.open()
-
     def test_expr(self):
 
         self.driver.default = None
 
-        expr = Expression.A
+        expr = Expression.in_
 
-        self.assertRaises(ValueError, self.transaction.process, cruds=[expr])
+        self.assertRaises(ValueError, self.driver.open(cruds=[expr]).commit)
 
     def test_default_expr(self):
 
-        expr = Expression.A
+        expr = Expression.in_
 
-        self.assertRaises(ValueError, self.transaction.process, cruds=[expr])
+        self.driver.open(cruds=[expr]).commit()
+
+from sys import setrecursionlimit
+
+setrecursionlimit(100)
 
 if __name__ == '__main__':
     main()

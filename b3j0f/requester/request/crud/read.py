@@ -65,11 +65,11 @@ class Read(CRUDElement):
         super(Read, self).__init__(*args, **kwargs)
 
         # initialize protected properties
-        self._select = None
+        self._select = ()
         self._offset = None
         self._limit = None
-        self._orderby = None
-        self._groupby = None
+        self._orderby = ()
+        self._groupby = ()
         self._join = None
 
         # set parameters

@@ -135,28 +135,43 @@ class Transaction(object):
 
         return result
 
-    def process(self, cruds, **kwargs):
+    def process(self, cruds=None, **kwargs):
         """Process input cruds with control paremeters.
 
         :param dict kwargs: driver specific kwargs. See Driver.process for more
             details.
         :return: process execution."""
 
-        self.cruds += cruds
+        if cruds is not None:
+            self.cruds += cruds
 
         if self.autocommit:
             self.state = State.COMMITTING
 
-        else:
-            return self.driver.process(transaction=self, **kwargs)
+        result = self.driver.process(transaction=self, **kwargs)
 
-    def open(self, autocommit=None, cruds=None):
+        if self.parent is not None:
+            if self.state is State.COMMITTING:
+                result = self.parent.commit()
+
+            elif self.state is State.ROLLBACKING:
+                result = self.parent.rollback()
+
+        return result
+
+    def open(self, autocommit=None, cruds=None, driver=None, ctx=None):
 
         if autocommit is None:
             autocommit = self.autocommit
 
+        if driver is None:
+            driver = self.driver
+
+        if ctx is None:
+            ctx = self.ctx
+
         return Transaction(
-            driver=self.driver, parent=self, ctx=self.ctx,
+            driver=driver, parent=self, ctx=ctx,
             autocommit=autocommit, cruds=cruds
         )
 

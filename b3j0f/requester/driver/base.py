@@ -76,14 +76,14 @@ class Driver(object):
     ):
         """Process input transaction and crud element.
 
-        :param Request transaction: transaction to process.
+        :param Transaction transaction: transaction to process.
         :param bool async: if True (default False), execute input crud in a
             separated thread.
-        :param callable callback: callable function which takes in parameter
+        :param Callable callback: callable function which takes in parameter
             the function result. Commonly used with async equals True.
         :param dict kwargs: additional parameters specific to the driver.
         :return: transaction.
-        :rtype: Request
+        :rtype: Transaction
         """
 
         def process(transaction=transaction, callback=callback, **kwargs):
@@ -113,7 +113,7 @@ class Driver(object):
         :param Transaction transaction: transaction to process.
         :param dict kwargs: additional parameters specific to the driver.
         :return: transaction.
-        :rtype: Request
+        :rtype: Transaction
         """
 
         raise NotImplementedError()
@@ -140,11 +140,9 @@ class Driver(object):
 
     def _getcrud(self, cls, **kwargs):
 
-        transaction = self.open(autocommit=True)
+        crud = cls(**kwargs)
 
-        crud = cls(transaction=transaction, **kwargs)
-
-        return crud()
+        return self.open(cruds=[crud]).commit()
 
     def create(self, **kwargs):
         """Create creation."""

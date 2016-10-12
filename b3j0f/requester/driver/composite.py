@@ -32,7 +32,9 @@ from six import iteritems
 
 from .py import PyDriver
 from .utils import getnames
+from .ctx import Context
 from ..request.consts import FuncName
+from ..request.base import BaseElement
 from ..request.crud.base import CRUDElement
 from ..request.crud.create import Create
 from ..request.crud.delete import Delete
@@ -94,7 +96,7 @@ class DriverComposite(PyDriver):
 
                     else:
                         for name, schema in iteritems(model.getschemas()):
-                            tmpelts.append(driver, schema)
+                            tmpelts.append((driver, schema))
 
                     tmpelts.remove((driver, model))
 
@@ -126,7 +128,7 @@ class DriverComposite(PyDriver):
     def _process(self, transaction, **kwargs):
 
         for crud in transaction.cruds:
-            self.processdeeply(crud, transaction.ctx)
+            self.processdeeply(elt=crud, transaction=transaction, **kwargs)
 
         return transaction
 
@@ -139,10 +141,9 @@ class DriverComposite(PyDriver):
         if elt in ctx:
             result = ctx[elt]
 
-        else:
-
+        elif isinstance(elt, BaseElement):
             # get driver and model
-            if FuncName.contains(elt.name):
+            if isinstance(elt, CRUDElement) or FuncName.contains(elt.name):
                 driver = model = None
 
             else:
@@ -150,7 +151,6 @@ class DriverComposite(PyDriver):
                 driverswmodel = self.getdrivers(elt.name)
 
                 if len(driverswmodel) > 1:
-                    print(driverswmodel)
                     raise ValueError(
                         'Too many drivers found for elt {0}. {1}'.format(
                             elt, driverswmodel
@@ -173,61 +173,85 @@ class DriverComposite(PyDriver):
                         _elts.append((driver, model, elt))
 
             if isinstance(elt, Function):
+
+                isor = elt.name == FuncName.OR.value
+
+                if isor:
+                    ctx = Context(transaction.ctx)
+                    ftransaction = transaction.open(ctx=ctx)
+
+                else:
+                    ftransaction == transaction
+
                 for param in elt.params:
                     self.processdeeply(
-                        elt=param, ctx=ctx, _elts=_elts, **kwargs
+                        elt=param, transaction=ftransaction, _elts=_elts,
+                        **kwargs
                     )
+
+                    if isor:
+                        transaction.ctx.fill(ftransaction.ctx)
 
             elif isinstance(elt, CRUDElement):
 
-                self.processdeeply(elt.query, ctx=ctx, _elts=_elts, **kwargs)
+                self.processdeeply(
+                    elt=elt.query, transaction=transaction, _elts=_elts,
+                    **kwargs
+                )
 
                 if isinstance(elt, (Create, Update)):
                     self.processdeeply(
-                        elt=elt.name, ctx=ctx, _elts=_elts, **kwargs
+                        elt=elt.name, transaction=transaction, _elts=_elts,
+                        **kwargs
                     )
                     for name, value in iteritems(elt.values):
                         self.processdeeply(
-                            elt=name, ctx=ctx, _elts=_elts, **kwargs
+                            elt=name, transaction=transaction, _elts=_elts,
+                            **kwargs
                         )
                         self.processdeeply(
-                            elt=value, ctx=ctx, _elts=_elts, **kwargs
+                            elt=value, transaction=transaction, _elts=_elts,
+                            **kwargs
                         )
 
                 elif isinstance(elt, Read):
-                    self.processdeeply(
-                        elt=elt.name, ctx=ctx, _elts=_elts, **kwargs
-                    )
-                    for select in elt.select:
+                    for select in elt.select():
                         self.processdeeply(
-                            elt=select, ctx=ctx, _elts=_elts, **kwargs
+                            elt=select, transaction=transaction, _elts=_elts,
+                            **kwargs
                         )
 
-                    for groupby in elt.groupby:
+                    for groupby in elt.groupby():
                         self.processdeeply(
-                            elt=groupby, ctx=ctx, _elts=_elts, **kwargs
+                            elt=groupby, transaction=transaction, _elts=_elts,
+                            **kwargs
                         )
 
-                    for orderby in elt.orderby:
+                    for orderby in elt.orderby():
                         self.processdeeply(
-                            elt=orderby, ctx=ctx, _elts=_elts, **kwargs
+                            elt=orderby, transaction=transaction, _elts=_elts,
+                            **kwargs
                         )
 
                     self.processdeeply(
-                        elt=elt.join, ctx=ctx, _elts=_elts, **kwargs
+                        elt=elt.join(), transaction=transaction, _elts=_elts,
+                        **kwargs
                     )
                     self.processdeeply(
-                        elt=elt.limit, ctx=ctx, _elts=_elts, **kwargs
+                        elt=elt.limit(), transaction=transaction, _elts=_elts,
+                        **kwargs
                     )
                     self.processdeeply(
-                        elt=elt.offset, ctx=ctx, _elts=_elts, **kwargs
+                        elt=elt.offset(), transaction=transaction, _elts=_elts,
+                        **kwargs
                     )
 
                 elif isinstance(elt, Delete):
 
                     for name in elt.names:
                         self.processdeeply(
-                            elt=name, ctx=ctx, _elts=_elts, **kwargs
+                            elt=name, transaction=transaction, _elts=_elts,
+                            **kwargs
                         )
 
             if _elts[-1][2] == elt:
@@ -249,11 +273,11 @@ class DriverComposite(PyDriver):
                     crud = elt
 
                 crudcopy = crud.copy()
-                self.updateelt(elt=crudcopy, driver=driver)
+                updatename(elt=crudcopy, driver=driver)
 
-                result = transaction.open(cruds=[crudcopy], ctx=ctx).commit(
-                    **kwargs
-                )
+                result = transaction.open(
+                    driver=driver, cruds=[crudcopy]
+                ).commit(**kwargs)
 
         ctx[elt] = result
 
@@ -261,7 +285,9 @@ class DriverComposite(PyDriver):
 
     def __repr__(self):
         """Driver representation with drivers."""
-        return 'CompositeDriver({0}, {1})'.format(self.name, self.drivers)
+        return 'CompositeDriver({0}, {1}, {2})'.format(
+            self.name, self.drivers, self.default
+        )
 
 
 def updatename(elt, driver):

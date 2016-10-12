@@ -272,7 +272,7 @@ class Expression(BaseElement):
         return Function(FuncName.ABS)(self)
 
     def __contains__(self, other):
-        
+
         return Function(FuncName.IN)(self, other)
 
     def __pow__(self, other):
@@ -458,15 +458,14 @@ class Expression(BaseElement):
 
     def __call__(self, *params):
         """Return a function where name is self name and params are varargs."""
-
         return Function(name=self.name, params=params)
 
     @property
     def ctxname(self):
         """Get ctx name to store result execution.
 
-        :rtype: str"""
-
+        :rtype: str
+        """
         return self.alias or self.name or self.uuid
 
     def __repr__(self):
@@ -511,8 +510,8 @@ class Function(Expression):
 
         If self is OR or AND function
 
-        :param list params: parameters to use."""
-
+        :param list params: parameters to use.
+        """
         self.params = list(params)
 
         return self
@@ -526,8 +525,8 @@ class Function(Expression):
         - OR(OR(A, B), C) => OR(A, B, C)
 
         :rtype: Function
-        :return: this."""
-
+        :return: this.
+        """
         params = []
 
         if self.name in (FuncName.AND.value, FuncName.OR.value):
@@ -554,8 +553,8 @@ class Function(Expression):
     def ctxname(self):
         """Get ctx name to store result execution.
 
-        :rtype: str"""
-
+        :rtype: str
+        """
         result = self.alias
 
         if not result:

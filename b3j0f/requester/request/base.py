@@ -99,3 +99,19 @@ class BaseElement(object):
         result += ')'
 
         return result
+
+    def copy(self, **kwargs):
+
+        cls = type(self)
+
+        copykwargs = kwargs
+
+        for slot in self.__slots__:
+            val = getattr(self, slot)
+            if slot[0] == '_':
+                slot = slot[1:]
+            kwargs[slot] = val
+
+        copykwargs.update(kwargs)
+
+        return cls(**copykwargs)

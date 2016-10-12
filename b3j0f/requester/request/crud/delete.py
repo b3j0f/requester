@@ -41,7 +41,7 @@ class Delete(CRUDElement):
         """
         super(Delete, self).__init__(*args, **kwargs)
 
-        self.names = names
+        self.names = () if names is None else names
 
     def __repr__(self):
 
