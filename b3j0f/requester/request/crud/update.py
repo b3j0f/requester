@@ -48,7 +48,12 @@ class Update(CRUDElement):
 
     def __repr__(self):
 
-        result = 'UPDATE {0}:{1}'.format(repr(self.name), repr(self.values))
+        result = 'UPDATE '
+
+        if self.name:
+            result += '{0}:'.format(repr(self.name))
+
+        result += repr(self.values)
 
         if self.query:
             result += ' where ({0})'.format(repr(self.query))
