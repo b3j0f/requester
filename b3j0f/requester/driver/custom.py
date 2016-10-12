@@ -103,13 +103,13 @@ class CustomDriver(Driver):
         return result
 
 
-def func2crudprocessing(func=None):
+def func2crudprocessing(func, annotation):
 
     if func is not None and not isinstance(func, Schema):
         func = data2schema(func)
 
     def _processing(crud, transaction, _func=func, **kwargs):
-        if crud.gateway:
+        if annotation.gateway:
             funckwargs = {}
             funcvarargs = []
 
@@ -209,7 +209,7 @@ def obj2driver(
             crudfn = getattr(fobj, crud.__name__)
             realfn = getattr(obj, crud.__name__)
             crud = _CRUDAnnotation.get_annotations(realfn)[0]
-            fcrudfn = func2crudprocessing(crudfn)
+            fcrudfn = func2crudprocessing(crudfn, crud)
 
             _locals['f{0}s'.format(crudname)].append(fcrudfn)
 
