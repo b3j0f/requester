@@ -50,7 +50,7 @@ class Read(CRUDElement):
     def __init__(
             self,
             select=None, offset=None, limit=None, orderby=None, groupby=None,
-            join=None, callback=None, *args, **kwargs
+            join=None, *args, **kwargs
     ):
         """
         :param list select: data to select.

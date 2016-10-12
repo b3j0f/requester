@@ -104,6 +104,18 @@ class Context(dict):
 
         return super(Context, self).get(ctxname, default)
 
+    def pop(self, key, default=None):
+
+        ctxname = getctxname(key)
+
+        return super(Context, self).pop(ctxname, default)
+
+    def setdefault(self, key, default):
+
+        ctxname = getctxname(key)
+
+        return super(Context, self).setdefault(ctxname, default)
+
     def fill(self, ctx, join=Join.FULL):
         """Fill this content with ctx data not in this data.
 

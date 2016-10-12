@@ -32,7 +32,7 @@ from b3j0f.schema.lang.python import FunctionSchema
 
 from .base import Driver
 from .py import processread
-from ..request.crud.base import CRUD, CRUDElement
+from ..request.crud.base import CRUD
 from ..request.crud.create import Create
 from ..request.crud.read import Read
 from ..request.crud.update import Update
@@ -123,7 +123,8 @@ def func2crudprocessing(func=None):
 
                 funckwargs[param.name] = transaction.ctx[param.name]
 
-        funcresult = list(_func(*funcvarargs, **funckwargs))
+        funcresult = _func(*funcvarargs, **funckwargs)
+        funcresult = [] if funcresult is None else list(funcresult)
 
         if isinstance(crud, Read):
             processread(read=crud, items=funcresult)
@@ -159,6 +160,21 @@ def obj2driver(
     else:
         fobj = obj
 
+    if creates is None:
+        creates = []
+
+    if reads is None:
+        reads = []
+
+    if updates is None:
+        updates = []
+
+    if deletes is None:
+        deletes = []
+
+    if functions is None:
+        functions = []
+
     fcreates = []
     freads = []
     fupdates = []
@@ -174,7 +190,7 @@ def obj2driver(
         for target in crudannotation.targets:
             targetname = target.__name__
             fobjtarget = getattr(fobj, targetname)
-            _locals['f{0}s'.format(crudannotation.name)].append(fobjtarget)
+            _locals['{0}s'.format(crudannotation.name)].append(fobjtarget)
 
     # then parse function parameters
     for crudname in (crudname.lower() for crudname in CRUD.__members__):
@@ -186,11 +202,10 @@ def obj2driver(
 
         for crud in cruds:
 
-            crudfunc = getattr(fobj, crud)
+            crudfn = getattr(fobj, crud.__name__)
+            fcrudfn = func2crudprocessing(crudfn) if crud.gateway else crudfn
 
-            fcrudfunc = func2crudprocessing(crudfunc)
-
-            _locals['f{0}s'.format(crudname)].append(fcrudfunc)
+            _locals['f{0}s'.format(crudname)].append(fcrudfn)
 
     ffunctions = {} if functions is None else functions
 
@@ -231,10 +246,10 @@ class DriverAnnotation(Annotation):
         super(DriverAnnotation, self).__init__(*args, **kwargs)
 
         self.name = name
-        self.creates = creates
-        self.reads = reads
-        self.updates = updates
-        self.deletes = deletes
+        self.creates = [] if creates is None else creates
+        self.reads = [] if reads is None else reads
+        self.updates = [] if updates is None else updates
+        self.deletes = [] if deletes is None else deletes
 
     def getdriver(self, obj):
         """Get a driver corresponding to input target instance related
@@ -256,14 +271,15 @@ class DriverAnnotation(Annotation):
 
                 kwargs.setdefault(fcrud, []).append(func)
 
-        return obj2driver(**kwargs)
+        return obj2driver(obj, **kwargs)
 
 
 class _CRUDAnnotation(Annotation):
 
-    def __init__(self, crud, *args, **kwargs):
+    def __init__(self, crud, gateway=True, *args, **kwargs):
         """
         :param str crud: crud name.
+        :param bool gateway: pass arguments from the context to the function
         """
 
         super(_CRUDAnnotation, self).__init__(*args, **kwargs)
@@ -272,6 +288,7 @@ class _CRUDAnnotation(Annotation):
             crud = crud.name.lower()
 
         self.name = crud
+        self.gateway = gateway
 
 
 class CreateAnnotation(_CRUDAnnotation):
