@@ -31,6 +31,7 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
+from ...expr import Expression as E
 from ..create import Create
 
 
@@ -44,6 +45,59 @@ class CreateTest(UTCase):
 
         self.assertEqual('test', create.name)
         self.assertEqual(values, create.values)
+
+    def test___repr__(self):
+        cases = [
+            {
+                'values': {},
+                'name': E.c,
+                'where': None,
+                'as': None,
+                'expected': "CREATE c:{}",
+            },
+            {
+                'values': {E.key: 'value'},
+                'name': E.c,
+                'where': None,
+                'as': None,
+                'expected': "CREATE c:{key: 'value'}",
+            },
+            {
+                'values': {E.k: 'v'},
+                'name': '',
+                'where': None,
+                'as': None,
+                'expected': "CREATE {k: 'v'}",
+            },
+            {
+                'values': {E.k: 'v'},
+                'name': '',
+                'where': E.w,
+                'as': None,
+                'expected': "CREATE {k: 'v'} where (w)",
+            },
+            {
+                'values': {E.k: 'v'},
+                'name': '',
+                'where': None,
+                'as': 'a',
+                'expected': "CREATE {k: 'v'} as a",
+            },
+        ]
+
+        for test in cases:
+            c = Create(
+                values=test['values'],
+                name=test['name'],
+            )
+
+            if test['where']:
+                c = c.where(test['where'])
+
+            if test['as']:
+                c = c.as_(test['as'])
+
+            self.assertEqual(repr(c), test['expected'])
 
 if __name__ == '__main__':
     main()

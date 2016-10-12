@@ -31,6 +31,7 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
+from ...expr import Expression as E
 from ..read import Read
 
 
@@ -106,6 +107,80 @@ class ReadTest(UTCase):
         self.assertEqual((orderby,), read.orderby())
         self.assertEqual((groupby,), read.groupby())
         self.assertEqual(join, read.join())
+
+    def test___repr__(self):
+        cases = [
+            {
+                'select': None,
+                'kwargs': {},
+                'where': None,
+                'as': None,
+                'expected': "READ all",
+            },
+            {
+                'select': [E.r1, E.r2, E.r3],
+                'kwargs': {},
+                'where': None,
+                'as': None,
+                'expected': "READ r1, r2, r3",
+            },
+            {
+                'select': [E.r],
+                'kwargs': {'offset': 10},
+                'where': None,
+                'as': None,
+                'expected': "READ r with (offset 10 )",
+            },
+            {
+                'select': [E.r],
+                'kwargs': {'limit': 10},
+                'where': None,
+                'as': None,
+                'expected': "READ r with (limit 10 )",
+            },
+            {
+                'select': [E.r],
+                'kwargs': {'groupby': [E.a, E.b]},
+                'where': None,
+                'as': None,
+                'expected': "READ r with (group by a, b )",
+            },
+            {
+                'select': [E.r],
+                'kwargs': {'orderby': [E.a, E.b]},
+                'where': None,
+                'as': None,
+                'expected': "READ r with (order by a, b )",
+            },
+            {
+                'select': [E.r],
+                'kwargs': {},
+                'where': E.w,
+                'as': None,
+                'expected': "READ r where (w)",
+            },
+            {
+                'select': [E.r],
+                'kwargs': {},
+                'where': None,
+                'as': 'a',
+                'expected': "READ r as a",
+            },
+        ]
+
+        for test in cases:
+            r = Read(
+                select=test['select'],
+                **test['kwargs']
+            )
+
+            if test['where']:
+                r = r.where(test['where'])
+
+            if test['as']:
+                r = r.as_(test['as'])
+
+            self.assertEqual(repr(r), test['expected'])
 
 if __name__ == '__main__':
     main()
