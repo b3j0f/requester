@@ -131,7 +131,11 @@ def func2crudprocessing(func, annotation):
         funcresult = [] if funcresult is None else list(funcresult)
 
         if isinstance(crud, Read):
-            processread(read=crud, items=funcresult)
+            funcresult = processread(
+                read=crud,
+                items=funcresult,
+                ctx=transaction.ctx
+            )
 
         transaction.ctx[crud] = funcresult
 
