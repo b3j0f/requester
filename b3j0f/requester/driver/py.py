@@ -88,8 +88,8 @@ def processcreate(items, create, ctx=None, **kwargs):
     :param list items: items to process with input Create.
     :param Create create: data to add to input items.
     :return: created item.
-    :rtype: list"""
-
+    :rtype: list
+    """
     return _GLOBALPYDRIVER.processcreate(
         create=create, ctx=ctx, items=items, **kwargs
     )
@@ -103,7 +103,6 @@ def processread(items, read, ctx=None, **kwargs):
     :return: read list.
     :rtype: list
     """
-
     return _GLOBALPYDRIVER.processread(
         read=read, ctx=ctx, items=items, **kwargs
     )
@@ -192,7 +191,9 @@ def all_(query, item, name, params, ctx):
     func = _OPERATORS_BY_NAME[operator]
 
     for _item in items:
-        if not func(function=query.params[0], ctx=ctx, params=[[items], _item]):
+        if not func(
+            function=query.params[0], ctx=ctx, params=[[items], _item]
+        ):
             result = False
             break
 
@@ -411,8 +412,7 @@ class PyFunctionChooser(object):
 
 
 class PyDriver(Driver):
-    """In charge of accessing to data from a list of dictionaries or objects.
-    """
+    """In charge of accessing data from a list of dictionaries or objects."""
 
     name = 'py'  # driver name
 
@@ -440,9 +440,7 @@ class PyDriver(Driver):
             )
 
         if transaction.state is State.COMMITTING:
-
             for crud in transaction.cruds:
-
                 self.processcrud(ctx=transaction.ctx, crud=crud, **kwargs)
 
         return result
@@ -455,8 +453,8 @@ class PyDriver(Driver):
             Default is None.
 
         :rtype: list
-        :return: list"""
-
+        :return: list
+        """
         result = kwargs.setdefault('items', self.items)
 
         if ctx is None:
@@ -487,7 +485,6 @@ class PyDriver(Driver):
 
     def processquery(self, query, ctx=None, **kwargs):
         """Process input query related to items and ctx."""
-
         result = query
 
         if ctx is None:
@@ -608,8 +605,8 @@ class PyDriver(Driver):
 
         :param Create create: data to add to input items.
         :return: created item.
-        :rtype: list"""
-
+        :rtype: list
+        """
         result = kwargs.setdefault('items', self.items)
 
         if ctx is None:
@@ -637,7 +634,6 @@ class PyDriver(Driver):
         :return: read list.
         :rtype: list
         """
-
         items = kwargs.setdefault('items', self.items)
 
         if ctx is None:
@@ -697,8 +693,8 @@ class PyDriver(Driver):
 
         :param Update update: update rule.
         :return: updated items.
-        :rtype: list"""
-
+        :rtype: list
+        """
         if ctx is None:
             ctx = Context()
 
@@ -733,8 +729,8 @@ class PyDriver(Driver):
         :param list items: items to modify.
         :param Delete delete: deletion rule.
         :rtype: list
-        :return: modified/deleted items."""
-
+        :return: modified/deleted items.
+        """
         result = kwargs.setdefault('items', self.items)
 
         if ctx is None:
