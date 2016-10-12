@@ -638,13 +638,13 @@ class PyDriver(Driver):
         :rtype: list
         """
 
-        result = items = kwargs.setdefault('items', self.items)
+        items = kwargs.setdefault('items', self.items)
 
         if ctx is None:
             ctx = Context()
 
         if read.query is not None:
-            result = self.processquery(query=read.query, ctx=ctx, **kwargs)
+            items = self.processquery(query=read.query, ctx=ctx, **kwargs)
 
         result = list(items)
 
