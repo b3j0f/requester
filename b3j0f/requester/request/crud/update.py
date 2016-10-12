@@ -46,6 +46,18 @@ class Update(CRUDElement):
         self.name = name
         self.values = values
 
+    def set(self, key, value):
+        """Set update value by field.
+
+        :param str key: field name.
+        :param value: field value.
+        :return: self.
+        :rtype: Update
+        """
+        self.values[key] = value
+
+        return self
+
     def __repr__(self):
 
         result = 'UPDATE '

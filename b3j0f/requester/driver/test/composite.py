@@ -54,13 +54,11 @@ class TestDriver(Driver):
 
     def _process(self, transaction, *args, **kwargs):
 
-        result = super(TestDriver, self).process(
-            transaction=transaction, *args, **kwargs
-        )
+        transaction.ctx.setdefault('test', [self])
 
         self.transactions.append((transaction, kwargs))
 
-        return result
+        return transaction
 
 
 class DriverCompositeTest(UTCase):
@@ -68,14 +66,19 @@ class DriverCompositeTest(UTCase):
 
     def setUp(self):
 
-        self.drivers = [TestDriver(name='s{0}'.format(i)) for i in range(4)]
+        self.drivers = [TestDriver(name='d{0}'.format(i)) for i in range(4)]
 
-        self.s0 = self.drivers[0]
-        self.s1 = self.drivers[1]
-        self.s2 = self.drivers[2]
-        self.s3 = self.drivers[3]
+        self.d0 = self.drivers[0]
+        self.d1 = self.drivers[1]
+        self.d2 = self.drivers[2]
+        self.d3 = self.drivers[3]
 
-        self.driver = DriverComposite(drivers=self.drivers, default=self.s3)
+        self.driver = DriverComposite(
+            drivers=self.drivers[:-1], default=self.d3
+        )
+
+        for driver in self.drivers:
+            self.assertFalse(driver.transactions)
 
     def test_expr(self):
 
@@ -90,6 +93,22 @@ class DriverCompositeTest(UTCase):
         expr = Expression.in_
 
         self.driver.open(cruds=[expr]).commit()
+
+        for driver in self.drivers[:-1]:
+            self.assertFalse(driver.transactions)
+
+        self.assertEqual(len(self.d3.transactions), 1)
+
+    def test_d0(self):
+
+        expr = Expression.d0
+
+        self.driver.open(cruds=[expr]).commit()
+
+        for driver in self.drivers[1:]:
+            self.assertFalse(driver.transactions)
+
+        self.assertEqual(len(self.d0.transactions), 1)
 
 from sys import setrecursionlimit
 

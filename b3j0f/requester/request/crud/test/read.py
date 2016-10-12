@@ -31,7 +31,7 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
-from ...expr import Expression as E
+from ...expr import Expression as Exp
 from ..read import Read
 
 
@@ -41,11 +41,11 @@ class ReadTest(UTCase):
 
         read = Read()
 
-        self.assertIsNone(read.select())
-        self.assertIsNone(read.offset())
+        self.assertFalse(read.select())
+        self.assertFalse(read.offset())
         self.assertIsNone(read.limit())
-        self.assertIsNone(read.orderby())
-        self.assertIsNone(read.groupby())
+        self.assertFalse(read.orderby())
+        self.assertFalse(read.groupby())
         self.assertFalse(read.join())
 
     def test_init(self):
@@ -118,49 +118,49 @@ class ReadTest(UTCase):
                 'expected': "READ all",
             },
             {
-                'select': [E.r1, E.r2, E.r3],
+                'select': [Exp.r1, Exp.r2, Exp.r3],
                 'kwargs': {},
                 'where': None,
                 'as': None,
                 'expected': "READ r1, r2, r3",
             },
             {
-                'select': [E.r],
+                'select': [Exp.r],
                 'kwargs': {'offset': 10},
                 'where': None,
                 'as': None,
                 'expected': "READ r with (offset 10 )",
             },
             {
-                'select': [E.r],
+                'select': [Exp.r],
                 'kwargs': {'limit': 10},
                 'where': None,
                 'as': None,
                 'expected': "READ r with (limit 10 )",
             },
             {
-                'select': [E.r],
-                'kwargs': {'groupby': [E.a, E.b]},
+                'select': [Exp.r],
+                'kwargs': {'groupby': [Exp.a, Exp.b]},
                 'where': None,
                 'as': None,
                 'expected': "READ r with (group by a, b )",
             },
             {
-                'select': [E.r],
-                'kwargs': {'orderby': [E.a, E.b]},
+                'select': [Exp.r],
+                'kwargs': {'orderby': [Exp.a, Exp.b]},
                 'where': None,
                 'as': None,
                 'expected': "READ r with (order by a, b )",
             },
             {
-                'select': [E.r],
+                'select': [Exp.r],
                 'kwargs': {},
-                'where': E.w,
+                'where': Exp.w,
                 'as': None,
                 'expected': "READ r where (w)",
             },
             {
-                'select': [E.r],
+                'select': [Exp.r],
                 'kwargs': {},
                 'where': None,
                 'as': 'a',

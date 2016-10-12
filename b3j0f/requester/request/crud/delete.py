@@ -33,7 +33,7 @@ __all__ = ['Delete']
 
 class Delete(CRUDElement):
 
-    __slots__ = ['names'] + CRUDElement.__slots__
+    __slots__ = ['_names'] + CRUDElement.__slots__
 
     def __init__(self, names=None, *args, **kwargs):
         """
@@ -41,12 +41,23 @@ class Delete(CRUDElement):
         """
         super(Delete, self).__init__(*args, **kwargs)
 
-        self.names = () if names is None else names
+        self._names = () if names is None else names
+
+    def names(self, *values):
+
+        if values:
+            self._names = values
+            result = self
+
+        else:
+            result = self._names
+
+        return result
 
     def __repr__(self):
 
         if self.names:
-            names = [repr(name) for name in self.names]
+            names = [repr(name) for name in self._names]
             names = ', '.join(names)
 
         else:

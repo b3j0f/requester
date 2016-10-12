@@ -156,7 +156,7 @@ class TransactionTest(UTCase):
 
         self.assertIsInstance(crud, Delete)
         self.assertIs(crud.transaction, self.transaction)
-        self.assertEqual(crud.names, names)
+        self.assertEqual(crud.names(), names)
 
     def test_open(self):
 

@@ -84,14 +84,14 @@ class DriverComposite(PyDriver):
         rootname = names[0]
 
         tmpelts = []  # list of couple of driver/model
-        elts = []  # list of couple of driver/model
+        result = []  # list of couple of driver/model
 
         for depth in range(maxdepth):
 
             if tmpelts:
                 for driver, model in list(tmpelts):
                     if hasattr(model, rootname):
-                        elts.append((driver, getattr(model, rootname)))
+                        result.append((driver, getattr(model, rootname)))
                         tmpelts.remove((driver, model))
 
                     else:
@@ -103,6 +103,7 @@ class DriverComposite(PyDriver):
             else:
                 if rootname in self.drivers:
                     driver = self.drivers[rootname]
+                    result = [(driver, driver)]
                     break
 
                 else:
@@ -110,17 +111,17 @@ class DriverComposite(PyDriver):
                         (driver, driver) for driver in self.drivers.values()
                     ]
 
-        if elts:
-            for name in names:
+        if result:
+            for name in names[1:]:
 
-                elts = [
-                    (elt[0], getattr(elt[1], name)) for elt in elts
+                result = [
+                    (elt[0], getattr(elt[1], name)) for elt in result
                     if hasattr(elt[1], name)
                 ]
-                if not elts:
+                if not result:
                     break
 
-        if not elts:
+        if not result:
             raise ValueError('No driver found for {0}'.format(name))
 
         return result
@@ -157,7 +158,7 @@ class DriverComposite(PyDriver):
                         )
                     )
 
-                driver, model = driverswmodel
+                driver, model = driverswmodel[0]
 
             # fill elts
             if _elts is None:
@@ -170,7 +171,7 @@ class DriverComposite(PyDriver):
                     _elts[-1][0] = driver
 
                 elif olddriver != driver:
-                        _elts.append((driver, model, elt))
+                        _elts.append([driver, model, elt])
 
             if isinstance(elt, Function):
 
@@ -248,7 +249,7 @@ class DriverComposite(PyDriver):
 
                 elif isinstance(elt, Delete):
 
-                    for name in elt.names:
+                    for name in elt.names():
                         self.processdeeply(
                             elt=name, transaction=transaction, _elts=_elts,
                             **kwargs
@@ -279,7 +280,7 @@ class DriverComposite(PyDriver):
                     driver=driver, cruds=[crudcopy]
                 ).commit(**kwargs)
 
-        ctx[elt] = result
+                ctx[elt] = result
 
         return result
 

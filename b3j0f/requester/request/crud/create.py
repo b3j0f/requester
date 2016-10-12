@@ -46,7 +46,13 @@ class Create(CRUDElement):
         self.values = values
 
     def set(self, key, value):
+        """Set create value by field.
 
+        :param str key: field name.
+        :param value: field value.
+        :return: self.
+        :rtype: Create
+        """
         self.values[key] = value
 
         return self

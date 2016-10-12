@@ -69,8 +69,8 @@ class CRUDElement(BaseElement):
 
         :param dict kwargs: driver specific kwargs. See Driver.process for more
             details.
-        :return: this execution result if async is False."""
-
+        :return: this execution result if async is False.
+        """
         if self.transaction is None:
             raise RuntimeError('No transaction attached.')
 
@@ -79,26 +79,39 @@ class CRUDElement(BaseElement):
 
             return self.transaction.ctx.get(self)
 
-    def where(self, query):
-        """Apply input query to this query.
+    def where(self, *query):
+        """Getter/Setter for query.
 
-        :return: self
-        :rtype: Request"""
+        Setter if query is given. Getter otherwise.
 
-        if self.query is None:
-            self.query = query
+        :return: self if query is given, self query otherwise.
+        :rtype: Request or BaseElement"""
+
+        if query:
+            query = query[0]
+
+            if not isinstance(query, BaseElement):
+                raise TypeError('{0}. {1} expected'.format(query, BaseElement))
+
+            if self.query is None:
+                self.query = query
+
+            else:
+                self.query &= query
+
+            result = self
 
         else:
-            self.query &= query
+            result = self.query
 
-        return self
+        return result
 
     def orwhere(self, query):
         """Apply input query to this query.
 
         :return: self
-        :rtype: Request"""
-
+        :rtype: Request
+        """
         if self.query is None:
             self.query = query
 

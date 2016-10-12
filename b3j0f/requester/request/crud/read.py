@@ -91,7 +91,7 @@ class Read(CRUDElement):
         if join is not None:
             self.join(join)
 
-    def offset(self, value=None):
+    def offset(self, *value):
         """Get or set offset if value is not None.
 
         :param int value: value to set. Default is None.
@@ -99,22 +99,23 @@ class Read(CRUDElement):
             this.
         :rtype: int or Read
         """
+        if value:
+            value = value[0]
 
-        if value is None:
-            result = self._offset
-
-        else:
             if not isinstance(value, int):
                 raise TypeError(
                     'Wrong value {0}. {1} expected'.format(value, int)
                 )
 
-            result = self
             self._offset = value
+            result = self
+
+        else:
+            result = self._offset
 
         return result
 
-    def limit(self, value=None):
+    def limit(self, *value):
         """Get or set limit if value is not None.
 
         :param int value: value to set. Default is None.
@@ -122,11 +123,9 @@ class Read(CRUDElement):
             this.
         :rtype: int or Read
         """
+        if value:
+            value = value[0]
 
-        if value is None:
-            result = self._limit
-
-        else:
             if not isinstance(value, int):
                 raise TypeError(
                     'Wrong value {0}. {1} expected'.format(value, int)
@@ -134,6 +133,9 @@ class Read(CRUDElement):
 
             result = self
             self._limit = value
+
+        else:
+            result = self._limit
 
         return result
 
@@ -145,7 +147,6 @@ class Read(CRUDElement):
             this.
         :rtype: tuple or Read
         """
-
         if values:
             self._orderby = values
             result = self
@@ -163,7 +164,6 @@ class Read(CRUDElement):
             this.
         :rtype: tuple or Read
         """
-
         if values:
             self._groupby = values
             result = self
@@ -181,7 +181,6 @@ class Read(CRUDElement):
             this.
         :rtype: tuple or Read
         """
-
         if values:
             self._select = values
             result = self
@@ -191,7 +190,7 @@ class Read(CRUDElement):
 
         return result
 
-    def join(self, value=None):
+    def join(self, *value):
         """Get or set join if value is not None.
 
         :param value: value to set. Default is None.
@@ -200,11 +199,9 @@ class Read(CRUDElement):
             this.
         :rtype: str or Join or Read
         """
+        if value:
+            value = value[0]
 
-        if value is None:
-            result = self._join
-
-        else:
             if not isinstance(value, string_types + (Join,)):
                 raise TypeError(
                     'Wrong value {0}. {1} expected'.format(
@@ -214,6 +211,9 @@ class Read(CRUDElement):
 
             self._join = value.name if isinstance(value, Join) else value
             result = self
+
+        else:
+            result = self._join
 
         return result
 

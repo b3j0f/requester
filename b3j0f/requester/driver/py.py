@@ -739,11 +739,11 @@ class PyDriver(Driver):
         if delete.query is not None:
             result = self.processquery(query=delete.query, ctx=ctx, **kwargs)
 
-        if delete.names:
+        if delete.names():
 
             names = [
                 self.processquery(query=name, ctx=ctx, **kwargs)
-                for name in delete.names
+                for name in delete.names()
             ]
 
             for name in names:
