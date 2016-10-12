@@ -109,21 +109,25 @@ def func2crudprocessing(func=None):
         func = data2schema(func)
 
     def _processing(crud, transaction, _func=func, **kwargs):
+        if crud.gateway:
+            funckwargs = {}
+            funcvarargs = []
 
-        funckwargs = {}
-        funcvarargs = []
+            if isinstance(crud, (Create, Update)):
+                funckwargs.update(crud.values)
+                # todo : specific _func args
 
-        if isinstance(crud, (Create, Update)):
-            funckwargs.update(crud.values)
-            # todo : specific _func args
+            for param in _func.params:
 
-        for param in _func.params:
+                if param.name in transaction.ctx:
 
-            if param.name in transaction.ctx:
+                    funckwargs[param.name] = transaction.ctx[param.name]
 
-                funckwargs[param.name] = transaction.ctx[param.name]
+            funcresult = _func(*funcvarargs, **funckwargs)
 
-        funcresult = _func(*funcvarargs, **funckwargs)
+        else:
+            funcresult = _func(transaction=transaction, crud=crud, **kwargs)
+
         funcresult = [] if funcresult is None else list(funcresult)
 
         if isinstance(crud, Read):
@@ -205,8 +209,7 @@ def obj2driver(
             crudfn = getattr(fobj, crud.__name__)
             realfn = getattr(obj, crud.__name__)
             crud = _CRUDAnnotation.get_annotations(realfn)[0]
-
-            fcrudfn = func2crudprocessing(crudfn) if crud.gateway else crudfn
+            fcrudfn = func2crudprocessing(crudfn)
 
             _locals['f{0}s'.format(crudname)].append(fcrudfn)
 
