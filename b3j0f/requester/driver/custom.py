@@ -203,6 +203,8 @@ def obj2driver(
         for crud in cruds:
 
             crudfn = getattr(fobj, crud.__name__)
+            crud = _CRUDAnnotation.get_annotations(crudfn)[0]
+
             fcrudfn = func2crudprocessing(crudfn) if crud.gateway else crudfn
 
             _locals['f{0}s'.format(crudname)].append(fcrudfn)
