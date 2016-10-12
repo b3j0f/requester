@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -24,25 +25,28 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Python utilities driver module."""
+"""conf file driver UTs."""
 
-__all__ = ['FunctionChooser', 'SEPARATOR']
+from unittest import main
 
+from b3j0f.utils.ut import UTCase
 
-class FunctionChooser(object):
-
-    def getfunction(self, name):
-
-        raise NotImplementedError()
+from ..utils import getnames
 
 
-SEPARATOR = '.'  #: name separator.
+class GetNamesTest(UTCase):
 
+    def test_one(self):
 
-def getnames(name):
-    """get resource names from input name.
+        names = getnames('test')
 
-    :param str name: resource name from where get hierarchy of names.
-    """
+        self.assertEqual(names, ['test'])
 
-    return name.split(SEPARATOR)
+    def test_many(self):
+
+        names = getnames('test.example')
+
+        self.assertEqual(names, ['test', 'example'])
+
+if __name__ == '__main__':
+    main()

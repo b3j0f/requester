@@ -42,7 +42,6 @@ from ..request.crud.update import Update
 __all__ = ['Driver']
 
 
-DEFAULT_EXPLAIN = False  #: default explain value.
 DEFAULT_ASYNC = False  #: default async value.
 
 
@@ -99,13 +98,13 @@ class Driver(object):
 
             return result
 
-        if transaction.state == State.COMMITTING:
+        if transaction.state is State.COMMITTING:
 
             if async:
                 Thread(target=process).start()
 
             else:
-                return process()
+                return process(**kwargs)
 
     def _process(self, transaction, **kwargs):
         """Generic method to override in order to crud input data related to
@@ -164,7 +163,7 @@ class Driver(object):
     def update(self, **kwargs):
         """Apply input updates.
 
-        :param tuple updates: updates to apply."""
+        :param tuple update: updates to apply."""
 
         return self._getcrud(cls=Update, **kwargs)
 

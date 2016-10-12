@@ -26,178 +26,255 @@
 
 """Module which specifices a composite of drivers."""
 
-from copy import deepcopy
-
 from b3j0f.schema import Schema, data2schema
 
-from .base import Driver
+from six import iteritems
 
+from .py import PyDriver
+from .utils import getnames
 from ..request.consts import FuncName
+from ..request.crud.base import CRUDElement
 from ..request.crud.create import Create
 from ..request.crud.delete import Delete
 from ..request.crud.read import Read
 from ..request.crud.update import Update
 from ..request.expr import Expression, Function
 
-
 __all__ = ['DriverComposite']
 
 
-class DriverComposite(Driver):
+class DriverComposite(PyDriver):
+    """In charge of distributing a request to several drivers."""
 
-    __LAST_DRIVER__ = '__last_driver__'
-
-    def __init__(self, drivers, *args, **kwargs):
+    def __init__(self, drivers, default=None, *args, **kwargs):
         """
         :param list drivers: drivers to use.
+        :param Driver default: default driver to use if no driver found.
         """
-
         super(DriverComposite, self).__init__(*args, **kwargs)
 
         self.drivers = {}
+
         for driver in drivers:
             if not isinstance(driver, Schema):
                 driver = data2schema(driver, name=driver.name, _force=True)
 
             self.drivers[driver.name] = driver
 
-    def _process(self, transaction, crud, **kwargs):
+        self.default = default
 
-        result = self._processquery(query=crud, ctx=transaction.ctx, **kwargs)
+    def getdrivers(self, name, maxdepth=3):
+        """Get a list of drivers and models which correspond to the input name.
 
-        if isinstance(crud, (Create, Update)):
-            if isinstance(crud.name, Expression):
-                transaction = self._processquery(
-                    query=crud.name, ctx=transaction.ctx
-                )
-                names = [crud.name.name]
+        :param str name: data name to retrieve.
+        :return: list of couples of driver with model where name match a
+            driver/model name.
+        :rtype: list
+        :raises: ValueError if no driver found.
+        """
+        result = []
+
+        driver = None
+        model = None
+
+        names = getnames(name)
+
+        rootname = names[0]
+
+        tmpelts = []  # list of couple of driver/model
+        elts = []  # list of couple of driver/model
+
+        for depth in range(maxdepth):
+
+            if tmpelts:
+                for driver, model in list(tmpelts):
+                    if hasattr(model, rootname):
+                        elts.append((driver, getattr(model, rootname)))
+                        tmpelts.remove((driver, model))
+
+                    else:
+                        for name, schema in iteritems(model.getschemas()):
+                            tmpelts.append(driver, schema)
+
+                    tmpelts.remove((driver, model))
 
             else:
-                names = [crud.name]
-
-        elif isinstance(crud, (Read, Delete)):
-            names = []
-
-            items = crud.select() if isinstance(crud, Read) else crud.names
-
-            for item in items:
-                if isinstance(item, Expression):
-                    ctx = self._processquery(query=item, ctx=transaction.ctx)
-                    names.append(item.name)
+                if rootname in self.drivers:
+                    driver = self.drivers[rootname]
+                    break
 
                 else:
-                    names.append(item)
+                    tmpelts = [
+                        (driver, driver) for driver in self.drivers.values()
+                    ]
 
-        if names:
-            driver = self.drivers.get(names[0])
+        if elts:
+            for name in names:
 
-            if driver is None:
-
-                processingdrivers = [
-                    _driver for _driver in self.drivers.values()
-                    if names[0] in _driver.getschemas()
+                elts = [
+                    (elt[0], getattr(elt[1], name)) for elt in elts
+                    if hasattr(elt[1], name)
                 ]
+                if not elts:
+                    break
 
-            else:
-                processingdrivers = [driver]
-
-            transaction = transaction.open(ctx=ctx, cruds=[crud])
-
-            for processingdriver in processingdrivers:
-
-                pctx = processingdriver.process(transaction=transaction)
-
-                ctx.fill(pctx)
-
-        transaction.ctx = ctx
+        if not elts:
+            raise ValueError('No driver found for {0}'.format(name))
 
         return result
 
-    def _processquery(self, query, ctx, _lastquery=None, **kwargs):
-        """Parse deeply the query from the left to the right and aggregates
-        queries which refers to the same system without any intermediate system
-        .
+    def _process(self, transaction, **kwargs):
 
-        :param Expression query: query to process.
-        :param Context ctx: context execution.
-        :param Expression _lastquery: private parameter which save the last
-            query to process.
-        :return: ctx
-        :rtype: ctx
-        """
+        for crud in transaction.cruds:
+            self.processdeeply(crud, transaction.ctx)
 
-        if _lastquery is None:
-            _lastquery = query
+        return transaction
 
-        names = query.name.split('.')
+    def processdeeply(self, elt, transaction, _elts=None, **kwargs):
+        """Parse input elt and return its evaluation."""
+        result = elt
 
-        driver = self.drivers.get(names[0])
-        lastdriver = ctx.get(DriverComposite.__LAST_DRIVER__, driver)
+        ctx = transaction.ctx
 
-        if driver is None:
-            driver = lastdriver
+        if elt in ctx:
+            result = ctx[elt]
 
         else:
-            if driver != lastdriver:
-                ctx[DriverComposite.__LAST_DRIVER__] = driver
 
-        if isinstance(query, Function):
-
-            isor = query.name == FuncName.OR.value
-
-            for param in query.params:
-                if isinstance(param, Expression):
-
-                    pctx = deepcopy(ctx) if isor else ctx
-
-                    self._processquery(
-                        query=param, ctx=pctx,
-                        _lastquery=query if _lastquery is None else _lastquery,
-                        **kwargs
-                    )
-
-                    if isor:
-                        ctx.fill(pctx)
-
-        if query == _lastquery:
-
-            if lastdriver is None:
-                lastdriver = ctx.get(DriverComposite.__LAST_DRIVER__, driver)
-
-            if lastdriver is None:
-
-                processingdrivers = [
-                    _driver for _driver in self.drivers.values()
-                    if names[0] in _driver.getschemas()
-                ]
+            # get driver and model
+            if FuncName.contains(elt.name):
+                driver = model = None
 
             else:
-                processingdrivers = [lastdriver]
+                # do something
+                driverswmodel = self.getdrivers(elt.name)
 
-            transaction = driver.open(cruds=[query], ctx=ctx)
+                if len(driverswmodel) > 1:
+                    print(driverswmodel)
+                    raise ValueError(
+                        'Too many drivers found for elt {0}. {1}'.format(
+                            elt, driverswmodel
+                        )
+                    )
 
-            for processingdriver in processingdrivers:
+                driver, model = driverswmodel
 
-                # prepare a read operation for the inner driver
-                crudname = query.ctxname  # prepare crud name
-                if crudname.startswith(processingdriver.name):
-                    crudname = crudname[len(processingdriver.name) + 1:]
+            # fill elts
+            if _elts is None:
+                _elts = [[driver, model, elt]]
 
-                crud = Read(
-                    select=[crudname] if crudname else None,
-                    alias=query.ctxname  # set alias equals query ctxname
+            elif driver is not None:
+                olddriver = _elts[-1][0]
+
+                if olddriver is None:
+                    _elts[-1][0] = driver
+
+                elif olddriver != driver:
+                        _elts.append((driver, model, elt))
+
+            if isinstance(elt, Function):
+                for param in elt.params:
+                    self.processdeeply(
+                        elt=param, ctx=ctx, _elts=_elts, **kwargs
+                    )
+
+            elif isinstance(elt, CRUDElement):
+
+                self.processdeeply(elt.query, ctx=ctx, _elts=_elts, **kwargs)
+
+                if isinstance(elt, (Create, Update)):
+                    self.processdeeply(
+                        elt=elt.name, ctx=ctx, _elts=_elts, **kwargs
+                    )
+                    for name, value in iteritems(elt.values):
+                        self.processdeeply(
+                            elt=name, ctx=ctx, _elts=_elts, **kwargs
+                        )
+                        self.processdeeply(
+                            elt=value, ctx=ctx, _elts=_elts, **kwargs
+                        )
+
+                elif isinstance(elt, Read):
+                    self.processdeeply(
+                        elt=elt.name, ctx=ctx, _elts=_elts, **kwargs
+                    )
+                    for select in elt.select:
+                        self.processdeeply(
+                            elt=select, ctx=ctx, _elts=_elts, **kwargs
+                        )
+
+                    for groupby in elt.groupby:
+                        self.processdeeply(
+                            elt=groupby, ctx=ctx, _elts=_elts, **kwargs
+                        )
+
+                    for orderby in elt.orderby:
+                        self.processdeeply(
+                            elt=orderby, ctx=ctx, _elts=_elts, **kwargs
+                        )
+
+                    self.processdeeply(
+                        elt=elt.join, ctx=ctx, _elts=_elts, **kwargs
+                    )
+                    self.processdeeply(
+                        elt=elt.limit, ctx=ctx, _elts=_elts, **kwargs
+                    )
+                    self.processdeeply(
+                        elt=elt.offset, ctx=ctx, _elts=_elts, **kwargs
+                    )
+
+                elif isinstance(elt, Delete):
+
+                    for name in elt.names:
+                        self.processdeeply(
+                            elt=name, ctx=ctx, _elts=_elts, **kwargs
+                        )
+
+            if _elts[-1][2] == elt:
+
+                driver, model, _ = _elts.pop()
+
+                if driver is None:
+                    driver = self.default
+
+                if driver is None:
+                    raise ValueError(
+                        'No driver found to process {0}'.format(elt)
+                    )
+
+                if isinstance(elt, Expression):
+                    crud = Read(query=elt)
+
+                else:
+                    crud = elt
+
+                crudcopy = crud.copy()
+                self.updateelt(elt=crudcopy, driver=driver)
+
+                result = transaction.open(cruds=[crudcopy], ctx=ctx).commit(
+                    **kwargs
                 )
 
-                transaction.cruds = [crud]
+        ctx[elt] = result
 
-                transaction = processingdriver.process(
-                    transaction=transaction, **kwargs
-                )
-
-                ctx = transaction.ctx
-
-        return ctx
+        return result
 
     def __repr__(self):
-
+        """Driver representation with drivers."""
         return 'CompositeDriver({0}, {1})'.format(self.name, self.drivers)
+
+
+def updatename(elt, driver):
+    """Rename elt in order to be specific to input driver."""
+    for slot in elt.__slots__:
+
+        subelt = getattr(elt, slot)
+
+        if isinstance(subelt, Expression):
+            if subelt.name.startswith(driver.name):
+                subelt.name = subelt.name[len(driver.name) + 1:]
+
+        elif isinstance(subelt, CRUDElement):
+
+            subelt = updatename(elt=subelt, driver=driver)
+            setattr(elt, slot, subelt)

@@ -195,7 +195,7 @@ def obj2driver(
 
     ffunctions = {} if functions is None else functions
 
-    for schema in obj.getschemas():
+    for schema in fobj.getschemas():
 
         if isinstance(schema, FunctionSchema):
             ffunctions[schema.name] = schema
@@ -269,7 +269,10 @@ class _CRUDAnnotation(Annotation):
 
         super(_CRUDAnnotation, self).__init__(*args, **kwargs)
 
-        self.crud = crud.name if isinstance(crud, CRUDElement) else crud
+        if isinstance(crud, CRUD):
+            crud = crud.name.lower()
+
+        self.name = crud
 
 
 class CreateAnnotation(_CRUDAnnotation):
