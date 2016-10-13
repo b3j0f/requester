@@ -241,7 +241,7 @@ class DriverComposite(Driver):
                 if isor:
                     transaction.ctx.fill(ftransaction.ctx)
 
-            if hash(_elts[-1][1]) == hash(elt):
+            if _elts[-1][1].ctxname == elt.ctxname:
 
                 drivers, _ = _elts.pop()
 
