@@ -34,6 +34,7 @@ except ImportError:
 
 from .transaction import State, Transaction
 
+from ..request.consts import FuncName
 from ..request.crud.create import Create
 from ..request.crud.delete import Delete
 from ..request.crud.read import Read
@@ -48,7 +49,9 @@ DEFAULT_ASYNC = False  #: default async value.
 class Driver(object):
     """In charge of accessing to data from a transaction."""
 
-    name = None  # driver name
+    name = None  #: driver name.
+    #: supported function names.
+    supportedfunctions = set(FuncName.__members__)
 
     def __init__(self, name=None, *args, **kwargs):
 
@@ -80,10 +83,11 @@ class Driver(object):
         :param bool async: if True (default False), execute input crud in a
             separated thread.
         :param Callable callback: callable function which takes in parameter
-            the function result. Commonly used with async equals True.
+            the function result and kwargs. Commonly used with async equals
+            True.
         :param dict kwargs: additional parameters specific to the driver.
-        :return: transaction.
-        :rtype: Transaction
+        :return: transaction or thread if async.
+        :rtype: Transaction or Thread
         """
 
         def process(transaction=transaction, callback=callback, **kwargs):
@@ -94,17 +98,20 @@ class Driver(object):
             result = self._process(transaction=transaction, **kwargs)
 
             if callback is not None:
-                callback(result)
+                callback(result, **kwargs)
 
             return result
 
         if transaction.state is State.COMMITTING:
 
             if async:
-                Thread(target=process).start()
+                result = Thread(target=process)
+                result.start()
 
             else:
-                return process(**kwargs)
+                result = process(**kwargs)
+
+        return result
 
     def _process(self, transaction, **kwargs):
         """Generic method to override in order to crud input data related to

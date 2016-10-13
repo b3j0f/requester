@@ -41,6 +41,12 @@ from ..request.crud.create import Create
 from ..request.crud.read import Read
 from ..request.crud.update import Update
 
+try:
+    from threading import Thread
+
+except ImportError:
+    from dummy_threading import Thread
+
 __all__ = [
     'CustomDriver',
     'func2crudprocessing', 'obj2driver',
@@ -125,6 +131,8 @@ def func2crudprocessing(func, annotation):
 
             funcresult = []
 
+            threads = []
+
             for funckwargs in orfunckwargs:
 
                 funcvarargs = []
@@ -139,8 +147,18 @@ def func2crudprocessing(func, annotation):
 
                         funckwargs[param.name] = transaction.ctx[param.name]
 
-                funcresult += _func(*funcvarargs, **funckwargs)
-                # TODO: remove duplicate data
+                def target():
+                    global funcresult
+                    funcresult += _func(*funcvarargs, **funckwargs)
+
+                thread = Thread(target=target)
+                thread.start()
+                threads.append(thread)
+
+            # TODO: remove duplicate data
+
+            for thread in threads:
+                thread.wait()
 
         else:
             funcresult = _func(transaction=transaction, crud=crud, **kwargs)

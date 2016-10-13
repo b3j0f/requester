@@ -46,12 +46,25 @@ __all__ = ['DriverComposite']
 
 
 class DriverComposite(PyDriver):
-    """In charge of distributing a request to several drivers."""
+    """In charge of distributing a request to several drivers.
 
-    def __init__(self, drivers, default=None, *args, **kwargs):
+    Driver parameters are :
+
+    .. csv-table::
+
+        :header: name, type, description
+
+        - discovery, bool (False), enable driver discovery from queries.
+        - many, bool (False), disable multi driver execution for one query.
+        - besteffort, bool (False), enable discovery and many.
+        - maxdepth, int (3), max depth data search in the driver tree.
+        - explain, bool (False), return query information processsing in ctx.
+    """
+
+    def __init__(self, drivers, ddriver=None, *args, **kwargs):
         """
         :param list drivers: drivers to use.
-        :param Driver default: default driver to use if no driver found.
+        :param Driver ddriver: default driver to use if no driver found.
         """
         super(DriverComposite, self).__init__(*args, **kwargs)
 
@@ -63,66 +76,99 @@ class DriverComposite(PyDriver):
 
             self.drivers[driver.name] = driver
 
-        self.default = default
+        self.ddriver = ddriver
 
-    def getdrivers(self, name, maxdepth=3):
-        """Get a list of drivers and models which correspond to the input name.
+    def getdrivers(self, name, maxdepth=3, discovery=False, many=False):
+        """Get a list of drivers corresponding with input model name.
 
-        :param str name: data name to retrieve.
+        :param str name: data name to identify such as a driver model.
+        :param bool discovery: if True (False by default), try to find drivers
+            where name match with driver models.
+        :param bool many: if False (default), raise a ValueError if more than
+            one driver is found.
         :return: list of couples of driver with model where name match a
             driver/model name.
         :rtype: list
-        :raises: ValueError if no driver found.
+        :raises: ValueError if name is not a standard query name and no driver
+            is found.
         """
         result = []
 
-        driver = None
-        model = None
+        if name in self.supportedfunctions:
+            return result
 
         names = getnames(name)
 
         rootname = names[0]
 
-        tmpelts = []  # list of couple of driver/model
-        result = []  # list of couple of driver/model
+        if discovery:
 
-        for depth in range(maxdepth):
+            tmpelts = []  # list of couple of driver/model.
+            elts = []  # list of couple of driver/model.
 
-            if tmpelts:
-                for driver, model in list(tmpelts):
-                    if hasattr(model, rootname):
-                        result.append((driver, getattr(model, rootname)))
-                        tmpelts.remove((driver, model))
+            for depth in range(maxdepth + 1):
 
-                    else:
-                        for name, schema in iteritems(model.getschemas()):
-                            tmpelts.append((driver, schema))
+                if elts:
+                    tmpelts = []
+                    for driver, model in list(elts):
+                        if hasattr(model, rootname):
+                            tmpelts.append((driver, getattr(model, rootname)))
 
-                    tmpelts.remove((driver, model))
+                        else:
+                            for mname, submodel in iteritems(model.getschemas()):
+                                tmpelts.append((name, submodel))
 
-            else:
-                if rootname in self.drivers:
-                    driver = self.drivers[rootname]
-                    result = [(driver, driver)]
-                    break
+                    elts = tmpelts
 
                 else:
-                    tmpelts = [
-                        (driver, driver) for driver in self.drivers.values()
-                    ]
+                    if rootname in self.drivers:
+                        result = [self.drivers[rootname]]
+                        break
+
+                    elif self.ddriver and self.ddriver.name == rootname:
+                        result = [self.ddriver]
+
+                    else:
+                        elts = [(item, item) for item in self.drivers.values()]
+                        if self.ddriver:
+                            elts.append((self.ddriver, self.ddriver))
+
+            if not result:
+                if elts:
+                    for name in names[1:]:
+
+                        elts = [
+                            (elt[0], getattr(elt[1], name)) for elt in elts
+                            if hasattr(elt[1], name)
+                        ]
+                        if not elts:
+                            break
+
+                    else:
+                        result = elts
+
+        else:
+            if rootname in self.drivers:
+                result = [self.drivers[rootname]]
+
+            elif self.ddriver is not None and self.ddriver.name == rootname:
+                result = [self.ddriver]
+
+            else:
+                raise ValueError(
+                    '{0} is not handled by {1}'.format(name, self)
+                )
 
         if result:
-            for name in names[1:]:
+            if many and len(result) > 1:
+                raise ValueError(
+                    'Too many drivers found for elt {0}: {1}.'.format(
+                        elt, result
+                    )
+                )
 
-                result = [
-                    (elt[0], getattr(elt[1], name)) for elt in result
-                    if hasattr(elt[1], name)
-                ]
-                if not result:
-                    break
-
-        if not result:
-            raise ValueError('No driver found for {0}'.format(name))
+        else:
+            raise ValueError('No driver found for processing {0}'.format(name))
 
         return result
 
@@ -137,6 +183,15 @@ class DriverComposite(PyDriver):
         """Parse input elt and return its evaluation."""
         result = elt
 
+        # process specific driver parameters
+        discovery = kwargs.get('discovery', False)
+        many = kwargs.get('many', False)
+        besteffort = kwargs.get('besteffort')
+        maxdepth = kwargs.get('maxdepth', 3)
+
+        if besteffort is not None:
+            many = discovery = besteffort
+
         ctx = transaction.ctx
 
         if elt in ctx:
@@ -144,34 +199,29 @@ class DriverComposite(PyDriver):
 
         elif isinstance(elt, BaseElement):
             # get driver and model
-            if isinstance(elt, CRUDElement) or FuncName.contains(elt.name):
-                driver = model = None
+
+            # ddriver case, elt is a crudelement or elt is a standard query
+            if isinstance(elt, CRUDElement):
+                drivers = []
 
             else:
-                # do something
-                driverswmodel = self.getdrivers(elt.name)
-
-                if len(driverswmodel) > 1:
-                    raise ValueError(
-                        'Too many drivers found for elt {0}. {1}'.format(
-                            elt, driverswmodel
-                        )
-                    )
-
-                driver, model = driverswmodel[0]
+                drivers = self.getdrivers(
+                    name=elt.name, maxdepth=maxdepth, discovery=discovery,
+                    many=many
+                )
 
             # fill elts
             if _elts is None:
-                _elts = [[driver, model, elt]]
+                _elts = [[drivers, elt]]
 
-            elif driver is not None:
-                olddriver = _elts[-1][0]
+            elif drivers:
+                olddrivers = _elts[-1][0]
 
-                if olddriver is None:
-                    _elts[-1][0] = driver
+                if olddrivers is None:
+                    _elts[-1][0] = drivers
 
-                elif olddriver != driver:
-                        _elts.append([driver, model, elt])
+                elif olddrivers != drivers:
+                        _elts.append([drivers, elt])
 
             children = getchildren(elt)
 
@@ -187,8 +237,7 @@ class DriverComposite(PyDriver):
                     ftransaction == transaction
 
                 self.processdeeply(
-                    elt=child, transaction=ftransaction, _elts=_elts,
-                    **kwargs
+                    elt=child, transaction=ftransaction, _elts=_elts, **kwargs
                 )
 
                 if isor:
@@ -196,37 +245,52 @@ class DriverComposite(PyDriver):
 
             if _elts[-1][2] == elt:
 
-                driver, model, _ = _elts.pop()
+                drivers, _ = _elts.pop()
 
-                if driver is None:
-                    driver = self.default
+                if drivers:
 
-                if driver is None:
+                    if isinstance(elt, Expression):
+                        crud = Read(query=elt)
+
+                    else:
+                        crud = elt
+
+                    crudcopy = crud.copy()
+
+                    threads = []
+
+                    for driver in drivers:
+                        updatename(elt=crudcopy, driver=driver)
+
+                        async = kwargs.pop('async', True)
+
+                        ctx[elt] = []
+
+                        def callback(transaction, **kwargs):
+                            ctx[elt] += transaction.ctx[crudcopy]
+
+                        thread = transaction.open(
+                            driver=driver, cruds=[crudcopy]
+                        ).commit(async=async, callback=callback, **kwargs)
+
+                        threads.append(thread)
+
+                    for thread in threads:
+                        thread.wait()
+
+                    result = ctx[elt]
+
+                else:
                     raise ValueError(
                         'No driver found to process {0}'.format(elt)
                     )
-
-                if isinstance(elt, Expression):
-                    crud = Read(query=elt)
-
-                else:
-                    crud = elt
-
-                crudcopy = crud.copy()
-                updatename(elt=crudcopy, driver=driver)
-
-                result = transaction.open(
-                    driver=driver, cruds=[crudcopy]
-                ).commit(**kwargs)
-
-                ctx[elt] = result
 
         return result
 
     def __repr__(self):
         """Driver representation with drivers."""
         return 'CompositeDriver({0}, {1}, {2})'.format(
-            self.name, self.drivers, self.default
+            self.name, self.drivers, self.ddriver
         )
 
 
