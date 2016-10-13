@@ -90,15 +90,17 @@ class Driver(object):
         :rtype: Transaction or Thread
         """
 
-        def process(transaction=transaction, callback=callback, **kwargs):
+        def process():
 
             if transaction.dparams is not None:
                 kwargs.update(transaction.dparams)
 
-            result = self._process(transaction=transaction, **kwargs)
+            result = self._process(
+                transaction=transaction, async=async, **kwargs
+            )
 
             if callback is not None:
-                callback(result, **kwargs)
+                callback(result, async=async, **kwargs)
 
             return result
 
@@ -109,7 +111,7 @@ class Driver(object):
                 result.start()
 
             else:
-                result = process(**kwargs)
+                result = process()
 
         return result
 

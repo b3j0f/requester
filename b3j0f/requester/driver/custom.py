@@ -158,7 +158,7 @@ def func2crudprocessing(func, annotation):
             # TODO: remove duplicate data
 
             for thread in threads:
-                thread.wait()
+                thread.join()
 
         else:
             funcresult = _func(transaction=transaction, crud=crud, **kwargs)

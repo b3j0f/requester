@@ -276,7 +276,7 @@ class DriverComposite(PyDriver):
                         threads.append(thread)
 
                     for thread in threads:
-                        thread.wait()
+                        thread.join()
 
                     result = ctx[elt]
 

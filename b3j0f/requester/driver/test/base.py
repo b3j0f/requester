@@ -71,10 +71,56 @@ class DriverTest(UTCase):
 
         kwargs = {'bar': 'foo'}
 
+        fkwargs = kwargs.copy()
+        fkwargs['async'] = False
+
         self.driver.process(transaction=self.transaction, **kwargs)
 
         self.assertEqual(self.transactions, [self.transaction])
-        self.assertEqual(self.lkwargs, [kwargs])
+        self.assertEqual(self.lkwargs, [fkwargs])
+
+    def test_callback(self):
+
+        kwargs = {'bar': 'foo'}
+
+        fkwargs = kwargs.copy()
+        fkwargs['async'] = False
+
+        transactions = []
+
+        def callback(transaction, **kwargs):
+            transactions.append((transaction, kwargs))
+
+        self.driver.process(
+            transaction=self.transaction, callback=callback, **kwargs
+        )
+
+        self.assertEqual(self.transactions, [self.transaction])
+        self.assertEqual(self.lkwargs, [fkwargs])
+        self.assertEqual(transactions, [(self.transaction, fkwargs)])
+
+    def test_async(self):
+
+        kwargs = {'bar': 'foo'}
+
+        fkwargs = kwargs.copy()
+        fkwargs['async'] = True
+
+        transactions = []
+
+        def callback(transaction, **kwargs):
+            transactions.append((transaction, kwargs))
+
+        thread = self.driver.process(
+            transaction=self.transaction, callback=callback, async=True,
+            **kwargs
+        )
+
+        thread.join()
+
+        self.assertEqual(self.transactions, [self.transaction])
+        self.assertEqual(self.lkwargs, [fkwargs])
+        self.assertEqual(transactions, [(self.transaction, fkwargs)])
 
 if __name__ == '__main__':
     main()
