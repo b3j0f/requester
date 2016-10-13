@@ -62,7 +62,7 @@ class TestDriver(PyDriver):
         super(TestDriver, self)._process(
             transaction=transaction, *args, **kwargs
         )
-
+        #print(self.name, transaction.cruds)
         transaction.ctx.setdefault('test', [self])
 
         self.transactions.append((transaction, kwargs))
@@ -154,15 +154,20 @@ class DriverCompositeTest(UTCase):
 
     def test_expr_d0_d1_d2(self):
 
-        expr = Expression.in_(Expression.d0, Expression.in_(Expression.d1))
+        expr = Expression.in_(
+            Expression.d0, Expression.in_(Expression.d1), Expression.d2
+        )
 
         self.driver.open(cruds=[expr]).commit()
 
-        for driver in self.drivers[2:]:
+        for driver in self.drivers[3:]:
             self.assertFalse(driver.transactions)
 
         self.assertEqual(len(self.d0.transactions), 1)
         self.assertEqual(len(self.d1.transactions), 1)
+        self.assertEqual(len(self.d2.transactions), 1)
+
+#    def test_expr_d0_d1_d2(self):
 
 if __name__ == '__main__':
     main()

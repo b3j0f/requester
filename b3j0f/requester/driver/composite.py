@@ -282,6 +282,7 @@ class DriverComposite(Driver):
                             transaction.ctx[elt] += transaction.ctx[crudcopy]
 
                         if len(drivers) == 1:
+                            print(elt, crud, crudcopy, driver.name)
                             result = ftransaction.commit(
                                 callback=callback, **dparams
                             )

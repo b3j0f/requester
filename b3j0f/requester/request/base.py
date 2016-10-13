@@ -107,8 +107,19 @@ class BaseElement(object):
 
         for slot in self.__slots__:
             val = getattr(self, slot)
+
+            if isinstance(val, BaseElement):
+                val = val.copy()
+
+            elif isinstance(val, (list, tuple)):
+                val = type(val)([
+                    item.copy() if isinstance(item, BaseElement) else item
+                    for item in val
+                ])
+
             if slot[0] == '_':
                 slot = slot[1:]
+
             kwargs[slot] = val
 
         copykwargs.update(kwargs)
