@@ -30,9 +30,10 @@ from six import iteritems
 
 from inspect import getmembers, isroutine
 
+from copy import deepcopy
+
 from b3j0f.annotation import Annotation
 from b3j0f.schema import Schema, data2schema
-from b3j0f.schema.lang.python import FunctionSchema
 
 from .base import Driver
 from .py import processread
@@ -217,7 +218,7 @@ def func2crudprocessing(func, annotation):
 
         else:
             fresult = _func(transaction=transaction, crud=crud, **kwargs)
-            funcresult = transaction if fresult is None else fresult.ctx[crud]
+            funcresult = transaction.ctx[crud] if fresult is None else fresult.ctx[crud]
 
         transaction.ctx[crud] = funcresult
 
@@ -246,7 +247,7 @@ def query2kwargs(query, ctx, pnames):
         if query.name in pnames:
 
             for item in result:
-                item[query.name] = ctx.get(query, {FuncName.EXISTS.value: ()})
+                item[query.name] = ctx.get(query, {FuncName.EXISTS.value: []})
 
         if isinstance(query, Function):
 
@@ -260,13 +261,13 @@ def query2kwargs(query, ctx, pnames):
 
                 if isor or query.name == FuncName.AND.value:
 
-                    for param in query.param:
+                    for param in query.params:
 
                         queryresult = query2kwargs(
                             query=param, ctx=ctx, pnames=pnames
                         )
 
-                        fresult = list(orresult) if isor else result
+                        fresult = deepcopy(orresult) if isor else result
 
                         for item in fresult:
 
@@ -280,7 +281,11 @@ def query2kwargs(query, ctx, pnames):
                                     else:
                                         item[qname] = qconds
 
-                        result += fresult
+                        if isor:
+                            result += fresult
+
+                        else:
+                            result = fresult
 
                 elif query.params:
                     elt = query.params[0]
@@ -299,7 +304,7 @@ def query2kwargs(query, ctx, pnames):
                         ]
 
                         for item in result:
-                            item.setdfault(elt.name, {})[query.name] = params
+                            item.setdefault(elt.name, {})[query.name] = params
 
                 else:
                     raise NotImplementedError(

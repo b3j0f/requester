@@ -35,7 +35,7 @@ from b3j0f.utils.ut import UTCase
 
 from ..custom import (
     CreateAnnotation, ReadAnnotation, UpdateAnnotation, DeleteAnnotation,
-    obj2driver, CustomDriver
+    obj2driver, CustomDriver, query2kwargs
 )
 from ..ctx import Context
 from ..custom import func2crudprocessing
@@ -316,7 +316,7 @@ class Func2CrudProcessingTest(UTCase):
 
 class Obj2DriverTest(UTCase):
 
-    def test_default(self):
+    def test_gateway(self):
 
         class Test(object):
 
@@ -330,25 +330,25 @@ class Obj2DriverTest(UTCase):
             @ReadAnnotation()
             def cr(self, **kwargs):
 
-                return [('cr', kwargs)]
+                return [{'cr': kwargs}]
 
             @ReadAnnotation()
             @UpdateAnnotation()
             def ru(self, **kwargs):
 
-                return [('ru', kwargs)]
+                return [{'cr': kwargs}]
 
             @UpdateAnnotation()
             @DeleteAnnotation()
             def ud(self, **kwargs):
 
-                return [('ud', kwargs)]
+                return [{'cr': kwargs}]
 
             @DeleteAnnotation()
             @CreateAnnotation()
             def dc(self, **kwargs):
 
-                return [('dc', kwargs)]
+                return [{'cr': kwargs}]
 
             def test(self, **kwargs):
 
@@ -358,7 +358,7 @@ class Obj2DriverTest(UTCase):
 
         driver = obj2driver(test)
 
-        query = Expression.test(Expression.test())
+        query = Expression.a > Expression.test(Expression.test())
 
         transaction = driver.create(values={}, query=query)
 
@@ -379,6 +379,146 @@ class Obj2DriverTest(UTCase):
 
         self.assertEqual(len(transaction.ctx), 3)
         self.assertEqual(len(test.kwargs), 8)
+
+    def test_notgateway(self):
+
+        class Test(object):
+
+            def __init__(self, *args, **kwargs):
+
+                super(Test, self).__init__(*args, **kwargs)
+
+                self.kwargs = []
+
+            @CreateAnnotation(gateway=False)
+            @ReadAnnotation(gateway=False)
+            def cr(self, **kwargs):
+
+                return
+
+            @ReadAnnotation(gateway=False)
+            @UpdateAnnotation(gateway=False)
+            def ru(self, **kwargs):
+
+                return
+
+            @UpdateAnnotation(gateway=False)
+            @DeleteAnnotation(gateway=False)
+            def ud(self, **kwargs):
+
+                return
+
+            @DeleteAnnotation(gateway=False)
+            @CreateAnnotation(gateway=False)
+            def dc(self, **kwargs):
+
+                return
+
+            def test(self, **kwargs):
+
+                self.kwargs.append(kwargs)
+
+        test = Test()
+
+        driver = obj2driver(test)
+
+        query = Expression.a > Expression.test(Expression.test())
+
+        transaction = driver.create(values={}, query=query)
+
+        self.assertEqual(len(transaction.ctx), 3)
+        self.assertEqual(len(test.kwargs), 2)
+
+        transaction = driver.read(query=query)
+
+        self.assertEqual(len(transaction.ctx), 3)
+        self.assertEqual(len(test.kwargs), 4)
+
+        transaction = driver.update(values={}, query=query)
+
+        self.assertEqual(len(transaction.ctx), 3)
+        self.assertEqual(len(test.kwargs), 6)
+
+        transaction = driver.delete(query=query)
+
+        self.assertEqual(len(transaction.ctx), 3)
+        self.assertEqual(len(test.kwargs), 8)
+
+
+class Query2KwargsTest(UTCase):
+
+    def test_default(self):
+
+        allkwargs = query2kwargs(query=None, ctx=Context(), pnames=[])
+
+        self.assertEqual(allkwargs, [{}])
+
+    def test_expr(self):
+
+        allkwargs = query2kwargs(query=Expression.a, ctx=Context(), pnames=[])
+
+        self.assertEqual(allkwargs, [{}])
+
+    def test_expr_a(self):
+
+        allkwargs = query2kwargs(
+            query=Expression.a, ctx=Context(), pnames=['a']
+        )
+
+        self.assertEqual(allkwargs, [{'a': {'exists': []}}])
+
+    def test_expr_a_b(self):
+
+        allkwargs = query2kwargs(
+            query=Expression.a & Expression.b & Expression.c,
+            ctx=Context(), pnames=['a', 'b']
+        )
+
+        self.assertEqual(
+            allkwargs,
+            [{'a': {'exists': []}, 'b': {'exists': []}}]
+        )
+
+    def test_and(self):
+
+        allkwargs = query2kwargs(
+            query=(Expression.a > 2) & (Expression.a < 3),
+            ctx=Context(),
+            pnames=['a']
+        )
+
+        self.assertEqual(
+            allkwargs,
+            [{'a': {'>': [2], '<': [3]}}]
+        )
+
+    def test_or(self):
+
+        allkwargs = query2kwargs(
+            query=(Expression.a > 2) | (Expression.a < 3),
+            ctx=Context(),
+            pnames=['a']
+        )
+
+        self.assertEqual(
+            allkwargs,
+            [{'a': {'>': [2]}}, {'a': {'<': [3]}}]
+        )
+
+    def test_or_and(self):
+
+        query = (Expression.a > 2) | ((Expression.a < 3) & (Expression.a == 4))
+
+        allkwargs = query2kwargs(
+            query=query,
+            ctx=Context(),
+            pnames=['a']
+        )
+
+        self.assertEqual(
+            allkwargs,
+            [{'a': {'>': [2]}}, {'a': {'<': [3], '==': [4]}}]
+        )
 
 if __name__ == '__main__':
     main()
