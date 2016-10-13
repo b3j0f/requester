@@ -177,6 +177,7 @@ CONDITIONS = [  #: expression conditions.
 
     FuncName.IS.value,
     FuncName.ISNOT.value,
+    FuncName.NOT.value,
     FuncName.EQ.value,
     FuncName.NE.value,
 

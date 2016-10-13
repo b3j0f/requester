@@ -40,10 +40,7 @@ from .ctx import Context
 from ..request.consts import FuncName
 from ..request.base import BaseElement
 from ..request.crud.base import CRUDElement
-from ..request.crud.create import Create
-from ..request.crud.delete import Delete
 from ..request.crud.read import Read
-from ..request.crud.update import Update
 from ..request.expr import Expression, Function
 
 __all__ = ['DriverComposite']

@@ -395,14 +395,6 @@ class ProcessQueryTest(CRUDTest):
 
         self.assertEqual(result, [self.items[3]])
 
-    def test_not(self):
-
-        result = processquery(items=self.items, query=Function.not_(True))
-
-        raise NotImplementedError()
-
-        return result
-
 
 class GetSubItemTest(UTCase):
 

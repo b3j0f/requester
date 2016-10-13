@@ -37,7 +37,7 @@ from b3j0f.schema import Schema, data2schema
 
 from .base import Driver
 from .py import processread
-from .transaction import State
+from .transaction import State, Transaction
 from .utils import getchildren
 from ..request.consts import FuncName, CONDITIONS
 from ..request.expr import Expression, Function
@@ -120,7 +120,16 @@ class CustomDriver(Driver):
                     for func in funcs:
                         fresult = func(crud=crud, transaction=result, **kwargs)
 
-                        transaction.ctx[crud] += fresult.ctx[crud]
+                        if isinstance(fresult, list):
+                            transaction.ctx[crud] += fresult
+
+                        elif isinstance(fresult, Transaction):
+                            transaction.ctx[crud] += fresult.ctx[crud]
+
+                        elif fresult is not None:
+                            msg1 = 'Wrong func result {0}.'.format(func)
+                            msg2 = 'Transaction, list or None expected.'
+                            raise TypeError('{0} {1}'.format(msg1, msg2))
 
                 else:
                     raise NotImplementedError(

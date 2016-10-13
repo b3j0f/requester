@@ -191,9 +191,13 @@ def all_(query, item, name, params, ctx):
     func = _OPERATORS_BY_NAME[operator]
 
     for _item in items:
-        if not func(
-            function=query.params[0], ctx=ctx, params=[[items], _item]
-        ):
+        params = [[item], _item]
+
+        function = query.params[1].copy()(query.params[1])
+
+        params = [[item], _item]
+
+        if not func(function=function, ctx=ctx, params=params):
             result = False
             break
 
@@ -236,7 +240,7 @@ _OPERATORS_BY_NAME = {
     FuncName.NE.value: _namedelt(ne),
     FuncName.GE.value: _namedelt(ge),
     FuncName.GT.value: _namedelt(gt),
-    FuncName.NOT.value: not_,
+    FuncName.NOT.value: lambda function, params, ctx: not_(params[0]),
     FuncName.TRUTH.value: truth,
     FuncName.IS.value: _namedelt(is_),
     FuncName.ISNOT.value: _namedelt(is_not),
