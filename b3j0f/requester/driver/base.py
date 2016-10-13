@@ -89,6 +89,7 @@ class Driver(object):
         :return: transaction or thread if async.
         :rtype: Transaction or Thread
         """
+        result = transaction
 
         def process():
 

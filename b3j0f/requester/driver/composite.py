@@ -111,6 +111,7 @@ class DriverComposite(Driver):
 
                 if elts:
                     tmpelts = []
+
                     for driver, model in list(elts):
                         if hasattr(model, rootname):
                             tmpelts.append((driver, getattr(model, rootname)))
@@ -265,17 +266,26 @@ class DriverComposite(Driver):
 
                         transaction.ctx[elt] = []
 
+                        ftransaction = transaction.open(
+                            driver=driver, cruds=[crudcopy]
+                        )
+
                         def callback(transaction, **kwargs):
                             transaction.ctx[elt] += transaction.ctx[crudcopy]
 
-                        thread = transaction.open(
-                            driver=driver, cruds=[crudcopy]
-                        ).commit(async=True, callback=callback, **dparams)
+                        if len(drivers) == 1:
+                            result = ftransaction.commit(
+                                callback=callback, **dparams
+                            )
 
-                        threads.append(thread)
+                        else:
+                            thread = ftransaction.commit(
+                                async=True, callback=callback, **dparams
+                            )
+                            threads.append(thread)
 
-                    for thread in threads:
-                        thread.join()
+                        for thread in threads:
+                            thread.join()
 
                     result = ctx[elt]
 
@@ -288,9 +298,7 @@ class DriverComposite(Driver):
 
     def __repr__(self):
         """Driver representation with drivers."""
-        return 'CompositeDriver({0}, {1}, {2})'.format(
-            self.name, self.drivers, self.ddriver
-        )
+        return 'CompositeDriver({0}, {1})'.format(self.name, self.drivers)
 
 
 def getchildren(elt):

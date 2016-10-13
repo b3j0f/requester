@@ -147,16 +147,19 @@ def func2crudprocessing(func, annotation):
 
                         funckwargs[param.name] = transaction.ctx[param.name]
 
-                def target():
-                    global funcresult
-                    funcresult += _func(*funcvarargs, **funckwargs)
+                if len(orfunckwargs) == 1:
+                    funcresult = _func(*funcvarargs, **funckwargs)
 
-                thread = Thread(target=target)
-                thread.start()
-                threads.append(thread)
+                else:
+                    def target():
+                        global funcresult
+                        funcresult += _func(*funcvarargs, **funckwargs)
+
+                    thread = Thread(target=target)
+                    thread.start()
+                    threads.append(thread)
 
             # TODO: remove duplicate data
-
             for thread in threads:
                 thread.join()
 
