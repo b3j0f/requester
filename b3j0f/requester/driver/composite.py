@@ -35,7 +35,7 @@ from six import iteritems
 from copy import deepcopy
 
 from .base import Driver
-from .utils import getnames
+from .utils import getnames, getchildren
 from .ctx import Context
 from ..request.consts import FuncName
 from ..request.base import BaseElement
@@ -306,46 +306,6 @@ class DriverComposite(Driver):
     def __repr__(self):
         """Driver representation with drivers."""
         return 'CompositeDriver({0}, {1})'.format(self.name, self.drivers)
-
-
-def getchildren(elt):
-    """Get children element from the request tree.
-
-    :param BaseElement elt: element from where get children.
-    :rtype: list
-    """
-    result = []
-
-    if isinstance(elt, Function):
-
-        result = elt.params
-
-    elif isinstance(elt, CRUDElement):
-
-        result.append(elt.query)
-
-        if isinstance(elt, (Create, Update)):
-
-            result.append(elt.name)
-
-            for name, value in iteritems(elt.values):
-                result.append(name)
-                result.append(value)
-
-        elif isinstance(elt, Read):
-
-            result += elt.select()
-            result += elt.groupby()
-            result += elt.orderby()
-            result.append(elt.join())
-            result.append(elt.limit())
-            result.append(elt.offset())
-
-        elif isinstance(elt, Delete):
-
-            result += elt.names()
-
-    return result
 
 
 def updatename(elt, driver):

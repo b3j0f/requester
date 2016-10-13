@@ -28,12 +28,16 @@
 
 from six import iteritems
 
+from inspect import getmembers, isroutine
+
 from b3j0f.annotation import Annotation
 from b3j0f.schema import Schema, data2schema
 from b3j0f.schema.lang.python import FunctionSchema
 
 from .base import Driver
 from .py import processread
+from .transaction import State
+from .utils import getchildren
 from ..request.consts import FuncName, CONDITIONS
 from ..request.expr import Expression, Function
 from ..request.crud.base import CRUD, CRUDElement
@@ -98,17 +102,56 @@ class CustomDriver(Driver):
 
         result = transaction
 
-        for crud in transaction.cruds:
-            crudname = type(crud).__name__.lower()
-            funcs = getattr(self, '{0}s'.format(crudname))
+        if transaction.state is State.COMMITTING:
 
-            if funcs:
-                for func in funcs:
-                    result = func(crud=crud, transaction=result, **kwargs)
+            for crud in transaction.cruds:
+
+                self.processquery(
+                    query=crud.query, transaction=transaction, **kwargs
+                )
+
+                crudname = type(crud).__name__.lower()
+                funcs = getattr(self, '{0}s'.format(crudname))
+
+                if funcs:
+                    transaction.ctx[crud] = []
+
+                    for func in funcs:
+                        fresult = func(crud=crud, transaction=result, **kwargs)
+
+                        transaction.ctx[crud] += fresult.ctx[crud]
+
+                else:
+                    raise NotImplementedError(
+                        'No implementation found for {0}'.format(crudname)
+                    )
+
+        return result
+
+    def processquery(self, query, transaction, **kwargs):
+
+        result = query
+
+        children = getchildren(query)
+
+        for child in children:
+            self.processquery(query=child, transaction=transaction, **kwargs)
+
+        if isinstance(query, Function):
+
+            if query.name in self.supportedfunctions:
+                pass
+
+            elif query.name in self.functions:
+                    func = self.functions[query.name]
+                    result = func(
+                        query=query, transaction=transaction, **kwargs
+                    )
+                    transaction.ctx[query] = result
 
             else:
                 raise NotImplementedError(
-                    'No implementation found for {0}'.format(crudname)
+                    '{0} is not implemented by {1}'.format(query, self)
                 )
 
         return result
@@ -163,17 +206,18 @@ def func2crudprocessing(func, annotation):
             for thread in threads:
                 thread.join()
 
+            transaction.ctx[crud] = [] if funcresult is None else funcresult
+
+            if isinstance(crud, Read):
+                funcresult = processread(
+                    read=crud,
+                    items=funcresult,
+                    ctx=transaction.ctx
+                )
+
         else:
-            funcresult = _func(transaction=transaction, crud=crud, **kwargs)
-
-        funcresult = [] if funcresult is None else list(funcresult)
-
-        if isinstance(crud, Read):
-            funcresult = processread(
-                read=crud,
-                items=funcresult,
-                ctx=transaction.ctx
-            )
+            fresult = _func(transaction=transaction, crud=crud, **kwargs)
+            funcresult = transaction if fresult is None else fresult.ctx[crud]
 
         transaction.ctx[crud] = funcresult
 
@@ -320,14 +364,17 @@ def obj2driver(
 
         for target in crudannotation.targets:
 
-            ftarget = func2crudprocessing(target, crudannotation)
+            otarget = getattr(obj, target.__name__)
+
+            ftarget = func2crudprocessing(otarget, crudannotation)
 
             _locals['{0}s'.format(crudannotation.name)].append(ftarget)
 
-    for schema in fobj.getschemas():
+    for name, member in getmembers(fobj):
 
-        if isinstance(schema, FunctionSchema):
-            functions[schema.name] = schema
+        if isroutine(member):
+
+            functions[name] = member
 
     return CustomDriver(
         name=name,

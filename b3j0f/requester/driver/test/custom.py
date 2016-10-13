@@ -29,17 +29,109 @@
 
 from unittest import main
 
+from six import iteritems
+
 from b3j0f.utils.ut import UTCase
 
+from ..custom import (
+    CreateAnnotation, ReadAnnotation, UpdateAnnotation, DeleteAnnotation,
+    obj2driver, CustomDriver
+)
 from ..ctx import Context
-from ..custom import CustomDriver, func2crudprocessing
-from ..transaction import Transaction
+from ..custom import func2crudprocessing
+from ..transaction import Transaction, State
 from ...request.crud.base import CRUD
 from ...request.crud.create import Create
 from ...request.crud.delete import Delete
 from ...request.crud.read import Read
 from ...request.crud.update import Update
 from ...request.expr import Expression
+
+
+class CustomDriverTest(UTCase):
+
+    def setUp(self):
+
+        self.driver = CustomDriver()
+        self.maxDiff = None
+
+    def test_default(self):
+
+        driver = CustomDriver()
+
+        self.assertFalse(driver.creates)
+        self.assertFalse(driver.reads)
+        self.assertFalse(driver.updates)
+        self.assertFalse(driver.deletes)
+        self.assertFalse(driver.functions)
+
+    def test_read(self):
+
+        def read(crud, transaction, **kwargs):
+            self.assertIsInstance(crud, Read)
+            self.assertIs(transaction.state, State.COMMITTING)
+            return [['read', transaction, kwargs]]
+
+        driver = CustomDriver(reads=[read, read])
+
+        transaction = driver.read()
+
+        self.assertEqual(len(transaction.ctx), 1)
+
+        for name, value in iteritems(transaction.ctx):
+            item = ['read', transaction, {'async': False}]
+            self.assertEqual(value, [item, item])
+
+    def test_create(self):
+
+        def create(crud, transaction, **kwargs):
+            self.assertIsInstance(crud, Create)
+            self.assertIs(transaction.state, State.COMMITTING)
+            return [['create', transaction, kwargs]]
+
+        driver = CustomDriver(creates=[create, create])
+
+        transaction = driver.create(values={})
+
+        self.assertEqual(len(transaction.ctx), 1)
+
+        for name, value in iteritems(transaction.ctx):
+            item = ['create', transaction, {'async': False}]
+            self.assertEqual(value, [item, item])
+
+    def test_update(self):
+
+        def update(crud, transaction, **kwargs):
+            self.assertIsInstance(crud, Update)
+            self.assertIs(transaction.state, State.COMMITTING)
+            return [['update', transaction, kwargs]]
+
+        driver = CustomDriver(updates=[update, update])
+
+        transaction = driver.update(values={})
+
+        self.assertEqual(len(transaction.ctx), 1)
+
+        for name, value in iteritems(transaction.ctx):
+            item = ['update', transaction, {'async': False}]
+            self.assertEqual(value, [item, item])
+
+    def test_delete(self):
+
+        def delete(crud, transaction, **kwargs):
+            self.assertIsInstance(crud, Delete)
+            self.assertIs(transaction.state, State.COMMITTING)
+            return [['delete', transaction, kwargs]]
+
+        driver = CustomDriver(deletes=[delete, delete])
+
+        transaction = driver.delete()
+
+        self.assertEqual(len(transaction.ctx), 1)
+
+        for name, value in iteritems(transaction.ctx):
+            item = ['delete', transaction, {'async': False}]
+            self.assertEqual(value, [item, item])
 
 
 class FunctionalDriverTest(UTCase):
@@ -94,7 +186,6 @@ class FunctionalDriverTest(UTCase):
         count = 1
 
         for crud in CRUD.__members__:
-
             self.assertEqual(len(self.processed[crud]), count)
 
             processedkwargs = self.processed[crud]
@@ -102,7 +193,6 @@ class FunctionalDriverTest(UTCase):
             self.assertEqual(len(processedkwargs), count)
 
             for processedkwarg in processedkwargs:
-
                 self.assertEqual(processedkwarg['foo'], kwargs['foo'])
 
             count += 1
@@ -225,7 +315,60 @@ class Func2CrudProcessingTest(UTCase):
 
 
 class Obj2DriverTest(UTCase):
-    pass
+
+    def test_default(self):
+
+        class Test(object):
+
+            def __init__(self, *args, **kwargs):
+
+                super(Test, self).__init__(*args, **kwargs)
+
+                self.kwargs = []
+
+            @CreateAnnotation()
+            @ReadAnnotation()
+            def cr(self, **kwargs):
+
+                return [('cr', kwargs)]
+
+            @ReadAnnotation()
+            @UpdateAnnotation()
+            def ru(self, **kwargs):
+
+                return [('ru', kwargs)]
+
+            @UpdateAnnotation()
+            @DeleteAnnotation()
+            def ud(self, **kwargs):
+
+                return [('ud', kwargs)]
+
+            @DeleteAnnotation()
+            @CreateAnnotation()
+            def dc(self, **kwargs):
+
+                return [('dc', kwargs)]
+
+            def test(self, **kwargs):
+
+                self.kwargs.append(kwargs)
+
+        test = Test()
+
+        driver = obj2driver(test)
+
+        query = Expression.test(Expression.test())
+
+        transaction = driver.create(values={}, query=query)
+
+        self.assertEqual(len(transaction.ctx), 3)
+        self.assertEqual(len(test.kwargs), 2)
+
+        transaction = driver.read(query=query)
+
+        transaction = driver.update(values={}, query=query)
+        transaction = driver.delete(query=query)
 
 if __name__ == '__main__':
     main()

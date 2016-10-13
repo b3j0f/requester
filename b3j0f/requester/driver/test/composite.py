@@ -186,7 +186,5 @@ class DriverCompositeTest(UTCase):
         self.assertEqual(len(self.d1.transactions), 1)
         self.assertEqual(len(self.d2.transactions), 1)
 
-#    def test_expr_d0_d1_d2(self):
-
 if __name__ == '__main__':
     main()

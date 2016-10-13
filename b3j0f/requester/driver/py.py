@@ -633,7 +633,7 @@ class PyDriver(Driver):
             ctx = Context()
 
         if read.query is not None:
-            items = self.processquery(query=read.query, ctx=ctx, **kwargs)
+            self.processquery(query=read.query, ctx=ctx, **kwargs)
 
         result = list(items)
 

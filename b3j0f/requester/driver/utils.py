@@ -26,6 +26,15 @@
 
 """Python utilities driver module."""
 
+from six import iteritems
+
+from ..request.crud.base import CRUDElement
+from ..request.crud.create import Create
+from ..request.crud.read import Read
+from ..request.crud.update import Update
+from ..request.crud.delete import Delete
+from ..request.expr import Function
+
 __all__ = ['FunctionChooser', 'SEPARATOR']
 
 
@@ -46,3 +55,43 @@ def getnames(name):
     """
 
     return name.split(SEPARATOR)
+
+
+def getchildren(elt):
+    """Get children element from the request tree.
+
+    :param BaseElement elt: element from where get children.
+    :rtype: list
+    """
+    result = []
+
+    if isinstance(elt, Function):
+
+        result = elt.params
+
+    elif isinstance(elt, CRUDElement):
+
+        result.append(elt.query)
+
+        if isinstance(elt, (Create, Update)):
+
+            result.append(elt.name)
+
+            for name, value in iteritems(elt.values):
+                result.append(name)
+                result.append(value)
+
+        elif isinstance(elt, Read):
+
+            result += elt.select()
+            result += elt.groupby()
+            result += elt.orderby()
+            result.append(elt.join())
+            result.append(elt.limit())
+            result.append(elt.offset())
+
+        elif isinstance(elt, Delete):
+
+            result += elt.names()
+
+    return result
