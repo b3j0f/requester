@@ -51,7 +51,7 @@ class Driver(object):
 
     name = None  #: driver name.
     #: supported function names.
-    supportedfunctions = set(FuncName.__members__)
+    supportedfunctions = [item.value for item in FuncName.__members__.values()]
 
     def __init__(self, name=None, *args, **kwargs):
 

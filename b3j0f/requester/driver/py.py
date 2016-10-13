@@ -432,13 +432,6 @@ class PyDriver(Driver):
 
         result = transaction
 
-        if kwargs:
-            raise ValueError(
-                'Driver {0} does not support additional arguments {1}'.format(
-                    self, kwargs
-                )
-            )
-
         if transaction.state is State.COMMITTING:
             for crud in transaction.cruds:
                 self.processcrud(ctx=transaction.ctx, crud=crud, **kwargs)

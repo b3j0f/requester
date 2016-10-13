@@ -32,6 +32,8 @@ from b3j0f.schema import Schema, data2schema
 
 from six import iteritems
 
+from copy import deepcopy
+
 from .base import Driver
 from .utils import getnames
 from .ctx import Context
@@ -63,10 +65,9 @@ class DriverComposite(Driver):
         - explain, bool (False), return query information processsing in ctx.
     """
 
-    def __init__(self, drivers, ddriver=None, *args, **kwargs):
+    def __init__(self, drivers, *args, **kwargs):
         """
         :param list drivers: drivers to use.
-        :param Driver ddriver: default driver to use if no driver found.
         """
         super(DriverComposite, self).__init__(*args, **kwargs)
 
@@ -77,8 +78,6 @@ class DriverComposite(Driver):
                 driver = data2schema(driver, name=driver.name, _force=True)
 
             self.drivers[driver.name] = driver
-
-        self.ddriver = ddriver
 
     def getdrivers(self, name, maxdepth=3, discovery=False, many=False):
         """Get a list of drivers corresponding with input model name.
@@ -134,18 +133,12 @@ class DriverComposite(Driver):
                         result = [self.drivers[rootname]]
                         break
 
-                    elif self.ddriver and self.ddriver.name == rootname:
-                        result = [self.ddriver]
-
                     else:
                         elts = [(item, item) for item in self.drivers.values()]
-                        if self.ddriver:
-                            elts.append((self.ddriver, self.ddriver))
 
             if not result:
                 if elts:
                     for name in names[1:]:
-
                         elts = [
                             (elt[0], getattr(elt[1], name)) for elt in elts
                             if hasattr(elt[1], name)
@@ -159,9 +152,6 @@ class DriverComposite(Driver):
         else:
             if rootname in self.drivers:
                 result = [self.drivers[rootname]]
-
-            elif self.ddriver is not None and self.ddriver.name == rootname:
-                result = [self.ddriver]
 
             else:
                 raise ValueError(
@@ -209,7 +199,7 @@ class DriverComposite(Driver):
         elif isinstance(elt, BaseElement):
             # get driver and model
 
-            # ddriver case, elt is a crudelement or elt is a standard query
+            # default case, elt is a crudelement or elt is a standard query
             if isinstance(elt, CRUDElement):
                 drivers = []
 
@@ -225,8 +215,7 @@ class DriverComposite(Driver):
 
             elif drivers:
                 olddrivers = _elts[-1][0]
-
-                if olddrivers is None:
+                if not olddrivers:
                     _elts[-1][0] = drivers
 
                 elif olddrivers != drivers:
@@ -243,7 +232,7 @@ class DriverComposite(Driver):
                     ftransaction = transaction.open(ctx=ctx)
 
                 else:
-                    ftransaction == transaction
+                    ftransaction = transaction
 
                 self.processdeeply(
                     elt=child, transaction=ftransaction, _elts=_elts, **kwargs
@@ -252,7 +241,7 @@ class DriverComposite(Driver):
                 if isor:
                     transaction.ctx.fill(ftransaction.ctx)
 
-            if _elts[-1][1] == elt:
+            if hash(_elts[-1][1]) == hash(elt):
 
                 drivers, _ = _elts.pop()
 
@@ -271,16 +260,17 @@ class DriverComposite(Driver):
                     for driver in drivers:
                         updatename(elt=crudcopy, driver=driver)
 
-                        async = kwargs.pop('async', True)
+                        dparams = deepcopy(kwargs)
+                        dparams.pop('async', None)
 
-                        ctx[elt] = []
+                        transaction.ctx[elt] = []
 
                         def callback(transaction, **kwargs):
-                            ctx[elt] += transaction.ctx[crudcopy]
+                            transaction.ctx[elt] += transaction.ctx[crudcopy]
 
                         thread = transaction.open(
                             driver=driver, cruds=[crudcopy]
-                        ).commit(async=async, callback=callback, **kwargs)
+                        ).commit(async=True, callback=callback, **dparams)
 
                         threads.append(thread)
 

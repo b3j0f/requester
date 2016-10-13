@@ -86,31 +86,16 @@ class DriverCompositeTest(UTCase):
         self.d2 = self.drivers[2]
         self.d3 = self.drivers[3]
 
-        self.driver = DriverComposite(
-            drivers=self.drivers[:-1], ddriver=self.d3
-        )
+        self.driver = DriverComposite(drivers=self.drivers[:-1])
 
         for driver in self.drivers:
             self.assertFalse(driver.transactions)
 
     def test_expr(self):
 
-        self.driver.default = None
-
         expr = Expression.in_
 
         self.assertRaises(ValueError, self.driver.open(cruds=[expr]).commit)
-
-    def test_default_expr(self):
-
-        expr = Expression.in_
-
-        self.driver.open(cruds=[expr]).commit()
-
-        for driver in self.drivers[:-1]:
-            self.assertFalse(driver.transactions)
-
-        self.assertEqual(len(self.d3.transactions), 1)
 
     def test_d0(self):
 
@@ -136,7 +121,18 @@ class DriverCompositeTest(UTCase):
 
     def test_expr_d0(self):
 
-        expr = Expression.process(Expression.d0)
+        expr = Expression.in_(Expression.d0)
+
+        self.driver.open(cruds=[expr]).commit()
+
+        for driver in self.drivers[1:]:
+            self.assertFalse(driver.transactions)
+
+        self.assertEqual(len(self.d0.transactions), 1)
+
+    def test_expr_expr_d0(self):
+
+        expr = Expression.in_(Expression.in_(Expression.d0))
 
         self.driver.open(cruds=[expr]).commit()
 
