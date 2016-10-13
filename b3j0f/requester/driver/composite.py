@@ -249,7 +249,7 @@ class DriverComposite(Driver):
 
                 if isor:
                     transaction.ctx.fill(ftransaction.ctx)
-            print(_elts)
+
             if _elts[-1][1].ctxname == elt.ctxname:
 
                 drivers, _ = _elts.pop()
@@ -278,8 +278,6 @@ class DriverComposite(Driver):
                             driver=driver, cruds=[crudcopy]
                         )
 
-                        print(repr(crudcopy))
-
                         def callback(transaction, **kwargs):
                             transaction.ctx[elt] += transaction.ctx[crudcopy]
 
@@ -287,7 +285,7 @@ class DriverComposite(Driver):
                             result = ftransaction.commit(
                                 callback=callback, **dparams
                             )
-                            print('DRIVER: ', drivers)
+
                         else:
                             thread = ftransaction.commit(
                                 async=True, callback=callback, **dparams

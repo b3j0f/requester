@@ -158,10 +158,11 @@ class DriverCompositeTest(UTCase):
 
         self.driver.open(cruds=[expr]).commit()
 
-        for driver in self.drivers[1:]:
+        for driver in self.drivers[2:]:
             self.assertFalse(driver.transactions)
 
         self.assertEqual(len(self.d0.transactions), 1)
+        self.assertEqual(len(self.d1.transactions), 1)
 
 if __name__ == '__main__':
     main()
