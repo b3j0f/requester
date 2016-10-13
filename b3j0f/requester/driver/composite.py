@@ -26,7 +26,7 @@
 
 """Module which specifices a composite of drivers."""
 
-from inspect import getmembers, isroutine, isbuiltin, isgeneratorfunction
+from inspect import getmembers
 
 from b3j0f.schema import Schema, data2schema
 
@@ -123,15 +123,7 @@ class DriverComposite(Driver):
                                 tmpelts.append((driver, submodel))
 
                         else:
-                            for name, member in getmembers(
-                                model,
-                                lambda member:
-                                    not (
-                                        isroutine(member) or
-                                        isgeneratorfunction(member) or
-                                        isbuiltin(member)
-                                    )
-                            ):
+                            for name, member in getmembers(model):
                                 if name[0] != '_':
                                     tmpelts.append((driver, member))
 

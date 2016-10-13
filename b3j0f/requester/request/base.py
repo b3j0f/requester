@@ -45,6 +45,10 @@ class BaseElement(object):
         self.alias = alias
         self.uuid = str(uuid or uuid4())
 
+    def __hash__(self):
+        """Hash value is this context name."""
+        return hash(self.ctxname)
+
     @staticmethod
     def refers(alias):
         """Create a reference base element which refers to another element or

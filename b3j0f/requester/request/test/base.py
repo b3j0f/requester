@@ -120,5 +120,13 @@ class BaseElementTest(UTCase):
 
         self.assertNotEqual(base0, base1)
 
+    def test_hash(self):
+
+        elt = BaseElement()
+
+        elthash = hash(elt)
+
+        self.assertEqual(elthash, hash(elt.ctxname))
+
 if __name__ == '__main__':
     main()
