@@ -72,12 +72,17 @@ class DriverComposite(Driver):
         super(DriverComposite, self).__init__(*args, **kwargs)
 
         self.drivers = {}
+        self.sdrivers = {}
 
         for driver in drivers:
-            if not isinstance(driver, Schema):
-                driver = data2schema(driver, name=driver.name, _force=True)
+            if isinstance(driver, Schema):
+                sdriver = driver
+
+            else:
+                sdriver = data2schema(driver, name=driver.name, _force=True)
 
             self.drivers[driver.name] = driver
+            self.sdrivers[driver.name] = sdriver
 
     def getdrivers(self, name, maxdepth=3, discovery=False, many=False):
         """Get a list of drivers corresponding with input model name.
@@ -135,7 +140,10 @@ class DriverComposite(Driver):
                         break
 
                     else:
-                        elts = [(item, item) for item in self.drivers.values()]
+                        elts = [
+                            (self.drivers[name], self.sdrivers[name])
+                            for name in self.drivers
+                        ]
 
             if not result:
                 if elts:
@@ -148,7 +156,7 @@ class DriverComposite(Driver):
                             break
 
                     else:
-                        result = elts
+                        result = [item[0] for item in elts]
 
         else:
             if rootname in self.drivers:
@@ -241,7 +249,7 @@ class DriverComposite(Driver):
 
                 if isor:
                     transaction.ctx.fill(ftransaction.ctx)
-
+            print(_elts)
             if _elts[-1][1].ctxname == elt.ctxname:
 
                 drivers, _ = _elts.pop()
@@ -270,6 +278,8 @@ class DriverComposite(Driver):
                             driver=driver, cruds=[crudcopy]
                         )
 
+                        print(repr(crudcopy))
+
                         def callback(transaction, **kwargs):
                             transaction.ctx[elt] += transaction.ctx[crudcopy]
 
@@ -277,7 +287,7 @@ class DriverComposite(Driver):
                             result = ftransaction.commit(
                                 callback=callback, **dparams
                             )
-
+                            print('DRIVER: ', drivers)
                         else:
                             thread = ftransaction.commit(
                                 async=True, callback=callback, **dparams
