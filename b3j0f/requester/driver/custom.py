@@ -144,11 +144,12 @@ class CustomDriver(Driver):
                 pass
 
             elif query.name in self.functions:
-                    func = self.functions[query.name]
-                    result = func(
-                        query=query, transaction=transaction, **kwargs
-                    )
-                    transaction.ctx[query] = result
+
+                func = self.functions[query.name]
+                result = func(
+                    query=query, transaction=transaction, **kwargs
+                )
+                transaction.ctx[query] = result
 
             else:
                 raise NotImplementedError(
@@ -181,23 +182,26 @@ def func2crudprocessing(func, annotation):
 
                 funcvarargs = []
 
+                for param in _func.params:
+
+                    pname = param.name
+
+                    if pname in transaction.ctx and pname not in funckwargs:
+
+                        funckwargs[param.name] = transaction.ctx[param.name]
+
                 if isinstance(crud, (Create, Update)):
 
                     funckwargs.update(crud.values)
 
-                for param in _func.params:
-
-                    if param.name in transaction.ctx:
-
-                        funckwargs[param.name] = transaction.ctx[param.name]
-
                 if len(orfunckwargs) == 1:
+
                     funcresult = _func(*funcvarargs, **funckwargs)
 
                 else:
-                    def target():
-                        global funcresult
-                        funcresult += _func(*funcvarargs, **funckwargs)
+                    def target(funcresult=funcresult):
+                        result = _func(*funcvarargs, **funckwargs)
+                        funcresult += result
 
                     thread = Thread(target=target)
                     thread.start()
@@ -218,7 +222,13 @@ def func2crudprocessing(func, annotation):
 
         else:
             fresult = _func(transaction=transaction, crud=crud, **kwargs)
-            funcresult = transaction.ctx[crud] if fresult is None else fresult.ctx[crud]
+
+            if fresult is None:
+
+                funcresult = transaction.ctx[crud]
+
+            else:
+                funcresult = fresult.ctx[crud]
 
         transaction.ctx[crud] = funcresult
 

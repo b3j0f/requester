@@ -527,7 +527,7 @@ class PyDriver(Driver):
 
             if isor:
                 fitems = list(items)
-                fctx = Context(ctx=ctx)
+                fctx = Context(ctx)
 
             elif isand:
                 fitems = presult

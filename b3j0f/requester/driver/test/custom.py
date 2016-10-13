@@ -318,6 +318,8 @@ class Obj2DriverTest(UTCase):
 
     def test_gateway(self):
 
+        self_ = self
+
         class Test(object):
 
             def __init__(self, *args, **kwargs):
@@ -328,37 +330,47 @@ class Obj2DriverTest(UTCase):
 
             @CreateAnnotation()
             @ReadAnnotation()
-            def cr(self, **kwargs):
+            def cr(self, a, **kwargs):
+
+                self_.assertEqual(a, {'>': [2]})
 
                 return [{'cr': kwargs}]
 
             @ReadAnnotation()
             @UpdateAnnotation()
-            def ru(self, **kwargs):
+            def ru(self, a, **kwargs):
 
-                return [{'cr': kwargs}]
+                self_.assertEqual(a, {'>': [2]})
+
+                return [{'ru': kwargs}]
 
             @UpdateAnnotation()
             @DeleteAnnotation()
-            def ud(self, **kwargs):
+            def ud(self, a, **kwargs):
 
-                return [{'cr': kwargs}]
+                self_.assertEqual(a, {'>': [2]})
+
+                return [{'ud': kwargs}]
 
             @DeleteAnnotation()
             @CreateAnnotation()
-            def dc(self, **kwargs):
+            def dc(self, a, **kwargs):
 
-                return [{'cr': kwargs}]
+                self_.assertEqual(a, {'>': [2]})
+
+                return [{'dc': kwargs}]
 
             def test(self, **kwargs):
 
                 self.kwargs.append(kwargs)
 
+                return 'test'
+
         test = Test()
 
         driver = obj2driver(test)
 
-        query = Expression.a > Expression.test(Expression.test())
+        query = (Expression.a > 2) & Expression.test(Expression.test())
 
         transaction = driver.create(values={}, query=query)
 
@@ -367,7 +379,7 @@ class Obj2DriverTest(UTCase):
 
         transaction = driver.read(query=query)
 
-        self.assertEqual(len(transaction.ctx), 3)
+        self.assertEqual(len(transaction.ctx), 6)
         self.assertEqual(len(test.kwargs), 4)
 
         transaction = driver.update(values={}, query=query)
@@ -379,6 +391,98 @@ class Obj2DriverTest(UTCase):
 
         self.assertEqual(len(transaction.ctx), 3)
         self.assertEqual(len(test.kwargs), 8)
+
+    def test_gateway_or(self):
+
+        self_ = self
+
+        class Test(object):
+
+            def __init__(self, *args, **kwargs):
+
+                super(Test, self).__init__(*args, **kwargs)
+
+                self.kwargs = []
+
+            @CreateAnnotation()
+            @ReadAnnotation()
+            def cr(self, a=None, b=None, **kwargs):
+
+                if a is not None:
+                    self_.assertEqual(a, {'>': [2]})
+
+                if b is not None:
+                    self_.assertEqual(b, {'>': [3]})
+
+                return [{'cr': kwargs}]
+
+            @ReadAnnotation()
+            @UpdateAnnotation()
+            def ru(self, a=None, b=None, **kwargs):
+
+                if a is not None:
+                    self_.assertEqual(a, {'>': [2]})
+
+                if b is not None:
+                    self_.assertEqual(b, {'>': [3]})
+
+                return [{'ru': kwargs}]
+
+            @UpdateAnnotation()
+            @DeleteAnnotation()
+            def ud(self, a=None, b=None, **kwargs):
+
+                if a is not None:
+                    self_.assertEqual(a, {'>': [2]})
+
+                if b is not None:
+                    self_.assertEqual(b, {'>': [3]})
+
+                return [{'ud': kwargs}]
+
+            @DeleteAnnotation()
+            @CreateAnnotation()
+            def dc(self, a=None, b=None, **kwargs):
+
+                if a is not None:
+                    self_.assertEqual(a, {'>': [2]})
+
+                if b is not None:
+                    self_.assertEqual(b, {'>': [3]})
+
+                return [{'dc': kwargs}]
+
+            def test(self, **kwargs):
+
+                self.kwargs.append(kwargs)
+
+                return 'test'
+
+        test = Test()
+
+        driver = obj2driver(test)
+
+        query = (Expression.a > 2) & Expression.test() | (Expression.b > 3)
+
+        transaction = driver.create(values={}, query=query)
+
+        self.assertEqual(len(transaction.ctx), 2)
+        self.assertEqual(len(test.kwargs), 1)
+
+        transaction = driver.read(query=query)
+
+        self.assertEqual(len(transaction.ctx), 3)
+        self.assertEqual(len(test.kwargs), 2)
+
+        transaction = driver.update(values={}, query=query)
+
+        self.assertEqual(len(transaction.ctx), 2)
+        self.assertEqual(len(test.kwargs), 3)
+
+        transaction = driver.delete(query=query)
+
+        self.assertEqual(len(transaction.ctx), 2)
+        self.assertEqual(len(test.kwargs), 4)
 
     def test_notgateway(self):
 
@@ -417,6 +521,8 @@ class Obj2DriverTest(UTCase):
             def test(self, **kwargs):
 
                 self.kwargs.append(kwargs)
+
+                return 'test'
 
         test = Test()
 
