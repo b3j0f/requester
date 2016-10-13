@@ -28,7 +28,7 @@
 
 from collections import Iterable
 
-from six import string_types
+from six import string_types, iteritems
 
 from .base import CRUDElement
 
@@ -252,32 +252,43 @@ class Read(CRUDElement):
         result = 'READ {0} '.format(select)
 
         if self._limit or self._offset or self._groupby or self._orderby:
-            result += 'with ('
 
             if self._limit is not None:
-                result += 'limit {0} '.format(repr(self._limit))
+                result += 'LIMIT {0} '.format(repr(self._limit))
 
             if self._offset is not None:
-                result += 'offset {0} '.format(repr(self._offset))
+                result += 'OFFSET {0} '.format(repr(self._offset))
 
             if self._groupby:
                 items = [repr(item) for item in self._groupby]
-                result += 'group by {0} '.format(', '.join(items))
+                result += 'GROUP BY {0} '.format(', '.join(items))
 
             if self._orderby:
                 items = [repr(item) for item in self._orderby]
-                result += 'order by {0} '.format(', '.join(items))
-
-            result += ') '
+                result += 'ORDER BY {0} '.format(', '.join(items))
 
         if self.query:
-            result += 'where ({0})'.format(repr(self.query))
+            result += 'WHERE {0} '.format(repr(self.query))
+
+        if self.dparams:
+            result += 'WITH '
+
+            dparams = []
+            for name, value in iteritems(self.dparams):
+                dparam = '{0}'.format(name)
+
+                if value is not True:
+                    dparam += ': {0}'.format(value)
+
+                dparams.append(dparam)
+
+            result += '{0} '.format(', '.join(dparams))
+
+        if self.alias:
+            result += 'AS {0}'.format(self.alias)
 
         if result[-1] == ' ':
             result = result[:-1]
-
-        if self.alias:
-            result += ' as {0}'.format(self.alias)
 
         return result
 

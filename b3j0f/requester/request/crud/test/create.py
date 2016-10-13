@@ -31,7 +31,7 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
-from ...expr import Expression as E
+from ...expr import Expression as Exp
 from ..create import Create
 
 
@@ -50,38 +50,38 @@ class CreateTest(UTCase):
         cases = [
             {
                 'values': {},
-                'name': E.c,
+                'name': Exp.c,
                 'where': None,
                 'as': None,
                 'expected': "CREATE c:{}",
             },
             {
-                'values': {E.key: 'value'},
-                'name': E.c,
+                'values': {Exp.key: 'value'},
+                'name': Exp.c,
                 'where': None,
                 'as': None,
                 'expected': "CREATE c:{key: 'value'}",
             },
             {
-                'values': {E.k: 'v'},
+                'values': {Exp.k: 'v'},
                 'name': '',
                 'where': None,
                 'as': None,
                 'expected': "CREATE {k: 'v'}",
             },
             {
-                'values': {E.k: 'v'},
+                'values': {Exp.k: 'v'},
                 'name': '',
-                'where': E.w,
+                'where': Exp.w,
                 'as': None,
-                'expected': "CREATE {k: 'v'} where (w)",
+                'expected': "CREATE {k: 'v'} WHERE w",
             },
             {
-                'values': {E.k: 'v'},
+                'values': {Exp.k: 'v'},
                 'name': '',
                 'where': None,
                 'as': 'a',
-                'expected': "CREATE {k: 'v'} as a",
+                'expected': "CREATE {k: 'v'} AS a",
             },
         ]
 

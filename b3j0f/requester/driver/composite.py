@@ -26,11 +26,13 @@
 
 """Module which specifices a composite of drivers."""
 
+from inspect import getmembers, isroutine, isbuiltin, isgeneratorfunction
+
 from b3j0f.schema import Schema, data2schema
 
 from six import iteritems
 
-from .py import PyDriver
+from .base import Driver
 from .utils import getnames
 from .ctx import Context
 from ..request.consts import FuncName
@@ -45,7 +47,7 @@ from ..request.expr import Expression, Function
 __all__ = ['DriverComposite']
 
 
-class DriverComposite(PyDriver):
+class DriverComposite(Driver):
     """In charge of distributing a request to several drivers.
 
     Driver parameters are :
@@ -114,9 +116,24 @@ class DriverComposite(PyDriver):
                         if hasattr(model, rootname):
                             tmpelts.append((driver, getattr(model, rootname)))
 
+                        elif isinstance(model, Schema):
+                            for mname, submodel in iteritems(
+                                model.getschemas()
+                            ):
+                                tmpelts.append((driver, submodel))
+
                         else:
-                            for mname, submodel in iteritems(model.getschemas()):
-                                tmpelts.append((name, submodel))
+                            for name, member in getmembers(
+                                model,
+                                lambda member:
+                                    not (
+                                        isroutine(member) or
+                                        isgeneratorfunction(member) or
+                                        isbuiltin(member)
+                                    )
+                            ):
+                                if name[0] != '_':
+                                    tmpelts.append((driver, member))
 
                     elts = tmpelts
 
@@ -243,7 +260,7 @@ class DriverComposite(PyDriver):
                 if isor:
                     transaction.ctx.fill(ftransaction.ctx)
 
-            if _elts[-1][2] == elt:
+            if _elts[-1][1] == elt:
 
                 drivers, _ = _elts.pop()
 

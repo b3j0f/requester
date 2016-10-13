@@ -69,13 +69,13 @@ class DeleteTest(UTCase):
                 'names': [Exp.d],
                 'where': Exp.w,
                 'as': None,
-                'expected': "DELETE d where (w)",
+                'expected': "DELETE d WHERE w",
             },
             {
                 'names': [Exp.d],
                 'where': None,
                 'as': 'a',
-                'expected': "DELETE d as a",
+                'expected': "DELETE d AS a",
             },
         ]
 

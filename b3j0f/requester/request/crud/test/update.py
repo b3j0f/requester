@@ -31,7 +31,7 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
-from ...expr import Expression as E
+from ...expr import Expression as Exp
 from ..update import Update
 
 
@@ -50,38 +50,38 @@ class UpdateTest(UTCase):
         cases = [
             {
                 'values': {},
-                'name': E.u,
+                'name': Exp.u,
                 'where': None,
                 'as': None,
                 'expected': "UPDATE u:{}",
             },
             {
-                'values': {E.key: 'value'},
-                'name': E.u,
+                'values': {Exp.key: 'value'},
+                'name': Exp.u,
                 'where': None,
                 'as': None,
                 'expected': "UPDATE u:{key: 'value'}",
             },
             {
-                'values': {E.k: 'v'},
+                'values': {Exp.k: 'v'},
                 'name': '',
                 'where': None,
                 'as': None,
                 'expected': "UPDATE {k: 'v'}",
             },
             {
-                'values': {E.k: 'v'},
+                'values': {Exp.k: 'v'},
                 'name': '',
-                'where': E.w,
+                'where': Exp.w,
                 'as': None,
-                'expected': "UPDATE {k: 'v'} where (w)",
+                'expected': "UPDATE {k: 'v'} WHERE (w)",
             },
             {
-                'values': {E.k: 'v'},
+                'values': {Exp.k: 'v'},
                 'name': '',
                 'where': None,
                 'as': 'a',
-                'expected': "UPDATE {k: 'v'} as a",
+                'expected': "UPDATE {k: 'v'} AS a",
             },
         ]
 

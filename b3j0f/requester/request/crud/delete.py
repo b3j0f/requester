@@ -26,6 +26,8 @@
 
 """delete module."""
 
+from six import iteritems
+
 from .base import CRUDElement
 
 __all__ = ['Delete']
@@ -61,14 +63,31 @@ class Delete(CRUDElement):
             names = ', '.join(names)
 
         else:
-            names = 'all'
+            names = 'ALL'
 
-        result = 'DELETE {0}'.format(names)
+        result = 'DELETE {0} '.format(names)
 
         if self.query:
-            result += ' where ({0})'.format(repr(self.query))
+            result += 'WHERE {0} '.format(repr(self.query))
+
+        if self.dparams:
+            result += 'WITH '
+
+            dparams = []
+            for name, value in iteritems(self.dparams):
+                dparam = '{0}'.format(name)
+
+                if value is not True:
+                    dparam += ': {0}'.format(value)
+
+                dparams.append(dparam)
+
+            result += '{0} '.format(', '.join(dparams))
 
         if self.alias:
-            result += ' as {0}'.format(self.alias)
+            result += 'AS {0}'.format(self.alias)
+
+        if result[-1] == ' ':
+            result = result[:-1]
 
         return result

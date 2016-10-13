@@ -87,7 +87,7 @@ class DriverCompositeTest(UTCase):
         self.d3 = self.drivers[3]
 
         self.driver = DriverComposite(
-            drivers=self.drivers[:-1], default=self.d3
+            drivers=self.drivers[:-1], ddriver=self.d3
         )
 
         for driver in self.drivers:
