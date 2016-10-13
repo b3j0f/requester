@@ -24,7 +24,7 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""base module."""
+"""Base module."""
 
 from uuid import uuid4
 
@@ -39,15 +39,10 @@ class BaseElement(object):
         """
         :param str alias: alias name. Default is None.
         """
-
         super(BaseElement, self).__init__(*args, **kwargs)
 
         self.alias = alias
         self.uuid = str(uuid or uuid4())
-
-    def __hash__(self):
-        """Hash value is this context name."""
-        return hash(self.ctxname)
 
     @staticmethod
     def refers(alias):
@@ -55,8 +50,8 @@ class BaseElement(object):
         alias.
 
         :param alias: alias to use.
-        :type alias: str or BaseElement."""
-
+        :type alias: str or BaseElement.
+        """
         if isinstance(alias, BaseElement):
             alias = alias.ctxname
 
@@ -67,8 +62,8 @@ class BaseElement(object):
 
         :param str alias: alias to use.
         :rtype: BaseElement
-        :return: this."""
-
+        :return: this.
+        """
         self.alias = alias
 
         return self
@@ -77,8 +72,8 @@ class BaseElement(object):
     def ctxname(self):
         """Get ctx name to store result execution.
 
-        :rtype: str"""
-
+        :rtype: str
+        """
         return self.alias or self.uuid
 
     def __eq__(self, other):
