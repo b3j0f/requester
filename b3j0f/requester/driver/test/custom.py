@@ -367,8 +367,18 @@ class Obj2DriverTest(UTCase):
 
         transaction = driver.read(query=query)
 
+        self.assertEqual(len(transaction.ctx), 3)
+        self.assertEqual(len(test.kwargs), 4)
+
         transaction = driver.update(values={}, query=query)
+
+        self.assertEqual(len(transaction.ctx), 3)
+        self.assertEqual(len(test.kwargs), 6)
+
         transaction = driver.delete(query=query)
+
+        self.assertEqual(len(transaction.ctx), 3)
+        self.assertEqual(len(test.kwargs), 8)
 
 if __name__ == '__main__':
     main()
