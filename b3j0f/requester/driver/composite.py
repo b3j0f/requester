@@ -224,7 +224,6 @@ class DriverComposite(Driver):
 
             elif drivers:
                 olddrivers = _elts[-1][0]
-
                 if not olddrivers:
                     _elts[-1][0] = drivers
 
