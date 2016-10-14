@@ -115,7 +115,7 @@ class ReadTest(UTCase):
                 'kwargs': {},
                 'where': None,
                 'as': None,
-                'expected': "READ all",
+                'expected': "READ ALL",
             },
             {
                 'select': [Exp.r1, Exp.r2, Exp.r3],

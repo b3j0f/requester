@@ -254,7 +254,7 @@ class Read(CRUDElement):
             select = ', '.join(items)
 
         else:
-            select = 'all'
+            select = 'ALL'
 
         result = 'READ {0} '.format(select)
 

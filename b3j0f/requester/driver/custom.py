@@ -466,3 +466,21 @@ class DeleteAnnotation(_CRUDAnnotation):
         super(DeleteAnnotation, self).__init__(
             crud=CRUD.DELETE, *args, **kwargs
         )
+
+
+def datafromgateway(param):
+    """Get a data from parameter."""
+
+    result = None
+
+    for key, value in iteritems(param):
+        if key == FuncName.EQ.value:
+            result = value[0]
+
+        elif key == FuncName.BETWEEN.value:
+            result = value
+
+        elif key == FuncName.IN.value:
+            result = value
+
+    return result
