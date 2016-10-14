@@ -69,7 +69,7 @@ class Read(CRUDElement):
         self._offset = None
         self._limit = None
         self._orderby = ()
-        self._groupby = ()
+        self._groupby = None
         self._join = None
 
         # set parameters
@@ -267,7 +267,7 @@ class Read(CRUDElement):
                 result += 'OFFSET {0} '.format(repr(self._offset))
 
             if self._groupby:
-                result += 'GROUP BY {0} '.format(repr(self._groupby))
+                result += 'GROUP BY {0} '.format(self._groupby)
 
             if self._orderby:
                 items = [repr(item) for item in self._orderby]

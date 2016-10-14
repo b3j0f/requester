@@ -84,11 +84,11 @@ def getchildren(elt):
         elif isinstance(elt, Read):
 
             result += elt.select()
-            result += elt.groupby()
             result += elt.orderby()
             result.append(elt.join())
             result.append(elt.limit())
             result.append(elt.offset())
+            result.append(elt.groupby())
 
         elif isinstance(elt, Delete):
 

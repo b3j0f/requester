@@ -45,7 +45,7 @@ class ReadTest(UTCase):
         self.assertFalse(read.offset())
         self.assertIsNone(read.limit())
         self.assertFalse(read.orderby())
-        self.assertFalse(read.groupby())
+        self.assertIsNone(read.groupby())
         self.assertFalse(read.join())
 
     def test_init(self):
@@ -59,14 +59,14 @@ class ReadTest(UTCase):
 
         read = Read(
             select=(select,), offset=offset, limit=limit, orderby=(orderby,),
-            groupby=(groupby,), join=join
+            groupby=groupby, join=join
         )
 
         self.assertEqual((select,), read.select())
         self.assertEqual(offset, read.offset())
         self.assertEqual(limit, read.limit())
         self.assertEqual((orderby,), read.orderby())
-        self.assertEqual((groupby,), read.groupby())
+        self.assertEqual(groupby, read.groupby())
         self.assertEqual(join, read.join())
 
     def test_init_error(self):
@@ -140,10 +140,10 @@ class ReadTest(UTCase):
             },
             {
                 'select': [Exp.r],
-                'kwargs': {'groupby': [Exp.a, Exp.b]},
+                'kwargs': {'groupby': 'a'},
                 'where': None,
                 'as': None,
-                'expected': "READ r GROUP BY a, b",
+                'expected': "READ r GROUP BY a",
             },
             {
                 'select': [Exp.r],
