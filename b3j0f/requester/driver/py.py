@@ -191,13 +191,12 @@ def all_(query, item, name, params, ctx):
     func = _OPERATORS_BY_NAME[operator]
 
     for _item in items:
-        params = [[item], _item]
 
-        function = query.params[1].copy()(query.params[1])
+        function = Function(operator)(query.params[0], _item)
 
-        params = [[item], _item]
+        fparams = [[item], _item]
 
-        if not func(function=function, ctx=ctx, params=params):
+        if not func(function=function, ctx=ctx, params=fparams):
             result = False
             break
 
@@ -218,13 +217,12 @@ def any_(query, item, name, params, ctx):
     func = _OPERATORS_BY_NAME[operator]
 
     for _item in items:
-        params = [[item], _item]
 
-        function = query.params[1].copy()(query.params[1])
+        function = Function(operator)(query.params[0], _item)
 
-        params = [[item], _item]
+        fparams = [[item], _item]
 
-        if func(function=function, ctx=ctx, params=params):
+        if func(function=function, ctx=ctx, params=fparams):
             result = True
             break
 

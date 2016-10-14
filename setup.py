@@ -4,7 +4,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -32,8 +32,6 @@ from setuptools import setup, find_packages
 from os.path import abspath, dirname, join
 
 from re import compile as re_compile, S as re_S
-
-from sys import prefix
 
 NAME = 'b3j0f.requester'  #: library name.
 
