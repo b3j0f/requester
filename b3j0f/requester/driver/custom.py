@@ -199,18 +199,36 @@ def func2crudprocessing(func, annotation):
 
                         funckwargs[param.name] = transaction.ctx[param.name]
 
+                if annotation.translator is not None:
+                    for key in list(funckwargs):
+                        val = funckwargs[key]
+
+                        funckwargs[key] = annotation.translator(key, val)
+
                 if isinstance(crud, (Create, Update)):
 
-                    funckwargs.update(crud.values)
+                    for key in crud.values:
+                        if key in pnames:
+                            funckwargs[key] = crud.values[key]
 
                 if len(orfunckwargs) == 1:
 
-                    funcresult = _func(*funcvarargs, **funckwargs)
+                    try:
+                        funcresult = _func(*funcvarargs, **funckwargs)
+
+                    except Exception:
+                        pass
 
                 else:
                     def target(funcresult=funcresult):
-                        result = _func(*funcvarargs, **funckwargs)
-                        funcresult += result
+                        try:
+                            result = _func(*funcvarargs, **funckwargs)
+
+                        except Exception:
+                            pass
+
+                        else:
+                            funcresult += result
 
                     thread = Thread(target=target)
                     thread.start()
@@ -230,7 +248,14 @@ def func2crudprocessing(func, annotation):
                 )
 
         else:
-            fresult = _func(transaction=transaction, crud=crud, **kwargs)
+
+            fresult = transaction
+
+            try:
+                fresult = _func(transaction=transaction, crud=crud, **kwargs)
+
+            except Exception:
+                pass
 
             if fresult is None:
 
@@ -413,10 +438,13 @@ def obj2driver(
 class _CRUDAnnotation(Annotation):
     """Base Annotation for annotating CRUD functions."""
 
-    def __init__(self, crud, gateway=True, *args, **kwargs):
+    def __init__(self, crud, gateway=True, translator=None, *args, **kwargs):
         """
         :param str crud: crud name.
         :param bool gateway: pass arguments from the context to the function.
+        :param callable translator: if gateway, translate gateway parameters to
+            translated data. Must take a gateway parameter name and value in
+            parameters. For example you could use `datafromgateway`.
         """
 
         super(_CRUDAnnotation, self).__init__(*args, **kwargs)
@@ -426,6 +454,7 @@ class _CRUDAnnotation(Annotation):
 
         self.name = crud
         self.gateway = gateway
+        self.translator = translator
 
 
 class CreateAnnotation(_CRUDAnnotation):
@@ -468,19 +497,20 @@ class DeleteAnnotation(_CRUDAnnotation):
         )
 
 
-def datafromgateway(param):
+def datafromgateway(name, param):
     """Get a data from parameter."""
 
-    result = None
+    result = param
 
-    for key, value in iteritems(param):
-        if key == FuncName.EQ.value:
-            result = value[0]
+    if isinstance(param, dict):
+        for key, value in iteritems(param):
+            if key == FuncName.EQ.value:
+                result = value[0]
 
-        elif key == FuncName.BETWEEN.value:
-            result = value
+            elif key == FuncName.BETWEEN.value:
+                result = value
 
-        elif key == FuncName.IN.value:
-            result = value
+            elif key == FuncName.IN.value:
+                result = value
 
     return result

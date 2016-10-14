@@ -5,6 +5,8 @@ ChangeLog
 ==================
 
 - support for groupby.
+- add main object definition in the main package.
+- add translator in the crudannotation.
 
 0.0.1 - 2016/10/14
 ==================
