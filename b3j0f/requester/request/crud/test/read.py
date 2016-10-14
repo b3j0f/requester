@@ -115,6 +115,7 @@ class ReadTest(UTCase):
                 'kwargs': {},
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "READ all",
             },
             {
@@ -122,6 +123,7 @@ class ReadTest(UTCase):
                 'kwargs': {},
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "READ r1, r2, r3",
             },
             {
@@ -129,6 +131,7 @@ class ReadTest(UTCase):
                 'kwargs': {'offset': 10},
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "READ r OFFSET 10",
             },
             {
@@ -136,6 +139,7 @@ class ReadTest(UTCase):
                 'kwargs': {'limit': 10},
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "READ r LIMIT 10",
             },
             {
@@ -143,6 +147,7 @@ class ReadTest(UTCase):
                 'kwargs': {'groupby': [Exp.a, Exp.b]},
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "READ r GROUP BY a, b",
             },
             {
@@ -150,6 +155,7 @@ class ReadTest(UTCase):
                 'kwargs': {'orderby': [Exp.a, Exp.b]},
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "READ r ORDER BY a, b",
             },
             {
@@ -157,6 +163,7 @@ class ReadTest(UTCase):
                 'kwargs': {},
                 'where': Exp.w,
                 'as': None,
+                'with': None,
                 'expected': "READ r WHERE w",
             },
             {
@@ -164,13 +171,23 @@ class ReadTest(UTCase):
                 'kwargs': {},
                 'where': None,
                 'as': 'a',
+                'with': None,
                 'expected': "READ r AS a",
+            },
+            {
+                'select': [Exp.r],
+                'kwargs': {},
+                'where': None,
+                'as': None,
+                'with': {'k': Exp.v},
+                'expected': "READ r WITH {'k': v}",
             },
         ]
 
         for test in cases:
             r = Read(
                 select=test['select'],
+                dparams=test['with'],
                 **test['kwargs']
             )
 

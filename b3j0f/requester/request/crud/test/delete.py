@@ -57,30 +57,41 @@ class DeleteTest(UTCase):
                 'names': [Exp.d],
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "DELETE d",
             },
             {
                 'names': [Exp.d1, Exp.d2],
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "DELETE d1, d2",
             },
             {
                 'names': [Exp.d],
                 'where': Exp.w,
                 'as': None,
+                'with': None,
                 'expected': "DELETE d WHERE w",
             },
             {
                 'names': [Exp.d],
                 'where': None,
                 'as': 'a',
+                'with': None,
                 'expected': "DELETE d AS a",
+            },
+            {
+                'names': [Exp.d],
+                'where': None,
+                'as': None,
+                'with': {'k': Exp.v},
+                'expected': "DELETE d WITH {'k': v}",
             },
         ]
 
         for test in cases:
-            d = Delete(names=test['names'])
+            d = Delete(names=test['names'], dparams=test['with'])
 
             if test['where']:
                 d = d.where(test['where'])
