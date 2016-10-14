@@ -105,7 +105,7 @@ class ReadTest(UTCase):
         self.assertEqual(offset, read.offset())
         self.assertEqual(limit, read.limit())
         self.assertEqual((orderby,), read.orderby())
-        self.assertEqual((groupby,), read.groupby())
+        self.assertEqual(groupby, read.groupby())
         self.assertEqual(join, read.join())
 
     def test___repr__(self):

@@ -56,7 +56,7 @@ class Read(CRUDElement):
         :param list select: data to select.
         :param int offset: data to avoid.
         :param int limit: max number of data to retrieve.
-        :param list orderby: data sorting.
+        :param str orderby: data sorting.
         :param list groupby: data field group.
         :param join: join type (INNER, LEFT, etc.).
         :type join: str or Join
@@ -86,7 +86,7 @@ class Read(CRUDElement):
             self.orderby(*orderby)
 
         if groupby is not None:
-            self.groupby(*groupby)
+            self.groupby(groupby)
 
         if join is not None:
             self.join(join)
@@ -156,17 +156,24 @@ class Read(CRUDElement):
 
         return result
 
-    def groupby(self, *values):
-        """Get or set groupby if value is not None.
+    def groupby(self, *value):
+        """Get or set groupby if value exists.
 
-        :param tuple value: value to set. Default is None.
+        :param int value: value to set. Default is None.
         :return: depending on value. If None, return this offset, otherwise
             this.
-        :rtype: tuple or Read
+        :rtype: int or Read
         """
-        if values:
-            self._groupby = values
+        if value:
+            value = value[0]
+
+            if not isinstance(value, string_types):
+                raise TypeError(
+                    'Wrong value {0}. {1} expected'.format(value, str)
+                )
+
             result = self
+            self._groupby = value
 
         else:
             result = self._groupby
@@ -260,8 +267,7 @@ class Read(CRUDElement):
                 result += 'OFFSET {0} '.format(repr(self._offset))
 
             if self._groupby:
-                items = [repr(item) for item in self._groupby]
-                result += 'GROUP BY {0} '.format(', '.join(items))
+                result += 'GROUP BY {0} '.format(repr(self._groupby))
 
             if self._orderby:
                 items = [repr(item) for item in self._orderby]
