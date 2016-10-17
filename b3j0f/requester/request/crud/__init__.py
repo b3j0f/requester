@@ -31,5 +31,8 @@ from .create import Create
 from .delete import Delete
 from .read import Cursor, Read
 from .update import Update
+from .join import Join
 
-__all__ = ['CRUDElement', 'Create', 'Read', 'Cursor', 'Update', 'Delete']
+__all__ = [
+    'CRUDElement', 'Create', 'Read', 'Cursor', 'Update', 'Delete', 'Join'
+]

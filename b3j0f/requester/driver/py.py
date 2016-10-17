@@ -659,20 +659,27 @@ class PyDriver(Driver):
                 result.sort(key=lambda item: item.get(orderby))
 
         if read.groupby():
-            raise NotImplementedError()
-            groupbyresult = {}
-            _groupbyresult = []
-            for groupby in read.groupby():
-                if _groupbyresult:
-                    for item in _groupbyresult:
-                        pass
-                _groupbyresult = {groupby: []}
+            groupby = read.groupby()
 
-                for res in result:
-                    if groupby in res:
-                        groupbyresult[groupby] = res.pop(groupby)
+            groupedvalues = {}
 
-                # FIX: do the same for sub groupby...
+            for item in result:
+
+                if groupby in item:
+
+                    subitems = groupedvalues.setdefault(item[groupby], {})
+
+                    for key, value in iteritems(item):
+
+                        if key != groupby:
+                            subitems.setdefault(key, []).append(value)
+
+            result = []
+
+            for key, value in iteritems(groupedvalues):
+
+                value[groupby] = key
+                result.append(value)
 
         if read.join() not in ('FULL', None):
             raise NotImplementedError(

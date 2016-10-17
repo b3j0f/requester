@@ -159,7 +159,11 @@ class FuncName(Enum):
 
     @staticmethod
     def contains(value):
+        """True iif input value is a value of FuncName.
 
+        :param str value: funcname value to check.
+        :rtype: bool
+        """
         result = False
 
         for member in FuncName.__members__.values():

@@ -49,9 +49,12 @@ class CRUDTest(UTCase):
 
     def setUp(self):
 
-        self.items = list([{'name': str(i), 'id': i} for i in range(5)])
+        self.items = [
+            {'name': str(i), 'id': i} for i in range(5)
+        ]
 
         self.items[-1]['ext'] = None
+        self.items[-1]['name'] = str(0)
 
 
 class CreateTest(CRUDTest):
@@ -111,10 +114,18 @@ class ReadTest(CRUDTest):
 
     def test_groupby(self):
 
-        crud = Read(groupby=['a'])
+        crud = Read(groupby='name')
 
-        self.assertRaises(
-            NotImplementedError, processread, items=self.items, read=crud
+        result = processread(items=self.items, read=crud)
+
+        self.assertEqual(
+            result,
+            [
+                {'id': [1], 'name': '1'},
+                {'ext': [None], 'id': [0, 4], 'name': '0'},
+                {'id': [3], 'name': '3'},
+                {'id': [2], 'name': '2'}
+            ]
         )
 
     def test_join(self):
@@ -278,7 +289,7 @@ class ProcessQueryTest(CRUDTest):
             items=self.items, query=Expression.name_ % '[1234]'
         )
 
-        self.assertEqual(result, self.items[1:])
+        self.assertEqual(result, self.items[1:-1])
 
     def test_exists(self):
 
