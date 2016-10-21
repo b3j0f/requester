@@ -53,6 +53,7 @@ class UpdateTest(UTCase):
                 'name': Exp.u,
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "UPDATE u:{}",
             },
             {
@@ -60,6 +61,7 @@ class UpdateTest(UTCase):
                 'name': Exp.u,
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "UPDATE u:{key: 'value'}",
             },
             {
@@ -67,6 +69,7 @@ class UpdateTest(UTCase):
                 'name': '',
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "UPDATE {k: 'v'}",
             },
             {
@@ -74,14 +77,24 @@ class UpdateTest(UTCase):
                 'name': '',
                 'where': Exp.w,
                 'as': None,
-                'expected': "UPDATE {k: 'v'} WHERE (w)",
+                'with': None,
+                'expected': "UPDATE {k: 'v'} WHERE w",
             },
             {
                 'values': {Exp.k: 'v'},
                 'name': '',
                 'where': None,
                 'as': 'a',
+                'with': None,
                 'expected': "UPDATE {k: 'v'} AS a",
+            },
+            {
+                'values': {Exp.k: 'v'},
+                'name': '',
+                'where': None,
+                'as': None,
+                'with': {'wk': Exp.wv},
+                'expected': "UPDATE {k: 'v'} WITH {'wk': wv}",
             },
         ]
 
@@ -89,6 +102,7 @@ class UpdateTest(UTCase):
             u = Update(
                 values=test['values'],
                 name=test['name'],
+                dparams=test['with'],
             )
 
             if test['where']:

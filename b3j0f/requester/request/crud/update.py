@@ -70,21 +70,10 @@ class Update(CRUDElement):
         result += repr(self.values)
 
         if self.query:
-            result += ' WHERE ({0})'.format(repr(self.query))
+            result += ' WHERE {0}'.format(repr(self.query))
 
         if self.dparams:
-            result += 'WITH ('
-
-            dparams = []
-            for name, value in iteritems(self.dparams):
-                dparam = '{0}'.format(name)
-
-                if value is not True:
-                    dparam += ': {0}'.format(value)
-
-                dparams.append(dparam)
-
-            result += '{0}) '.format(', '.join(dparams))
+            result += ' WITH {0}'.format(repr(self.dparams))
 
         if self.alias:
             result += ' AS {0}'.format(self.alias)
