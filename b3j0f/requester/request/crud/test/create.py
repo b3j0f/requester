@@ -53,6 +53,7 @@ class CreateTest(UTCase):
                 'name': Exp.c,
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "CREATE c:{}",
             },
             {
@@ -60,6 +61,7 @@ class CreateTest(UTCase):
                 'name': Exp.c,
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "CREATE c:{key: 'value'}",
             },
             {
@@ -67,6 +69,7 @@ class CreateTest(UTCase):
                 'name': '',
                 'where': None,
                 'as': None,
+                'with': None,
                 'expected': "CREATE {k: 'v'}",
             },
             {
@@ -74,6 +77,7 @@ class CreateTest(UTCase):
                 'name': '',
                 'where': Exp.w,
                 'as': None,
+                'with': None,
                 'expected': "CREATE {k: 'v'} WHERE w",
             },
             {
@@ -81,7 +85,16 @@ class CreateTest(UTCase):
                 'name': '',
                 'where': None,
                 'as': 'a',
+                'with': None,
                 'expected': "CREATE {k: 'v'} AS a",
+            },
+            {
+                'values': {Exp.k: 'v'},
+                'name': '',
+                'where': None,
+                'as': None,
+                'with': {'k': Exp.v},
+                'expected': "CREATE {k: 'v'} WITH {'k': v}",
             },
         ]
 
@@ -89,6 +102,7 @@ class CreateTest(UTCase):
             c = Create(
                 values=test['values'],
                 name=test['name'],
+                dparams=test['with'],
             )
 
             if test['where']:
