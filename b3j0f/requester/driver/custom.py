@@ -33,7 +33,7 @@ from inspect import getmembers, isroutine
 from copy import deepcopy
 
 from b3j0f.annotation import Annotation
-from b3j0f.schema import Schema, data2schema
+from b3j0f.schema import Schema, data2schema, ParamSchema, getresource
 
 from .base import Driver
 from .py import processread
@@ -56,7 +56,8 @@ __all__ = [
     'CustomDriver',
     'func2crudprocessing', 'obj2driver',
     'CreateAnnotation', 'ReadAnnotation', 'UpdateAnnotation',
-    'DeleteAnnotation', 'query2kwargs'
+    'DeleteAnnotation', 'query2kwargs',
+    'TranslatorFactory', 'registertranslator'
 ]
 
 
@@ -187,23 +188,30 @@ def func2crudprocessing(func, annotation):
 
             threads = []
 
-            for funckwargs in orfunckwargs:
+            ctx = transaction.ctx
+            translator = annotation.translator
 
+            for funckwargs in orfunckwargs:
                 funcvarargs = []
 
-                for param in _func.params:
+                if _func.params:
 
-                    pname = param.name
+                    for param in _func.params:
+                        pname = param.name
 
-                    if pname in transaction.ctx and pname not in funckwargs:
+                        if pname in ctx and pname not in funckwargs:
+                            val = ctx[param.name]
 
-                        funckwargs[param.name] = transaction.ctx[param.name]
+                            if translator is not None:
+                                val = translator(pname, val, ctx)
 
-                if annotation.translator is not None:
+                            funckwargs[param.name] = val
+
+                elif translator is not None:
                     for key in list(funckwargs):
                         val = funckwargs[key]
 
-                        funckwargs[key] = annotation.translator(key, val)
+                        funckwargs[key] = translator(key, val, ctx)
 
                 if isinstance(crud, (Create, Update)):
 
@@ -443,8 +451,9 @@ class _CRUDAnnotation(Annotation):
         :param str crud: crud name.
         :param bool gateway: pass arguments from the context to the function.
         :param callable translator: if gateway, translate gateway parameters to
-            translated data. Must take a gateway parameter name and value in
-            parameters. For example you could use `datafromgateway`.
+            translated data. Must take a gateway parameter (name) and value in
+            parameters. For example you could use `datafromgateway`. Default
+            is translator factory.
         """
 
         super(_CRUDAnnotation, self).__init__(*args, **kwargs)
@@ -454,7 +463,7 @@ class _CRUDAnnotation(Annotation):
 
         self.name = crud
         self.gateway = gateway
-        self.translator = translator
+        self.translator = translator or _SINGLETONTRANSLATORFACTORY
 
 
 class CreateAnnotation(_CRUDAnnotation):
@@ -497,13 +506,19 @@ class DeleteAnnotation(_CRUDAnnotation):
         )
 
 
-def datafromgateway(name, param):
-    """Get a data from parameter."""
+def datafromgateway(param, val, ctx):
+    """Get a data from parameter value.
 
-    result = param
+    :param param: parameter (name) to translate.
+    :param val: parameter value to translate.
+    :param dict ctx: expression execution context.
+    :return: translation of input val.
+    """
 
-    if isinstance(param, dict):
-        for key, value in iteritems(param):
+    result = val
+
+    if isinstance(val, dict):
+        for key, value in iteritems(val):
             if key == FuncName.EQ.value:
                 result = value[0]
 
@@ -514,3 +529,43 @@ def datafromgateway(name, param):
                 result = value
 
     return result
+
+
+class TranslatorFactory(object):
+    """Register translators by data type and translate an expression."""
+
+    def __init__(self, *args, **kwargs):
+
+        super(TranslatorFactory, self).__init__(*args, **kwargs)
+
+        self.translators = {}
+
+    def register(self, cls, translator):
+
+        self.translators[cls] = translator
+
+    def __call__(self, param, val, ctx):
+
+        if isinstance(param, ParamSchema):
+            if param.ref in self.translators:
+                cls = param.ref
+
+            else:
+                cls = getresource(param.ref)
+
+            translator = self.translators.get(cls, datafromgateway)
+
+        else:
+            translator = datafromgateway
+
+        result = translator(param, val, ctx)
+
+        return result
+
+_SINGLETONTRANSLATORFACTORY = TranslatorFactory()
+
+
+def registertranslator(cls, translator):
+    """Register input cls and translator in the singleton translatorfactory."""
+
+    _SINGLETONTRANSLATORFACTORY.register(cls, translator)
