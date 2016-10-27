@@ -421,42 +421,6 @@ class Expression(BaseElement):
 
         return Function(FuncName.LSHIFT)(value, self)
 
-    def copy(self, **kwargs):
-        """Copy this expression with input kwargs.
-
-        :param dict kwargs: parameters to set in the copy.
-        :rtype: self"""
-
-        cls = type(self)
-
-        ckwargs = {}
-
-        for slot in cls.__slots__:
-            value = getattr(self, slot)
-
-            if value is not None:
-
-                fvalue = value
-
-                if isinstance(value, Expression):
-                    fvalue = value.copy()
-
-                elif isinstance(value, list):
-
-                    fvalue = [
-                        item.copy()
-                        if isinstance(item, Expression) else item
-                        for item in value
-                    ]
-
-                kwargs[slot] = fvalue
-
-        ckwargs.update(kwargs)
-
-        result = cls(**ckwargs)
-
-        return result
-
     def __call__(self, *params):
         """Return a function where name is self name and params are varargs."""
         return Function(name=self.name, params=params)

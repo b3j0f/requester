@@ -100,10 +100,15 @@ class BaseElement(object):
         return result
 
     def copy(self, **kwargs):
+        """Copy this base element.
 
+        :param kwargs: parameters to set in the copy.
+        :return: copied base element.
+        :rtype: BaseElement
+        """
         cls = type(self)
 
-        copykwargs = kwargs
+        copykwargs = {}
 
         for slot in self.__slots__:
             val = getattr(self, slot)
@@ -120,7 +125,7 @@ class BaseElement(object):
             if slot[0] == '_':
                 slot = slot[1:]
 
-            kwargs[slot] = val
+            copykwargs[slot] = val
 
         copykwargs.update(kwargs)
 
