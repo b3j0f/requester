@@ -586,10 +586,12 @@ class PyDriver(Driver):
                 result = lookup(expr.name)
 
             except ImportError:
-                items[:] = result
+                if isinstance(items, list):
+                    items[:] = result
 
         else:
-            items[:] = result
+            if isinstance(items, list):
+                items[:] = result
 
         ctx[expr] = result
 
@@ -602,13 +604,15 @@ class PyDriver(Driver):
         :return: created item.
         :rtype: list
         """
-        result = kwargs.setdefault('items', self.items)
+        result = kwargs.pop('items', self.items)
 
         if ctx is None:
             ctx = Context()
 
         if create.query is not None:
-            result = self.processquery(query=create.query, ctx=ctx, **kwargs)
+            result = self.processquery(
+                query=create.query, ctx=ctx, items=result, **kwargs
+            )
 
         values = create.values
 
@@ -629,23 +633,24 @@ class PyDriver(Driver):
         :return: read list.
         :rtype: list
         """
-        items = kwargs.setdefault('items', self.items)
+        items = kwargs.pop('items', self.items)
 
         if ctx is None:
             ctx = Context()
 
         if read.query is not None:
-            self.processquery(query=read.query, ctx=ctx, **kwargs)
+            self.processquery(query=read.query, ctx=ctx, items=items, **kwargs)
 
         result = list(items)
 
         if read.select():
             result = []
-            for item in list(items):
+            for item in items:
                 fitem = {}
                 for sel in read.select():
                     if sel in item:
                         fitem[sel] = item[sel]
+
                 result.append(fitem)
 
         if read.offset():
@@ -700,10 +705,12 @@ class PyDriver(Driver):
         if ctx is None:
             ctx = Context()
 
-        result = kwargs.setdefault('items', self.items)
+        result = kwargs.pop('items', self.items)
 
         if update.query is not None:
-            result = self.processquery(query=update.query, ctx=ctx, **kwargs)
+            result = self.processquery(
+                query=update.query, ctx=ctx, items=result, **kwargs
+            )
 
         values = {}
 
@@ -733,13 +740,15 @@ class PyDriver(Driver):
         :rtype: list
         :return: modified/deleted items.
         """
-        result = kwargs.setdefault('items', self.items)
+        result = kwargs.pop('items', self.items)
 
         if ctx is None:
             ctx = Context()
 
         if delete.query is not None:
-            result = self.processquery(query=delete.query, ctx=ctx, **kwargs)
+            result = self.processquery(
+                query=delete.query, ctx=ctx, items=result, **kwargs
+            )
 
         if delete.names():
 

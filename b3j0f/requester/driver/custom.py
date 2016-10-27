@@ -45,6 +45,7 @@ from ..request.crud.base import CRUD, CRUDElement
 from ..request.crud.create import Create
 from ..request.crud.read import Read
 from ..request.crud.update import Update
+from ..request.crud.delete import Delete
 
 try:
     from threading import Thread
@@ -246,17 +247,23 @@ def func2crudprocessing(func, annotation):
             for thread in threads:
                 thread.join()
 
-            transaction.ctx[crud] = [] if funcresult is None else funcresult
+            if funcresult is None:
+                transaction.ctx[crud] = []
 
-            if isinstance(crud, Read):
-                funcresult = processread(
-                    read=crud,
-                    items=funcresult,
-                    ctx=transaction.ctx
-                )
+            else:
+                if isinstance(crud, (Read, Update, Delete)):
+                    funcresult = list(funcresult)
+
+                transaction.ctx[crud] = funcresult
+
+                if isinstance(crud, Read):
+                    funcresult = processread(
+                        read=crud,
+                        items=funcresult,
+                        ctx=transaction.ctx
+                    )
 
         else:
-
             fresult = transaction
 
             try:

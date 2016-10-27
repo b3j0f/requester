@@ -57,8 +57,7 @@ class Driver(object):
 
         super(Driver, self).__init__(*args, **kwargs)
 
-        if name is not None:
-            self.name = name
+        self.name = name or self.name or type(self).__name__
 
     def open(self, ctx=None, autocommit=False, cruds=None):
         """open a new transaction.

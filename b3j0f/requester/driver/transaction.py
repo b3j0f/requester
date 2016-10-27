@@ -50,6 +50,10 @@ class State(IntEnum):
     COMMITTING = 2
     ROLLBACKING = 3
 
+    def __repr__(self):
+
+        return self.name
+
 
 class Transaction(object):
     """Request execution context."""

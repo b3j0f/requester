@@ -544,5 +544,18 @@ class FunctionTest(UTCase):
 
         self.assertEqual(func.params, params)
 
+    def test_copy(self):
+
+        params = [1, 2]
+
+        func = Function(name='name', alias='alias', params=params)
+
+        cfunc = func.copy()
+
+        self.assertIsNot(func, cfunc)
+        self.assertEqual(func.name, cfunc.name)
+        self.assertEqual(func.alias, cfunc.alias)
+        self.assertEqual(func.params, cfunc.params)
+
 if __name__ == '__main__':
     main()

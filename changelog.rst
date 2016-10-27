@@ -6,6 +6,8 @@ ChangeLog
 
 - fix docstrings.
 - fix wrong name from obj2driver.
+- fix copy of function.
+- enhance use of params.
 
 0.0.3 - 2016/10/26
 ==================

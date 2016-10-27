@@ -444,8 +444,9 @@ class Expression(BaseElement):
                 elif isinstance(value, list):
 
                     fvalue = [
-                        value.copy()
-                        if isinstance(value, Expression) else value
+                        item.copy()
+                        if isinstance(item, Expression) else item
+                        for item in value
                     ]
 
                 kwargs[slot] = fvalue
