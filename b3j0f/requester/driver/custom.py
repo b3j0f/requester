@@ -185,34 +185,28 @@ def func2crudprocessing(func, annotation):
                 query=crud.query, ctx=transaction.ctx, pnames=pnames
             )
 
+            if annotation.translator is not None:
+                for orfunckwarg in orfunckwargs:
+                    for pname in pnames:
+                        if pname in orfunckwarg:
+                            val = orfunckwarg[pname]
+                            orfunckwarg[pname] = annotation.translator(
+                                pname, val, transaction.ctx
+                            )
+
             funcresult = []
 
             threads = []
 
             ctx = transaction.ctx
-            translator = annotation.translator
 
             for funckwargs in orfunckwargs:
                 funcvarargs = []
 
-                if _func.params:
+                for pname in pnames:
 
-                    for param in _func.params:
-                        pname = param.name
-
-                        if pname in ctx and pname not in funckwargs:
-                            val = ctx[param.name]
-
-                            if translator is not None:
-                                val = translator(pname, val, ctx)
-
-                            funckwargs[param.name] = val
-
-                elif translator is not None:
-                    for key in list(funckwargs):
-                        val = funckwargs[key]
-
-                        funckwargs[key] = translator(key, val, ctx)
+                    if pname not in funckwargs and pname in ctx:
+                        funckwargs[pname] = ctx[pname]
 
                 if isinstance(crud, (Create, Update)):
 
@@ -526,14 +520,10 @@ def datafromgateway(param, val, ctx):
 
     if isinstance(val, dict):
         for key, value in iteritems(val):
-            if key == FuncName.EQ.value:
+            if key in (
+                FuncName.EQ.value, FuncName.BETWEEN.value, FuncName.IN.value
+            ):
                 result = value[0]
-
-            elif key == FuncName.BETWEEN.value:
-                result = value
-
-            elif key == FuncName.IN.value:
-                result = value
 
     return result
 
