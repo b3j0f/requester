@@ -371,7 +371,7 @@ def getsubitem(item, name, error=False):
 def condoperator(operator):
 
     @wraps(operator)
-    def result(function, params, ctx):
+    def result(function, params, ctx, **kwargs):
 
         if params:
 

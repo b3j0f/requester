@@ -263,7 +263,7 @@ class DriverComposite(Driver):
                     threads = []
 
                     for driver in drivers:
-                        updatename(elt=crudcopy, driver=driver)
+                        updatename(elt=crudcopy, dname=driver.name)
 
                         dparams = deepcopy(kwargs)
                         dparams.pop('async', None)
@@ -305,17 +305,19 @@ class DriverComposite(Driver):
         return 'CompositeDriver({0}, {1})'.format(self.name, self.drivers)
 
 
-def updatename(elt, driver):
-    """Rename elt in order to be specific to input driver."""
-    for slot in elt.__slots__:
+def updatename(elt, dname):
+    """Rename elt in order to be specific to input driver name.
 
-        subelt = getattr(elt, slot)
+    :param Expression elt: expression to rename with its children.
+    :param str dname: driver name.
+    """
 
-        if isinstance(subelt, Expression):
-            if subelt.name.startswith(driver.name):
-                subelt.name = subelt.name[len(driver.name) + 1:]
+    if isinstance(elt, Expression):
 
-        elif isinstance(subelt, CRUDElement):
+        if elt.name.startswith(dname):
+            elt.name = elt.name[len(dname) + 1:]
 
-            subelt = updatename(elt=subelt, driver=driver)
-            setattr(elt, slot, subelt)
+    children = getchildren(elt)
+
+    for child in children:
+        updatename(elt=child, dname=dname)

@@ -32,16 +32,8 @@ from unittest import main
 from b3j0f.utils.ut import UTCase
 
 from ..composite import DriverComposite, updatename
-
 from ..py import PyDriver
-from ..base import Driver
-from ..ctx import Context
-from ..transaction import Transaction
-from ...request.expr import Expression, Function
-from ...request.crud.create import Create
-from ...request.crud.delete import Delete
-from ...request.crud.read import Read
-from ...request.crud.update import Update
+from ...request.expr import Expression
 
 
 class TestDriver(PyDriver):
@@ -62,7 +54,7 @@ class TestDriver(PyDriver):
         super(TestDriver, self)._process(
             transaction=transaction, *args, **kwargs
         )
-        #print(self.name, transaction.cruds)
+
         transaction.ctx.setdefault('test', [self])
 
         self.transactions.append((transaction, kwargs))
@@ -185,6 +177,43 @@ class DriverCompositeTest(UTCase):
         self.assertEqual(len(self.d0.transactions), 1)
         self.assertEqual(len(self.d1.transactions), 1)
         self.assertEqual(len(self.d2.transactions), 1)
+
+
+class UpdateNameTest(UTCase):
+
+    def test_default(self):
+
+        expr = Expression('')
+
+        updatename(expr, dname='test')
+
+        self.assertEqual(expr.name, '')
+
+    def test_default_expr(self):
+
+        expr = Expression.test
+
+        updatename(expr, dname='test')
+
+        self.assertEqual(expr.name, '')
+
+    def test_expr(self):
+
+        expr = Expression.example
+
+        updatename(expr, dname='test')
+
+        self.assertEqual(expr.name, 'example')
+
+    def test_expr_composite(self):
+
+        expr = Expression.test.test
+
+        self.assertEqual(expr.name, 'test.test')
+
+        updatename(expr, dname='test')
+
+        self.assertEqual(expr.name, 'test')
 
 if __name__ == '__main__':
     main()
