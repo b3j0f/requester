@@ -273,7 +273,7 @@ class Expression(BaseElement):
 
     def __contains__(self, other):
 
-        return Function(FuncName.IN)(self, other)
+        return Function(FuncName.IN)(other, self)
 
     def __pow__(self, other):
 

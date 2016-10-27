@@ -63,10 +63,10 @@ class Driver(object):
     def open(self, ctx=None, autocommit=False, cruds=None):
         """open a new transaction.
 
-        :param Context ctx: execution context.
+        :param b3j0f.requester.driver.ctx.Context ctx: execution context.
         :param bool autocommit: transaction autocommit property. False by
             default.
-        :rtype: Transaction.
+        :rtype: Transaction
         """
 
         return Transaction(
@@ -82,9 +82,9 @@ class Driver(object):
         :param Transaction transaction: transaction to process.
         :param bool async: if True (default False), execute input crud in a
             separated thread.
-        :param Callable callback: callable function which takes in parameter
-            the function result and kwargs. Commonly used with async equals
-            True.
+        :param types.Callable callback: callable function which takes in
+            parameter the function result and kwargs. Commonly used with async
+            equals True.
         :param dict kwargs: additional parameters specific to the driver.
         :return: transaction or thread if async.
         :rtype: Transaction or Thread
@@ -125,7 +125,6 @@ class Driver(object):
         :return: transaction.
         :rtype: Transaction
         """
-
         raise NotImplementedError()
 
     def __repr__(self):
@@ -155,30 +154,33 @@ class Driver(object):
         return self.open(cruds=[crud]).commit()
 
     def create(self, **kwargs):
-        """Create creation."""
+        """Create creation.
 
+        :param kwargs: CRUDElement parameters.
+        :rtype: Driver
+        """
         return self._getcrud(cls=Create, **kwargs)
 
     def read(self, **kwargs):
         """Read input expressions.
 
-        :param tuple select: selection fields.
-        :param dict kwargs: additional selection parameters (limit, etc.).
-        :rtype: Cursor"""
-
+        :param kwargs: CRUDElement parameters.
+        :rtype: Driver
+        """
         return self._getcrud(cls=Read, **kwargs)
 
     def update(self, **kwargs):
         """Apply input updates.
 
-        :param tuple update: updates to apply."""
-
+        :param kwargs: CRUDElement parameters.
+        :rtype: Driver
+        """
         return self._getcrud(cls=Update, **kwargs)
 
     def delete(self, **kwargs):
         """Delete input deletes.
 
-        :param tuple names: model name to delete.
-        :return: number of deleted deletes."""
-
+        :param kwargs: CRUDElement parameters.
+        :rtype:Driver
+        """
         return self._getcrud(cls=Delete, **kwargs)

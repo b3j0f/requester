@@ -60,7 +60,8 @@ def getnames(name):
 def getchildren(elt):
     """Get children element from the request tree.
 
-    :param BaseElement elt: element from where get children.
+    :param b3j0f.requester.request.base.BaseElement elt: element from where
+        get children.
     :rtype: list
     """
     result = []

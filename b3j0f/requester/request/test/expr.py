@@ -307,7 +307,7 @@ class ExpressionTest(UTCase):
 
         func = expr.__contains__('')
 
-        self._assertfunc(func, FuncName.IN, expr, '')
+        self._assertfunc(func, FuncName.IN, '', expr)
 
     def test__mod__(self):
 

@@ -427,11 +427,11 @@ def obj2driver(
 
             _locals['{0}s'.format(crudannotation.name)].append(ftarget)
 
-    for name, member in getmembers(fobj):
+    for mname, member in getmembers(fobj):
 
         if isroutine(member):
 
-            functions[name] = member
+            functions[mname] = member
 
     return CustomDriver(
         name=name,

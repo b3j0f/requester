@@ -28,7 +28,7 @@
 
 from collections import Iterable
 
-from six import string_types, iteritems
+from six import string_types
 
 from .base import CRUDElement
 

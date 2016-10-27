@@ -73,7 +73,6 @@ class Transaction(object):
         :param list cruds: crud operations.
         :param dict dparams: driver specific parameters.
         """
-
         super(Transaction, self).__init__(*args, **kwargs)
 
         self.driver = driver
@@ -107,7 +106,11 @@ class Transaction(object):
 
         While committing, this transaction change of state. After that, this
         transaction state go back to PENDING.
-        :return: driver processing result."""
+
+        :param dict kwargs: driver kwargs.
+        :return: self.
+        :rtype: Transaction
+        """
 
         self.state = State.COMMITTING
 
@@ -125,7 +128,8 @@ class Transaction(object):
         transaction state go back to PENDING.
 
         :param dict kwargs: driver kwargs.
-        :return: driver processing result."""
+        :rtype: Transaction.
+        """
 
         self.state = State.ROLLBACKING
 
@@ -140,7 +144,8 @@ class Transaction(object):
 
         :param dict kwargs: driver specific kwargs. See Driver.process for more
             details.
-        :return: process execution."""
+        :rtype: Transaction.
+        """
 
         if cruds is not None:
             self.cruds += cruds
@@ -160,7 +165,10 @@ class Transaction(object):
         return result
 
     def open(self, autocommit=None, cruds=None, driver=None, ctx=None):
+        """Open a transaction.
 
+        :rtype: Transaction.
+        """
         if autocommit is None:
             autocommit = self.autocommit
 
@@ -176,7 +184,11 @@ class Transaction(object):
         )
 
     def _process(self, cls, **kwargs):
-        """Custom processing."""
+        """Custom processing.
+
+        :return: self.
+        :rtype: Transaction.
+        """
         crud = cls(transaction=self, **kwargs)
 
         self.process(cruds=[crud])
@@ -184,17 +196,37 @@ class Transaction(object):
         return self
 
     def create(self, **kwargs):
-        """Quick creation."""
+        """Quick creation.
+
+        :param kwargs: CRUDElement parameters.
+        :return: self.
+        :rtype: Transaction
+        """
         return self._process(cls=Create, **kwargs)
 
     def read(self, **kwargs):
-        """Quick reading."""
+        """Quick reading.
+
+        :param kwargs: CRUDElement parameters.
+        :return: self.
+        :rtype: Transaction
+        """
         return self._process(cls=Read, **kwargs)
 
     def update(self, **kwargs):
-        """Quick updating."""
+        """Quick updating.
+
+        :param kwargs: CRUDElement parameters.
+        :return: self.
+        :rtype: Transaction
+        """
         return self._process(cls=Update, **kwargs)
 
     def delete(self, **kwargs):
-        """Quick deletion."""
+        """Quick deletion.
+
+        :param kwargs: CRUDElement parameters.
+        :return: self.
+        :rtype: Transaction
+        """
         return self._process(cls=Delete, **kwargs)

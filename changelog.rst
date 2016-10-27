@@ -1,6 +1,12 @@
 ChangeLog
 =========
 
+0.0.4 - 2016/10/27
+==================
+
+- fix docstrings.
+- fix wrong name from obj2driver.
+
 0.0.3 - 2016/10/26
 ==================
 

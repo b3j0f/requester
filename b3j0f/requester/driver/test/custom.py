@@ -188,6 +188,8 @@ class Obj2DriverTest(UTCase):
 
         driver = obj2driver(test)
 
+        self.assertEqual(driver.name, 'Test')
+
         query = (Expression.a > 2) & Expression.test(Expression.test())
 
         transaction = driver.create(values={}, query=query)
@@ -280,6 +282,8 @@ class Obj2DriverTest(UTCase):
 
         driver = obj2driver(test)
 
+        self.assertEqual(driver.name, 'Test')
+
         query = (Expression.a > 2) & Expression.test() | (Expression.b > 3)
 
         transaction = driver.create(values={}, query=query)
@@ -345,6 +349,8 @@ class Obj2DriverTest(UTCase):
         test = Test()
 
         driver = obj2driver(test)
+
+        self.assertEqual(driver.name, 'Test')
 
         query = Expression.a > Expression.test(Expression.test())
 
