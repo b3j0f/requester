@@ -42,6 +42,7 @@ from ...request.crud.create import Create
 from ...request.crud.delete import Delete
 from ...request.crud.read import Read
 from ...request.crud.update import Update
+from ...request.crud.join import Join
 from ...request.expr import Expression, Function
 
 
@@ -130,7 +131,7 @@ class ReadTest(CRUDTest):
 
     def test_join(self):
 
-        crud = Read(join='')
+        crud = Read(join=Join())
 
         self.assertRaises(
             NotImplementedError, processread, items=self.items, read=crud

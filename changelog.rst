@@ -1,6 +1,12 @@
 ChangeLog
 =========
 
+0.0.5 - 2016/10/28
+==================
+
+- improve pathing algorithm.
+- add Join object for processing join (most business code left).
+
 0.0.4 - 2016/10/27
 ==================
 

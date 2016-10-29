@@ -24,7 +24,47 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Module which specifices a composite of drivers."""
+"""Module which specifices a composite of drivers.
+
+Pathing algorithm:
+- Deep pathing
+
+Let an base element such as a tree of nodes.
+
+The path is recursive with a stack of couple of (drivers, node). The goal is to
+aggregate same drivers in the tree with a parent which has a lot of child node
+with same drivers.
+
+From a node, we have drivers:
+
+1- case 0 (stack is empty): we put the drivers and the node in the stack.
+
+2- if the current node has no drivers, we add current node to the stack in
+    order to be updated by next nodes if a system exists among children and
+    might execute upper nodes.
+
+3- if current node has drivers, we look for the last item in the stack (parent
+    node):
+
+    - parent node has not drivers: we look for the grand parent node:
+
+        - grand parent does not exist or has different drivers: parent drivers
+            become currend drivers in order to remove node without drivers
+            between node with drivers.
+
+        - grand parent node has same drivers than current: we remove the parent
+            node in order to keep a chain of same drivers.
+
+        The algorithm ensures that grand parent node has drivers !
+
+    - parent node has drivers:
+
+        - parent node drivers not equal to current drivers: add current node
+            in the stack with current drivers.
+
+        - parent node drivers equal to current drivers: do nothing in order to
+            add a node in the same driver execution.
+"""
 
 from inspect import getmembers
 
@@ -221,11 +261,19 @@ class DriverComposite(Driver):
 
             elif drivers:
                 olddrivers = _elts[-1][0]
+
                 if not olddrivers:
-                    _elts[-1][0] = drivers
+                    if len(_elts) == 1 or _elts[-2][0] != drivers:
+                        _elts[-1][0] = drivers
+
+                    else:
+                        _elts.pop()
 
                 elif olddrivers != drivers:
                         _elts.append([drivers, elt])
+
+            elif _elts[-1][0]:
+                _elts.append([drivers, elt])
 
             children = getchildren(elt)
 
@@ -268,14 +316,17 @@ class DriverComposite(Driver):
                         dparams = deepcopy(kwargs)
                         dparams.pop('async', None)
 
-                        transaction.ctx[elt] = []
+                        transaction.ctx.setdefault(elt, [])
+                        transaction.ctx.setdefault(driver.name, [])
 
                         ftransaction = transaction.open(
                             driver=driver, cruds=[crudcopy]
                         )
 
                         def callback(transaction, **kwargs):
-                            transaction.ctx[elt] += transaction.ctx[crudcopy]
+                            driverres = transaction.ctx[crudcopy]
+                            transaction.ctx[driver.name] += driverres
+                            transaction.ctx[elt] += driverres
 
                         if len(drivers) == 1:
                             result = ftransaction.commit(

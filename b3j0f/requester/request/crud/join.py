@@ -30,6 +30,8 @@ from copy import deepcopy
 
 from enum import IntEnum, unique
 
+from b3j0f.utils.version import OrderedDict
+
 __all__ = [
     'innerjoin', 'leftjoin', 'leftexjoin', 'rightjoin', 'rightexjoin',
     'fulljoin', 'fullexjoin', 'crossjoin', 'selfjoin', 'naturaljoin',
@@ -38,7 +40,8 @@ __all__ = [
 
 
 @unique
-class Join(IntEnum):
+class JoinKind(IntEnum):
+    """Join kind."""
 
     INNER = 0  #: inner join.
     LEFT = 1  #: left join.
@@ -53,32 +56,218 @@ class Join(IntEnum):
     UNION = 10  #: union join.
 
 
-def innerjoin(litems, ritems):
+class Join(object):
+    """In charge of managing Join."""
 
-    return [item for item in litems if item in ritems]
+    def __init__(self, on=None, kind=JoinKind.INNER.value, *args, **kwargs):
+        """
+        :param Expression on: condition on which apply the join.
+        :param str kind: join kind.
+        """
+        super(Join, self).__init__(*args, **kwargs)
+
+        self.on = on
+        self.kind = kind
+
+    def __call__(self, ctx):
+        """Apply join on input ctx."""
+
+        return applyjoin(kind=self.kind, on=self.on, ctx=ctx)
 
 
-def leftjoin(litems, ritems):
+def applyjoin(kind, on, ctx):
+    """Apply join on input ctx."""
+
+    result = None
+
+    joinprocess = getjoin(kind)
+
+    on = self.on
+
+    datasets = getdatasets(expr=on, ctx=ctx)
+
+    names = list(datasets)
+
+    indexes = OrderedDict([(name, 0) for name in names])
+
+    maxpos = len(names) - 1
+
+    namepos = 0
+
+    while True:
+
+        items = OrderedDict()
+
+        name = names[namepos]
+
+        index = indexes[name]
+
+        items[name] = datasets[name][index]
+
+        if namepos == maxpos:
+
+            resjoin = joinprocess(items=items, on=on)
+
+            if resjoin is not None:
+                result.append(resjoin)
+
+            index = (index + 1) % len(datasets[name])
+            indexes[name] = index
+
+            if index == 0:
+
+                for namepos in range(namepos - 1, -1, -1):
+
+                    name = names[namepos]
+
+                    index = (indexes[name] + 1) % len(datasets[name])
+
+                    indexes[name] = index
+
+                    if index != 0:
+                        break
+
+                else:
+                    break
+
+        namepos = (namepos + 1) % len(namepos)
+
+    return result
+
+
+def checkon(on, items):
+    """Check if input on match input items.
+
+    :param Expression on: join on expression.
+    :param OrderedDict items: items where check input on.
+    :rtype: bool
+    """
+    return True
+
+
+def innerjoin(items, on):
+    """Apply inner join.
+
+    :param OrderedDict items:
+    :param Expression on: where filter.
+    :rtype: dict
+    """
+    result = None
+
+    if checkon(items):
+        result = crossjoin(items, on)
+
+    return result
+
+
+def crossjoin(items, on):
+
+    return dict(list(iteritems(item)) for item in items)
+
+
+def selfjoin(items, on):
+
+    return crossjoin(items, on)
+
+
+def naturaljoin(items, on):
+
+    result = None
+
+    intersection = set()
+
+    for item in items:
+
+        intersection &= set(item)
+
+    if intersection:
+
+        result = {}
+
+        for item in items:
+            result.update(item)
+
+    return result
+
+
+def getdatasets(expr, ctx):
+
+    result = {}
+
+    if isinstance(expr, Expression):
+
+            if isinstance(expr, Function):
+
+                for param in expr.params:
+
+                    presult = getdatasets(param, ctx)
+                    result.update(presult)
+
+            else:
+                name = expr.name.split('.')[0]
+                result[name] = ctx[name]
+
+    return result
+
+
+def innerjoin(lfield, rfield, litems, ritems):
+
+    result = []
+
+    for litem in litems:
+
+        if lfield in litem:
+            lvalue = litem[lfield]
+
+            for ritem in ritems:
+                if rfield in ritem:
+                    rvalue = ritem[rfield]
+
+                    if rvalue == lvalue:
+
+                        item = deepcopy(litem)
+                        item.update(ritem)
+                        result.append(item)
+
+    return result
+
+
+def leftjoin(lfield, rfield, litems, ritems):
 
     return litems
 
 
-def leftexjoin(litems, ritems):
+def leftexjoin(lfield, rfield, litems, ritems):
 
-    return [item for item in litems if item not in ritems]
+    result = []
+
+    for litem in litems:
+        if lfield in litem:
+            lvalue = litem[lfield]
+
+            for ritem in ritems:
+                if rfield in ritem:
+                    rvalue = ritem[rfield]
+
+                    if rvalue != lvalue:
+                        item = deepcopy(litem)
+                        item.update(ritem)
+                        result.append(item)
+
+    return result
 
 
-def rightjoin(litems, ritems):
+def rightjoin(lfield, rfield, litems, ritems):
 
     return ritems
 
 
-def rightexjoin(litems, ritems):
+def rightexjoin(lfield, rfield, litems, ritems):
 
-    return [item for item in ritems if item not in litems]
+    return leftexjoin(rfield, lfield, ritems, litems)
 
 
-def fulljoin(litems, ritems):
+def fulljoin(lfield, rfield, litems, ritems):
     """Apply full join on litems and rtimes.
 
     :param list litems:
@@ -86,77 +275,99 @@ def fulljoin(litems, ritems):
     :return: new list of items.
     :rtype: list"""
 
-    return litems + [item for item in ritems if item not in litems]
-
-
-def fullexjoin(litems, ritems):
-
-    return leftexjoin(litems, ritems) + rightexjoin(litems, ritems)
-
-
-def crossjoin(litems, ritems):
-
-    return [(litem, ritem) for litem in litems for ritem in ritems]
-
-
-def selfjoin(litems, ritems):
-
-    return crossjoin(litems, litems)
-
-
-def naturaljoin(litems, ritems):
-
     result = []
 
     for litem in litems:
 
         for ritem in ritems:
+            pass
 
-            issame = False
+    return litems + [item for item in ritems if item not in litems]
 
-            for key in ritem:
 
-                if key in litem:
-                    if litem[key] == ritem[key]:
-                        issame = True
+def fullexjoin(lfield, rfield, litems, ritems):
 
-                    else:
+    return leftexjoin(litems, ritems) + rightexjoin(litems, ritems)
+
+
+def crossjoin(lfield, rfield, litems, ritems):
+
+    result = []
+
+    for litem in litems:
+
+        for ritems in ritems:
+            item = deepcopy(litems)
+            item.update(ritem)
+            result.append(item)
+
+    return result
+
+
+def selfjoin(lfield, rfield, litems, ritems):
+
+    return crossjoin(lfield, rfield, litems, litems)
+
+
+def naturaljoin(lfield, rfield, litems, ritems):
+
+    result = []
+
+    for litem in litems:
+
+        lkeys = set(litem)
+
+        for ritem in ritems:
+
+            rkeys = set(ritem)
+
+            intersection = lkeys & rkeys
+
+            if intersection:
+
+                item = {}
+
+                for key in intersection:
+
+                    if litem[key] != ritem[key]:
+
                         break
 
-            else:
-                if issame:
-                    item = deepcopy(litem)
-                    item.update(deepcopy(ritem))
+                    item[key] = litem[key]
+
+                else:
+                    item.update(litem)
+                    item.update(ritem)
                     result.append(item)
 
     return result
 
 
-def unionjoin(litems, ritems):
+def unionjoin(lfield, rfield, litems, ritems):
 
     return litems + ritems
 
 
 _JOINBYNAME = {
-    Join.INNER.name: innerjoin,
-    Join.LEFT.name: leftjoin,
-    Join.LEFTEX.name: leftexjoin,
-    Join.RIGHT.name: rightjoin,
-    Join.RIGHTEX.name: rightexjoin,
-    Join.FULL.name: fulljoin,
-    Join.FULLEX.name: fullexjoin,
-    Join.CROSS.name: crossjoin,
-    Join.SELF.name: selfjoin,
-    Join.NATURAL.name: naturaljoin,
-    Join.UNION.name: unionjoin
+    JoinKind.INNER.name: innerjoin,
+    JoinKind.LEFT.name: leftjoin,
+    JoinKind.LEFTEX.name: leftexjoin,
+    JoinKind.RIGHT.name: rightjoin,
+    JoinKind.RIGHTEX.name: rightexjoin,
+    JoinKind.FULL.name: fulljoin,
+    JoinKind.FULLEX.name: fullexjoin,
+    JoinKind.CROSS.name: crossjoin,
+    JoinKind.SELF.name: selfjoin,
+    JoinKind.NATURAL.name: naturaljoin,
+    JoinKind.UNION.name: unionjoin
 }
 
 
-def applyjoin(litems, ritems, join=Join.FULL):
+def applyjoin(on, ctx, litems, ritems, join=JoinKind.INNER.name):
 
     if isinstance(join, Join):
         join = join.name
 
     func = _JOINBYNAME[join]
 
-    return func(litems, ritems)
+    return func(None, None, litems, ritems)

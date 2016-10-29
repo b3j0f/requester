@@ -44,13 +44,14 @@ class Read(CRUDElement):
     Result is a Cursor."""
 
     __slots__ = [
-        '_select', '_offset', '_limit', '_orderby', '_groupby', '_join'
+        '_distinct', '_select', '_offset', '_limit', '_orderby', '_groupby',
+        '_join'
     ] + CRUDElement.__slots__
 
     def __init__(
             self,
-            select=None, offset=None, limit=None, orderby=None, groupby=None,
-            join=None, *args, **kwargs
+            distinct=False, select=None, offset=None, limit=None, orderby=None,
+            groupby=None, join=None, *args, **kwargs
     ):
         """
         :param list select: data to select.
@@ -58,13 +59,13 @@ class Read(CRUDElement):
         :param int limit: max number of data to retrieve.
         :param str orderby: data sorting.
         :param list groupby: data field group.
-        :param join: join type (INNER, LEFT, etc.).
-        :type join: str or Join
+        :param Join join: join.
         """
 
         super(Read, self).__init__(*args, **kwargs)
 
         # initialize protected properties
+        self._distinct = False
         self._select = ()
         self._offset = None
         self._limit = None
@@ -73,6 +74,8 @@ class Read(CRUDElement):
         self._join = None
 
         # set parameters
+        self.distinct(distinct)
+
         if select is not None:
             self.select(*select)
 
@@ -91,11 +94,35 @@ class Read(CRUDElement):
         if join is not None:
             self.join(join)
 
-    def offset(self, *value):
-        """Get or set offset if value is not None.
+    def distinct(self, *value):
+        """Get or set distinct if value is not empty.
 
-        :param int value: value to set. Default is None.
-        :return: depending on value. If None, return this offset, otherwise
+        :param bool value: value to set.
+        :return: depending on value. If empty, return this offset, otherwise
+            this.
+        :rtype: int or Read
+        """
+        if value:
+            value = value[0]
+
+            if not isinstance(value, bool):
+                raise TypeError(
+                    'Wrong value {0}. {1} expected'.format(value, bool)
+                )
+
+            self._distinct = value
+            result = self
+
+        else:
+            result = self._distinct
+
+        return result
+
+    def offset(self, *value):
+        """Get or set offset if value is not empty.
+
+        :param int value: value to set.
+        :return: depending on value. If empty, return this offset, otherwise
             this.
         :rtype: int or Read
         """
@@ -116,10 +143,10 @@ class Read(CRUDElement):
         return result
 
     def limit(self, *value):
-        """Get or set limit if value is not None.
+        """Get or set limit if value is not empty.
 
-        :param int value: value to set. Default is None.
-        :return: depending on value. If None, return this offset, otherwise
+        :param int value: value to set.
+        :return: depending on value. If empty, return this offset, otherwise
             this.
         :rtype: int or Read
         """
@@ -140,10 +167,10 @@ class Read(CRUDElement):
         return result
 
     def orderby(self, *values):
-        """Get or set orderby if value is not None.
+        """Get or set orderby if value is not empty.
 
-        :param tuple value: value to set. Default is None.
-        :return: depending on value. If None, return this offset, otherwise
+        :param tuple value: value to set.
+        :return: depending on value. If empty, return this offset, otherwise
             this.
         :rtype: tuple or Read
         """
@@ -157,10 +184,10 @@ class Read(CRUDElement):
         return result
 
     def groupby(self, *value):
-        """Get or set groupby if value exists.
+        """Get or set groupby if value is not empty.
 
-        :param int value: value to set. Default is None.
-        :return: depending on value. If None, return this offset, otherwise
+        :param int value: value to set.
+        :return: depending on value. If empty, return this offset, otherwise
             this.
         :rtype: int or Read
         """
@@ -181,10 +208,10 @@ class Read(CRUDElement):
         return result
 
     def select(self, *values):
-        """Get or set select if value is not None.
+        """Get or set select if value is not empty.
 
-        :param tuple value: value to set. Default is None.
-        :return: depending on value. If None, return this offset, otherwise
+        :param tuple value: value to set.
+        :return: depending on value. If empty, return this offset, otherwise
             this.
         :rtype: tuple or Read
         """
@@ -198,25 +225,24 @@ class Read(CRUDElement):
         return result
 
     def join(self, *value):
-        """Get or set join if value is not None.
+        """Get or set join if value is not empty.
 
-        :param value: value to set. Default is None.
-        :type value: str or Join
-        :return: depending on value. If None, return this offset, otherwise
+        :param Join value: value to set.
+        :return: depending on value. If empty, return this offset, otherwise
             this.
-        :rtype: str or Join or Read
+        :rtype: str or JoinKind or Read
         """
         if value:
             value = value[0]
 
-            if not isinstance(value, string_types + (Join,)):
+            if not isinstance(value, Join):
                 raise TypeError(
                     'Wrong value {0}. {1} expected'.format(
-                        value, string_types + (Join,)
+                        value, Join
                     )
                 )
 
-            self._join = value.name if isinstance(value, Join) else value
+            self._join = value
             result = self
 
         else:
@@ -258,8 +284,10 @@ class Read(CRUDElement):
 
         result = 'READ {0} '.format(select)
 
-        if self._limit or self._offset or self._groupby or self._orderby:
-
+        if (
+            self._limit or self._offset or self._groupby or self._orderby or
+            self._join
+        ):
             if self._limit is not None:
                 result += 'LIMIT {0} '.format(repr(self._limit))
 
@@ -272,6 +300,9 @@ class Read(CRUDElement):
             if self._orderby:
                 items = [repr(item) for item in self._orderby]
                 result += 'ORDER BY {0} '.format(', '.join(items))
+
+            if self._join is not None:
+                result += 'JOIN {0} '.format(repr(self._join))
 
         if self.query:
             result += 'WHERE {0} '.format(repr(self.query))

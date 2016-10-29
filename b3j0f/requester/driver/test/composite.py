@@ -174,7 +174,7 @@ class DriverCompositeTest(UTCase):
         for driver in self.drivers[3:]:
             self.assertFalse(driver.transactions)
 
-        self.assertEqual(len(self.d0.transactions), 1)
+        self.assertEqual(len(self.d0.transactions), 2)
         self.assertEqual(len(self.d1.transactions), 1)
         self.assertEqual(len(self.d2.transactions), 1)
 

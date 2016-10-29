@@ -31,7 +31,7 @@ from collections import Hashable, Iterable
 from six import iteritems
 
 from ..request.base import BaseElement
-from ..request.crud.join import Join, applyjoin
+from ..request.crud.join import JoinKind, applyjoin
 
 __all__ = ['Context', 'getctxname']
 
@@ -116,7 +116,7 @@ class Context(dict):
 
         return super(Context, self).setdefault(ctxname, default)
 
-    def fill(self, ctx, join=Join.FULL):
+    def fill(self, ctx, join=JoinKind.INNER.name):
         """Fill this content with ctx data not in this data.
 
         :param Context ctx: ctx context from where get items."""
@@ -125,7 +125,7 @@ class Context(dict):
             for key, value in iteritems(ctx):
 
                 if key in list(self):
-                    self[key] = applyjoin(self[key], value)
+                    self[key] = applyjoin(None, None, self[key], value)
 
                 else:
                     self[key] = ctx[key]
@@ -134,6 +134,6 @@ class Context(dict):
 
                 for key in list(self):
                     if key.endswith(dotkey):
-                        self[key] = applyjoin(self[key], value)
+                        self[key] = applyjoin(None, None, self[key], value)
 
         return self

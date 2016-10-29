@@ -33,6 +33,7 @@ from b3j0f.utils.ut import UTCase
 
 from ...expr import Expression as Exp
 from ..read import Read
+from ..join import Join
 
 
 class ReadTest(UTCase):
@@ -55,7 +56,7 @@ class ReadTest(UTCase):
         limit = 2
         orderby = 'orderby'
         groupby = 'groupby'
-        join = 'join'
+        join = Join()
 
         read = Read(
             select=(select,), offset=offset, limit=limit, orderby=(orderby,),
@@ -76,7 +77,7 @@ class ReadTest(UTCase):
         limit = '2'
         orderby = 0
         groupby = 0
-        join = 0
+        join = ''
 
         self.assertRaises(TypeError, Read, select=select)
         self.assertRaises(TypeError, Read, offset=offset)
@@ -92,7 +93,7 @@ class ReadTest(UTCase):
         limit = 2
         orderby = 'orderby'
         groupby = 'groupby'
-        join = 'join'
+        join = Join()
 
         read = Read()
 
