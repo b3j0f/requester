@@ -275,6 +275,11 @@ class Read(CRUDElement):
 
     def __repr__(self):
 
+        result = 'READ '
+
+        if self._distinct:
+            result += 'DISTINCT '
+
         if self._select:
             items = [repr(item) for item in self._select]
             select = ', '.join(items)
@@ -282,7 +287,7 @@ class Read(CRUDElement):
         else:
             select = 'ALL'
 
-        result = 'READ {0} '.format(select)
+        result += '{0} '.format(select)
 
         if (
             self._limit or self._offset or self._groupby or self._orderby or
