@@ -30,7 +30,12 @@ from copy import deepcopy
 
 from enum import IntEnum, unique
 
+from ..expr import Function, Expression
+from ..consts import FuncName
+
 from b3j0f.utils.version import OrderedDict
+
+from six import iteritems
 
 __all__ = [
     'innerjoin', 'leftjoin', 'leftexjoin', 'rightjoin', 'rightexjoin',
@@ -59,20 +64,45 @@ class JoinKind(IntEnum):
 class Join(object):
     """In charge of managing Join."""
 
-    def __init__(self, on=None, kind=JoinKind.INNER.value, *args, **kwargs):
+    DEFAULT_KIND = 'CROSS'
+
+    __slots__ = ['on', 'using', 'kind']
+
+    def __init__(
+            self, on=None, using=None, kind=DEFAULT_KIND, *args, **kwargs
+    ):
         """
         :param Expression on: condition on which apply the join.
-        :param str kind: join kind.
+        :param list using: list of field names to keep.
+        :param str kind: join kind. Default is CROSS.
         """
         super(Join, self).__init__(*args, **kwargs)
 
         self.on = on
+        self.using = using
         self.kind = kind
 
     def __call__(self, ctx):
         """Apply join on input ctx."""
 
         return applyjoin(kind=self.kind, on=self.on, ctx=ctx)
+
+    def __repr__(self):
+
+        result = 'Join('
+
+        if self.on:
+            result += 'on={0}, '.format(self.join)
+
+        if self.using:
+            result += 'using={0}, '.format(self.using)
+
+        if self.kind:
+            result += 'kind={0}'.format(self.kind)
+
+        result += ')'
+
+        return result
 
 
 def applyjoin(kind, on, ctx):
@@ -135,11 +165,11 @@ def applyjoin(kind, on, ctx):
     return result
 
 
-def checkon(on, items):
+def checkon(items, on):
     """Check if input on match input items.
 
-    :param Expression on: join on expression.
     :param OrderedDict items: items where check input on.
+    :param Expression on: join on expression.
     :rtype: bool
     """
     return True
@@ -155,7 +185,7 @@ def innerjoin(items, on):
     result = None
 
     if checkon(items):
-        result = crossjoin(items, on)
+        result = crossjoin(items=items, on=on)
 
     return result
 
@@ -371,3 +401,58 @@ def applyjoin(on, ctx, litems, ritems, join=JoinKind.INNER.name):
     func = _JOINBYNAME[join]
 
     return func(None, None, litems, ritems)
+
+
+def applyjoinonquery(join, query, ctx):
+
+    result = []
+
+    if isinstance(join, Function):
+
+        if join.name == (FuncName.AND.value, FuncName.OR.value):
+
+            if join.name == FuncName.AND.value:
+                result = [[]]
+
+            for param in join.params:
+                exprquery = applyjoinonquery(param, query, ctx)
+
+            if join.name == FuncName.AND.value:
+                result[-1] += exprquery
+
+            else:
+                result.append(exprquery)
+
+        elif join.name == (FuncName.EQ.value, FuncName.NEQ.value):
+
+            if type(join.params[1]) is Expression:
+
+                names = join.params[1].name
+
+                val2cmp = None
+
+                for ran in len(names):
+
+                    name = '.'.join(names[:ran])
+
+                    if name in ctx:
+
+                        data = ctx[name]
+
+                        prop = '.'.join(names[ran:])
+
+                        val2cmp = [item[prop] for item in data if prop in item]
+
+                        if join.name == FuncName.EQ.value:
+                            funcname = FuncName.IN.value
+
+                        else:
+                            funcname = FuncName.NIN.value
+
+                        result = [
+                            Function(
+                                name=funcname, params=[join.params[0], val2cmp]
+                            )
+                        ]
+
+    return result
