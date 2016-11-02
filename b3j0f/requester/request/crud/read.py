@@ -28,7 +28,7 @@
 
 from collections import Iterable
 
-from six import string_types
+from ..expr import Expression as E, Function as F
 
 from .base import CRUDElement
 
@@ -186,17 +186,18 @@ class Read(CRUDElement):
     def groupby(self, *value):
         """Get or set groupby if value is not empty.
 
-        :param int value: value to set.
+        :param value: value to set.
+        :type value: b3j0f.requester.request.expr.{Expression,Function}
         :return: depending on value. If empty, return this offset, otherwise
             this.
-        :rtype: int or Read
+        :rtype: b3j0f.requester.request.expr.{Expression,Function} or Read
         """
         if value:
             value = value[0]
 
-            if not isinstance(value, string_types):
+            if not isinstance(value, E) or isinstance(value, F):
                 raise TypeError(
-                    'Wrong value {0}. {1} expected'.format(value, str)
+                    'Wrong value {0}. {1} or {2} expected'.format(value, E, F)
                 )
 
             result = self
@@ -295,7 +296,7 @@ class Read(CRUDElement):
                 result += 'OFFSET {0} '.format(repr(self._offset))
 
             if self._groupby:
-                result += 'GROUP BY {0} '.format(self._groupby)
+                result += 'GROUP BY {0} '.format(repr(self._groupby))
 
             if self._orderby:
                 items = [repr(item) for item in self._orderby]

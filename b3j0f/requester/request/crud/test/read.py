@@ -55,7 +55,7 @@ class ReadTest(UTCase):
         offset = 1
         limit = 2
         orderby = 'orderby'
-        groupby = 'groupby'
+        groupby = Exp.groupby
         join = Join()
 
         read = Read(
@@ -92,7 +92,7 @@ class ReadTest(UTCase):
         offset = 1
         limit = 2
         orderby = 'orderby'
-        groupby = 'groupby'
+        groupby = Exp.groupby
         join = Join()
 
         read = Read()
@@ -145,7 +145,7 @@ class ReadTest(UTCase):
             },
             {
                 'select': [Exp.r],
-                'kwargs': {'groupby': 'a'},
+                'kwargs': {'groupby': Exp.a},
                 'where': None,
                 'as': None,
                 'with': None,
