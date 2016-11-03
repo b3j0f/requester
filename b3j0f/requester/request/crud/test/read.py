@@ -120,6 +120,14 @@ class ReadTest(UTCase):
                 'expected': "READ ALL",
             },
             {
+                'select': None,
+                'kwargs': {'distinct': True},
+                'where': None,
+                'as': None,
+                'with': None,
+                'expected': "READ DISTINCT ALL",
+            },
+            {
                 'select': [Exp.r1, Exp.r2, Exp.r3],
                 'kwargs': {},
                 'where': None,
