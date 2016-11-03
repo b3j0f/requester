@@ -55,7 +55,7 @@ class ReadTest(UTCase):
         offset = 1
         limit = 2
         orderby = 'orderby'
-        groupby = 'groupby'
+        groupby = Exp.groupby
         join = Join()
 
         read = Read(
@@ -92,7 +92,7 @@ class ReadTest(UTCase):
         offset = 1
         limit = 2
         orderby = 'orderby'
-        groupby = 'groupby'
+        groupby = Exp.groupby
         join = Join()
 
         read = Read()
@@ -120,6 +120,14 @@ class ReadTest(UTCase):
                 'expected': "READ ALL",
             },
             {
+                'select': None,
+                'kwargs': {'distinct': True},
+                'where': None,
+                'as': None,
+                'with': None,
+                'expected': "READ DISTINCT ALL",
+            },
+            {
                 'select': [Exp.r1, Exp.r2, Exp.r3],
                 'kwargs': {},
                 'where': None,
@@ -145,11 +153,11 @@ class ReadTest(UTCase):
             },
             {
                 'select': [Exp.r],
-                'kwargs': {'groupby': 'a'},
+                'kwargs': {'groupby': Exp.a},
                 'where': None,
                 'as': None,
                 'with': None,
-                'expected': "READ r GROUP BY 'a'",
+                'expected': "READ r GROUP BY a",
             },
             {
                 'select': [Exp.r],

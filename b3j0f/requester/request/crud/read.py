@@ -30,6 +30,7 @@ from collections import Iterable
 
 from six import string_types
 
+from ..expr import Expression as E, Function as F
 from .base import CRUDElement
 from .join import Join
 
@@ -191,17 +192,20 @@ class Read(CRUDElement):
     def groupby(self, *value):
         """Get or set groupby if value is not empty.
 
-        :param int value: value to set.
-        :return: depending on value. If empty, return this groupby, otherwise
+        :param value: value to set.
+        :type value: b3j0f.requester.request.expr.{Expression,Function}
+        :return: depending on value. If empty, return this offset, otherwise
             this.
-        :rtype: int or Read
+        :rtype: b3j0f.requester.request.expr.{Expression,Function} or Read
         """
         if value:
             value = value[0]
 
-            if not isinstance(value, string_types):
+            if not isinstance(value, (E, F) + string_types):
                 raise TypeError(
-                    'Wrong value {0}. {1} expected'.format(value, str)
+                    'Wrong value {0}. {1} expected'.format(
+                        value, (E, F, string_types)
+                    )
                 )
 
             result = self
@@ -297,6 +301,11 @@ class Read(CRUDElement):
 
     def __repr__(self):
 
+        result = 'READ '
+
+        if self._distinct:
+            result += 'DISTINCT '
+
         if self._select:
             items = [repr(item) for item in self._select]
             select = ', '.join(items)
@@ -304,7 +313,7 @@ class Read(CRUDElement):
         else:
             select = 'ALL'
 
-        result = 'READ {0} '.format(select)
+        result += '{0} '.format(select)
 
         if (
             self._limit or self._offset or self._groupby or self._orderby or
