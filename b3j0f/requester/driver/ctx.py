@@ -116,7 +116,7 @@ class Context(dict):
 
         return super(Context, self).setdefault(ctxname, default)
 
-    def fill(self, ctx, join=JoinKind.INNER.name):
+    def fill(self, ctx):
         """Fill this content with ctx data not in this data.
 
         :param Context ctx: ctx context from where get items."""
@@ -124,8 +124,10 @@ class Context(dict):
         if isinstance(ctx, Context):
             for key, value in iteritems(ctx):
 
-                if key in list(self):
-                    self[key] = applyjoin(None, None, self[key], value)
+                if key in self:
+                    self[key] += [
+                        item for item in value if item not in self[key]
+                    ]
 
                 else:
                     self[key] = ctx[key]
@@ -134,6 +136,8 @@ class Context(dict):
 
                 for key in list(self):
                     if key.endswith(dotkey):
-                        self[key] = applyjoin(None, None, self[key], value)
+                        self[key] += [
+                            item for item in value if item not in self[key]
+                        ]
 
         return self

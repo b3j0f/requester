@@ -35,7 +35,9 @@ from ..request.crud.update import Update
 from ..request.crud.delete import Delete
 from ..request.expr import Function
 
-__all__ = ['FunctionChooser', 'SEPARATOR']
+__all__ = [
+    'FunctionChooser', 'SEPARATOR', 'getsubitem', 'getnames', 'getchildren'
+]
 
 
 class FunctionChooser(object):
@@ -94,5 +96,33 @@ def getchildren(elt):
         elif isinstance(elt, Delete):
 
             result += elt.names()
+
+    return result
+
+
+def getsubitem(item, name, error=False):
+    """Get input field value.
+
+    :param dict item: item from where get values.
+    :param str name: name of sub field. Might contains '.' for sub fields of
+        depth greater than 1.
+    :param bool error: if True (default False).
+    :return: sub field value with input field name.
+    """
+    names = name.split('.')
+
+    result = item
+
+    for name in names:
+        try:
+            result = result[name]
+
+        except KeyError:
+            if error:
+                raise
+
+            else:
+                result = None
+                break
 
     return result

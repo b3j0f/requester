@@ -149,7 +149,7 @@ class ReadTest(UTCase):
                 'where': None,
                 'as': None,
                 'with': None,
-                'expected': "READ r GROUP BY a",
+                'expected': "READ r GROUP BY 'a'",
             },
             {
                 'select': [Exp.r],

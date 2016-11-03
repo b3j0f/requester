@@ -31,7 +31,7 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
-from ..utils import getnames
+from ..utils import getnames, getsubitem
 
 
 class GetNamesTest(UTCase):
@@ -47,6 +47,37 @@ class GetNamesTest(UTCase):
         names = getnames('test.example')
 
         self.assertEqual(names, ['test', 'example'])
+
+
+class GetSubItemTest(UTCase):
+
+    def setUp(self):
+
+        self.item = {'test': {'test': {'test': None}}}
+
+    def test_one(self):
+
+        subitem = getsubitem(item=self.item, name='test')
+
+        self.assertIs(subitem, self.item['test'])
+
+    def test_two(self):
+
+        subitem = getsubitem(item=self.item, name='test.test')
+
+        self.assertIs(subitem, self.item['test']['test'])
+
+    def test_falseerror(self):
+
+        subitem = getsubitem(item=self.item, name='a')
+
+        self.assertIsNone(subitem)
+
+    def test_error(self):
+
+        self.assertRaises(
+            KeyError, getsubitem, item=self.item, name='a', error=True
+        )
 
 if __name__ == '__main__':
     main()

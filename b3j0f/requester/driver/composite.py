@@ -75,7 +75,7 @@ from six import iteritems
 from copy import deepcopy
 
 from .base import Driver
-from .utils import getnames, getchildren
+from .utils import getnames, getchildren, getsubitem
 from .ctx import Context
 from ..request.consts import FuncName
 from ..request.base import BaseElement
@@ -306,11 +306,43 @@ class DriverComposite(Driver):
                     else:
                         crud = elt
 
+                        # apply join queries if given
+                        if isinstance(elt, Read) and elt.join is not None:
+
+                            joinqueries = transformjoinquery(
+                                ctx=ctx,
+                                query=elt.join.query
+                            )
+
+                            if joinqueries:
+
+                                crud = crud.copy(ctx=ctx)
+
+                                if len(joinqueries) == 1:
+                                    if elt.query is None:
+                                        crud.query = joinqueries[0]
+
+                                    else:
+                                        crud.query = Function(
+                                            name=FuncName.AND.value,
+                                            params=(
+                                                joinqueries[0], elt.query
+                                            )
+                                        )
+
+                                else:
+                                    params = tuple(joinqueries) + (elt.query,)
+                                    crud.query = Function(
+                                        name=FuncName.OR.value,
+                                        params=params
+                                    )
+
                     crudcopy = crud.copy()
 
                     threads = []
 
                     for driver in drivers:
+
                         updatename(elt=crudcopy, dname=driver.name)
 
                         dparams = deepcopy(kwargs)
@@ -372,3 +404,62 @@ def updatename(elt, dname):
 
     for child in children:
         updatename(elt=child, dname=dname)
+
+
+def transformjoinquery(ctx, query):
+    """Transform join query to a set of queries.
+
+    :param Context ctx: execution context.
+    :param Expression query.
+    :rtype: list"""
+    result = [query]
+
+    if query is not None:
+
+        if isinstance(query, Function):
+
+            if query.name in (FuncName.EQ.value, FuncName.NEQ.value):
+
+                if type(query.params[1]) is Expression:
+
+                    pnames = query.params[1].split('.')
+                    pctxname = pnames[0]
+
+                    if pctxname in ctx:
+
+                        items = ctx[pctxname]
+
+                        subname = '.'.join(pnames[1:])
+                        values = [
+                            getsubitem(item=item, name=subname)
+                            for item in items
+                        ]
+
+                        if query.name == FuncName.EQ.value:
+                            name = FuncName.IN.value
+
+                        else:
+                            name = FuncName.NIN.value
+
+                        newexpr = Function(
+                            name=name, params=(query.params[0], values)
+                        )
+
+                        result = [newexpr]
+
+            elif query.name in (FuncName.AND.value, FuncName.OR.value):
+
+                result = [[]] if query.name == FuncName.AND.value else []
+
+                for param in query.params:
+
+                    presult = transformjoinquery(ctx=ctx, query=param)
+
+                if query.name == FuncName.AND.value:
+
+                    result[0] += presult
+
+                else:
+                    result.append(presult)
+
+    return result

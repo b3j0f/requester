@@ -26,21 +26,18 @@
 
 """join execution module."""
 
-from copy import deepcopy
-
 from enum import IntEnum, unique
 
 from ..expr import Function, Expression
-from ..consts import FuncName
 
 from b3j0f.utils.version import OrderedDict
 
-from six import iteritems
+from six import iteritems, string_types
 
 __all__ = [
-    'innerjoin', 'leftjoin', 'leftexjoin', 'rightjoin', 'rightexjoin',
-    'fulljoin', 'fullexjoin', 'crossjoin', 'selfjoin', 'naturaljoin',
-    'unionjoin', 'applyjoin'
+    'innerjoin', 'leftjoin', 'rightjoin',
+    'crossjoin', 'selfjoin', 'naturaljoin',
+    'applyjoin'
 ]
 
 
@@ -66,55 +63,80 @@ class Join(object):
 
     DEFAULT_KIND = 'CROSS'
 
-    __slots__ = ['on', 'using', 'kind']
+    __slots__ = ['scope', 'query', 'select', 'kind']
 
     def __init__(
-            self, on=None, using=None, kind=DEFAULT_KIND, *args, **kwargs
+            self, scope=None, query=None, select=None, kind=DEFAULT_KIND,
+            *args, **kwargs
     ):
         """
-        :param Expression on: condition on which apply the join.
-        :param list using: list of field names to keep.
+        :param list scope: scope names. By default, an automatic discovering is
+            processed.
+        :param Expression query: condition query which apply the join.
+        :param list select: list of field names to keep.
         :param str kind: join kind. Default is CROSS.
         """
         super(Join, self).__init__(*args, **kwargs)
 
-        self.on = on
-        self.using = using
+        self.scope = scope
+        self.query = query
+        self.select = select
         self.kind = kind
 
     def __call__(self, ctx):
-        """Apply join on input ctx."""
+        """Apply join query input ctx."""
 
-        return applyjoin(kind=self.kind, on=self.on, ctx=ctx)
+        datasets = []
+
+        for sco in self.scope:
+            name = None
+
+            if isinstance(sco, Function):
+                name = sco()
+
+            elif isinstance(sco, Expression):
+                name = sco.name
+
+            elif isinstance(sco, string_types):
+                name = sco
+
+            else:
+                raise TypeError(
+                    'Wrong scope type {0}. {1} expected.'.format(
+                        sco, string_types + (Expression, )
+                    )
+                )
+
+            if name in ctx:
+                datasets.append(ctx[name])
+
+        return applyjoin(kind=self.kind, query=self.query, ctx=ctx)
 
     def __repr__(self):
 
-        result = 'Join('
+        result = '({0} JOIN {1}'.format(self.kind, self.scope)
 
-        if self.on:
-            result += 'on={0}, '.format(self.join)
+        if self.query:
+            result += 'ON {0}, '.format(self.query)
 
-        if self.using:
-            result += 'using={0}, '.format(self.using)
-
-        if self.kind:
-            result += 'kind={0}'.format(self.kind)
+        if self.select:
+            result += 'USING {0}, '.format(self.select)
 
         result += ')'
 
         return result
 
 
-def applyjoin(kind, on, ctx):
-    """Apply join on input ctx."""
+def applyjoin(kind, query, ctx):
+    """Apply join query input ctx."""
 
     result = None
 
     joinprocess = getjoin(kind)
 
-    on = self.on
+    query = self.query
 
-    datasets = getdatasets(expr=on, ctx=ctx)
+    datasets = getdatasets(expr=query, ctx=ctx)
 
     names = list(datasets)
 
@@ -136,7 +158,7 @@ def applyjoin(kind, on, ctx):
 
         if namepos == maxpos:
 
-            resjoin = joinprocess(items=items, on=on)
+            resjoin = joinprocess(items=items, query=query)
 
             if resjoin is not None:
                 result.append(resjoin)
@@ -165,42 +187,49 @@ def applyjoin(kind, on, ctx):
     return result
 
 
-def checkon(items, on):
-    """Check if input on match input items.
+def check(item, query):
+    """Check if input query match input items.
 
-    :param OrderedDict items: items where check input on.
-    :param Expression on: join on expression.
+    :param OrderedDict items: items where check input query.
+    :param Expression query: join query expression.
     :rtype: bool
     """
     return True
 
 
-def innerjoin(items, on):
+def innerjoin(items, query):
     """Apply inner join.
 
     :param OrderedDict items:
-    :param Expression on: where filter.
+    :param Expression query: where filter.
     :rtype: dict
     """
     result = None
 
-    if checkon(items):
-        result = crossjoin(items=items, on=on)
+    if check(items):
+        result = crossjoin(items=items, query=query)
 
     return result
 
 
-def crossjoin(items, on):
+def crossjoin(items, query, policy):
+    """Apply a cross join on input items and query.
 
-    return dict(list(iteritems(item)) for item in items)
+    :param list items: items for several set of data.
+    :param Expression query: filtering expression.
+    """
+    return dict(
+        list(iteritems(item)) for item in items
+        if check(item=item, query=query)
+    )
 
 
-def selfjoin(items, on):
+def selfjoin(items, query):
 
-    return crossjoin(items, on)
+    return crossjoin(items=[items[0], items[0]], query=query)
 
 
-def naturaljoin(items, on):
+def naturaljoin(items, query):
 
     result = None
 
@@ -218,6 +247,21 @@ def naturaljoin(items, on):
             result.update(item)
 
     return result
+
+
+def indexjoin(items, query, index=0):
+
+    return items[index]
+
+
+def leftjoin(items, query):
+
+    return indexjoin(items=items, query=query)
+
+
+def rightjoin(items, query):
+
+    return indexjoin(items=items, query=query, index=-1)
 
 
 def getdatasets(expr, ctx):
@@ -240,219 +284,11 @@ def getdatasets(expr, ctx):
     return result
 
 
-def innerjoin(lfield, rfield, litems, ritems):
-
-    result = []
-
-    for litem in litems:
-
-        if lfield in litem:
-            lvalue = litem[lfield]
-
-            for ritem in ritems:
-                if rfield in ritem:
-                    rvalue = ritem[rfield]
-
-                    if rvalue == lvalue:
-
-                        item = deepcopy(litem)
-                        item.update(ritem)
-                        result.append(item)
-
-    return result
-
-
-def leftjoin(lfield, rfield, litems, ritems):
-
-    return litems
-
-
-def leftexjoin(lfield, rfield, litems, ritems):
-
-    result = []
-
-    for litem in litems:
-        if lfield in litem:
-            lvalue = litem[lfield]
-
-            for ritem in ritems:
-                if rfield in ritem:
-                    rvalue = ritem[rfield]
-
-                    if rvalue != lvalue:
-                        item = deepcopy(litem)
-                        item.update(ritem)
-                        result.append(item)
-
-    return result
-
-
-def rightjoin(lfield, rfield, litems, ritems):
-
-    return ritems
-
-
-def rightexjoin(lfield, rfield, litems, ritems):
-
-    return leftexjoin(rfield, lfield, ritems, litems)
-
-
-def fulljoin(lfield, rfield, litems, ritems):
-    """Apply full join on litems and rtimes.
-
-    :param list litems:
-    :param list ritmes:
-    :return: new list of items.
-    :rtype: list"""
-
-    result = []
-
-    for litem in litems:
-
-        for ritem in ritems:
-            pass
-
-    return litems + [item for item in ritems if item not in litems]
-
-
-def fullexjoin(lfield, rfield, litems, ritems):
-
-    return leftexjoin(litems, ritems) + rightexjoin(litems, ritems)
-
-
-def crossjoin(lfield, rfield, litems, ritems):
-
-    result = []
-
-    for litem in litems:
-
-        for ritems in ritems:
-            item = deepcopy(litems)
-            item.update(ritem)
-            result.append(item)
-
-    return result
-
-
-def selfjoin(lfield, rfield, litems, ritems):
-
-    return crossjoin(lfield, rfield, litems, litems)
-
-
-def naturaljoin(lfield, rfield, litems, ritems):
-
-    result = []
-
-    for litem in litems:
-
-        lkeys = set(litem)
-
-        for ritem in ritems:
-
-            rkeys = set(ritem)
-
-            intersection = lkeys & rkeys
-
-            if intersection:
-
-                item = {}
-
-                for key in intersection:
-
-                    if litem[key] != ritem[key]:
-
-                        break
-
-                    item[key] = litem[key]
-
-                else:
-                    item.update(litem)
-                    item.update(ritem)
-                    result.append(item)
-
-    return result
-
-
-def unionjoin(lfield, rfield, litems, ritems):
-
-    return litems + ritems
-
-
 _JOINBYNAME = {
     JoinKind.INNER.name: innerjoin,
     JoinKind.LEFT.name: leftjoin,
-    JoinKind.LEFTEX.name: leftexjoin,
     JoinKind.RIGHT.name: rightjoin,
-    JoinKind.RIGHTEX.name: rightexjoin,
-    JoinKind.FULL.name: fulljoin,
-    JoinKind.FULLEX.name: fullexjoin,
     JoinKind.CROSS.name: crossjoin,
     JoinKind.SELF.name: selfjoin,
-    JoinKind.NATURAL.name: naturaljoin,
-    JoinKind.UNION.name: unionjoin
+    JoinKind.NATURAL.name: naturaljoin
 }
-
-
-def applyjoin(on, ctx, litems, ritems, join=JoinKind.INNER.name):
-
-    if isinstance(join, Join):
-        join = join.name
-
-    func = _JOINBYNAME[join]
-
-    return func(None, None, litems, ritems)
-
-
-def applyjoinonquery(join, query, ctx):
-
-    result = []
-
-    if isinstance(join, Function):
-
-        if join.name == (FuncName.AND.value, FuncName.OR.value):
-
-            if join.name == FuncName.AND.value:
-                result = [[]]
-
-            for param in join.params:
-                exprquery = applyjoinonquery(param, query, ctx)
-
-            if join.name == FuncName.AND.value:
-                result[-1] += exprquery
-
-            else:
-                result.append(exprquery)
-
-        elif join.name == (FuncName.EQ.value, FuncName.NEQ.value):
-
-            if type(join.params[1]) is Expression:
-
-                names = join.params[1].name
-
-                val2cmp = None
-
-                for ran in len(names):
-
-                    name = '.'.join(names[:ran])
-
-                    if name in ctx:
-
-                        data = ctx[name]
-
-                        prop = '.'.join(names[ran:])
-
-                        val2cmp = [item[prop] for item in data if prop in item]
-
-                        if join.name == FuncName.EQ.value:
-                            funcname = FuncName.IN.value
-
-                        else:
-                            funcname = FuncName.NIN.value
-
-                        result = [
-                            Function(
-                                name=funcname, params=[join.params[0], val2cmp]
-                            )
-                        ]
-
-    return result

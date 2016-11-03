@@ -26,8 +26,6 @@
 
 """create module."""
 
-from six import iteritems
-
 from .base import CRUDElement
 
 __all__ = ['Create']

@@ -29,11 +29,9 @@
 __all__ = ['tostr']
 
 
-def tostr(self):
-    """Get the string representation of an object with the class attribute
-    __slots__ or __dict__."""
-
-    cls = type(self)
+def tostr(obj):
+    """Get str representation of an object with __slots__ or __dict__."""
+    cls = type(obj)
 
     result = '{0}('.format(cls.__name__)
 
@@ -41,11 +39,11 @@ def tostr(self):
         names = cls.__slots__
 
     except AttributeError:
-        names = self.__dict__
+        names = obj.__dict__
 
     for name in names:
 
-        val = getattr(self, name)
+        val = getattr(obj, name)
         if val is not None:
             result += '{0}: {1}, '.format(name, val)
 

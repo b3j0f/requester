@@ -53,13 +53,11 @@ from six import iteritems
 
 from soundex import getInstance
 
-
 from .base import Driver
 
 from .ctx import Context
 from .transaction import State
-
-from .utils import FunctionChooser
+from .utils import FunctionChooser, getsubitem
 from ..request.base import BaseElement
 from ..request.consts import CONDITIONS, FuncName
 from ..request.crud.base import CRUDElement
@@ -345,27 +343,6 @@ def processquery(query, items, ctx=None, **kwargs):
     return _GLOBALPYDRIVER.processquery(
         query=query, ctx=ctx, items=items, **kwargs
     )
-
-
-def getsubitem(item, name, error=False):
-
-    names = name.split('.')
-
-    result = item
-
-    for name in names:
-        try:
-            result = result[name]
-
-        except KeyError:
-            if error:
-                raise
-
-            else:
-                result = None
-                break
-
-    return result
 
 
 def condoperator(operator):

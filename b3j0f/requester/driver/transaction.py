@@ -31,12 +31,10 @@ from uuid import uuid4 as uuid
 from enum import IntEnum, unique
 
 from .ctx import Context
-
 from ..request.crud.create import Create
 from ..request.crud.delete import Delete
 from ..request.crud.read import Read
 from ..request.crud.update import Update
-
 from ..utils import tostr
 
 __all__ = ['Transaction', 'State']

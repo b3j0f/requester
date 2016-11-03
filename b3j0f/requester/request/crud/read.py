@@ -31,8 +31,8 @@ from collections import Iterable
 from six import string_types
 
 from .base import CRUDElement
-
 from .join import Join
+
 
 __all__ = ['Read', 'Cursor']
 
@@ -45,21 +45,22 @@ class Read(CRUDElement):
 
     __slots__ = [
         '_distinct', '_select', '_offset', '_limit', '_orderby', '_groupby',
-        '_join'
+        '_scope', '_join'
     ] + CRUDElement.__slots__
 
     def __init__(
             self,
             distinct=False, select=None, offset=None, limit=None, orderby=None,
-            groupby=None, join=None, *args, **kwargs
+            groupby=None, join=None, scope=None, *args, **kwargs
     ):
         """
         :param list select: data to select.
         :param int offset: data to avoid.
         :param int limit: max number of data to retrieve.
-        :param str orderby: data sorting.
-        :param list groupby: data field group.
+        :param list orderby: data sorting.
+        :param Expression groupby: data field group.
         :param Join join: join.
+        :param list scope: scope.
         """
 
         super(Read, self).__init__(*args, **kwargs)
@@ -72,6 +73,7 @@ class Read(CRUDElement):
         self._orderby = ()
         self._groupby = None
         self._join = None
+        self._scope = None
 
         # set parameters
         self.distinct(distinct)
@@ -94,11 +96,14 @@ class Read(CRUDElement):
         if join is not None:
             self.join(join)
 
+        if scope is not None:
+            self.scope(scope)
+
     def distinct(self, *value):
         """Get or set distinct if value is not empty.
 
         :param bool value: value to set.
-        :return: depending on value. If empty, return this offset, otherwise
+        :return: depending on value. If empty, return this distinct, otherwise
             this.
         :rtype: int or Read
         """
@@ -146,7 +151,7 @@ class Read(CRUDElement):
         """Get or set limit if value is not empty.
 
         :param int value: value to set.
-        :return: depending on value. If empty, return this offset, otherwise
+        :return: depending on value. If empty, return this limit, otherwise
             this.
         :rtype: int or Read
         """
@@ -169,8 +174,8 @@ class Read(CRUDElement):
     def orderby(self, *values):
         """Get or set orderby if value is not empty.
 
-        :param tuple value: value to set.
-        :return: depending on value. If empty, return this offset, otherwise
+        :param tuple values: value to set.
+        :return: depending on value. If empty, return this orderby, otherwise
             this.
         :rtype: tuple or Read
         """
@@ -187,7 +192,7 @@ class Read(CRUDElement):
         """Get or set groupby if value is not empty.
 
         :param int value: value to set.
-        :return: depending on value. If empty, return this offset, otherwise
+        :return: depending on value. If empty, return this groupby, otherwise
             this.
         :rtype: int or Read
         """
@@ -211,7 +216,7 @@ class Read(CRUDElement):
         """Get or set select if value is not empty.
 
         :param tuple value: value to set.
-        :return: depending on value. If empty, return this offset, otherwise
+        :return: depending on value. If empty, return this select, otherwise
             this.
         :rtype: tuple or Read
         """
@@ -224,13 +229,30 @@ class Read(CRUDElement):
 
         return result
 
+    def scope(self, *values):
+        """Get or set scope if value is not empty.
+
+        :param tuple value: value to set.
+        :return: depending on value. If empty, return this scope, otherwise
+            this.
+        :rtype: tuple or Read
+        """
+        if values:
+            self._scope = values
+            result = self
+
+        else:
+            result = self._scope
+
+        return result
+
     def join(self, *value):
         """Get or set join if value is not empty.
 
         :param Join value: value to set.
-        :return: depending on value. If empty, return this offset, otherwise
+        :return: depending on value. If empty, return this join, otherwise
             this.
-        :rtype: str or JoinKind or Read
+        :rtype: Join or Read
         """
         if value:
             value = value[0]
@@ -294,8 +316,8 @@ class Read(CRUDElement):
             if self._offset is not None:
                 result += 'OFFSET {0} '.format(repr(self._offset))
 
-            if self._groupby:
-                result += 'GROUP BY {0} '.format(self._groupby)
+            if self._groupby is not None:
+                result += 'GROUP BY {0} '.format(repr(self._groupby))
 
             if self._orderby:
                 items = [repr(item) for item in self._orderby]
