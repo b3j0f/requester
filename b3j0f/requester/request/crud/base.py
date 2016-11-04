@@ -64,7 +64,7 @@ class CRUDElement(BaseElement):
         self.transaction = transaction
         self.dparams = dparams
 
-    def __call__(self, **kwargs):
+    def commit(self, **kwargs):
         """Execute this CRUD element.
 
         :param dict kwargs: driver specific kwargs. See Driver.process for more
@@ -75,9 +75,33 @@ class CRUDElement(BaseElement):
             raise RuntimeError('No transaction attached.')
 
         else:
-            self.transaction.process(cruds=[self], **kwargs)
+            with self.transaction.open(cruds=[self]) as transaction:
+                transaction.commit(**kwargs)
+                return transaction.ctx.get(self)
 
-            return self.transaction.ctx.get(self)
+    def process(self, **kwargs):
+        """Execute this CRUD element.
+
+        :param dict kwargs: driver specific kwargs. See Driver.process for more
+            details.
+        :return: this execution result if async is False.
+        """
+        if self.transaction is None:
+            raise RuntimeError('No transaction attached.')
+
+        else:
+            with self.transaction.open(cruds=[self]) as transaction:
+                transaction.process(**kwargs)
+                return transaction.ctx.get(self)
+
+    def __call__(self, **kwargs):
+        """Execute this CRUD element.
+
+        :param dict kwargs: driver specific kwargs. See Driver.process for more
+            details.
+        :return: this execution result if async is False.
+        """
+        return self.process(**kwargs)
 
     def where(self, *query):
         """Getter/Setter for query.

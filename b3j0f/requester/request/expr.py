@@ -520,12 +520,7 @@ class Function(Expression):
 
         :rtype: str
         """
-        result = self.alias
-
-        if not result:
-            result = '{0}({1})'.format(
-                self.name, ','.join([str(param) for param in self.params])
-            )
+        result = self.alias or self.uuid
 
         return result
 

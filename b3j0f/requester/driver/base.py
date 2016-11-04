@@ -156,7 +156,7 @@ class Driver(object):
         """Create creation.
 
         :param kwargs: CRUDElement parameters.
-        :rtype: Driver
+        :rtype: Transaction
         """
         return self._getcrud(cls=Create, **kwargs)
 
@@ -164,7 +164,7 @@ class Driver(object):
         """Read input expressions.
 
         :param kwargs: CRUDElement parameters.
-        :rtype: Driver
+        :rtype: Transaction
         """
         return self._getcrud(cls=Read, **kwargs)
 
@@ -172,7 +172,7 @@ class Driver(object):
         """Apply input updates.
 
         :param kwargs: CRUDElement parameters.
-        :rtype: Driver
+        :rtype: Transaction
         """
         return self._getcrud(cls=Update, **kwargs)
 
@@ -180,6 +180,6 @@ class Driver(object):
         """Delete input deletes.
 
         :param kwargs: CRUDElement parameters.
-        :rtype:Driver
+        :rtype:Transaction
         """
         return self._getcrud(cls=Delete, **kwargs)

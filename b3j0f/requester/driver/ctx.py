@@ -31,7 +31,6 @@ from collections import Hashable, Iterable
 from six import iteritems
 
 from ..request.base import BaseElement
-from ..request.crud.join import JoinKind, applyjoin
 
 __all__ = ['Context', 'getctxname']
 

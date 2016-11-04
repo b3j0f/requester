@@ -61,12 +61,10 @@ class JoinKind(IntEnum):
 class Join(object):
     """In charge of managing Join."""
 
-    DEFAULT_KIND = 'CROSS'
-
     __slots__ = ['scope', 'query', 'select', 'kind']
 
     def __init__(
-            self, scope=None, query=None, select=None, kind=DEFAULT_KIND,
+            self, scope=None, query=None, select=None, kind=None,
             *args, **kwargs
     ):
         """
@@ -114,7 +112,9 @@ class Join(object):
 
     def __repr__(self):
 
-        result = '({0} JOIN {1}'.format(self.kind, self.scope)
+        result = '({0}JOIN {1}'.format(
+            '{0} '.format(self.kind) if self.kind else '', self.scope
+        )
 
         if self.query:
             result += 'ON {0}, '.format(self.query)

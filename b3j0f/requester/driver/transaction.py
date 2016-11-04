@@ -57,18 +57,16 @@ class Transaction(object):
     """Request execution context."""
 
     __slots__ = [
-        'driver', 'parent', 'cruds', 'autocommit', 'uuid', 'state', 'ctx',
+        'driver', 'cruds', 'autocommit', 'uuid', 'state', 'ctx',
         'dparams'
     ]
 
     def __init__(
-            self, driver,
-            parent=None, autocommit=False, ctx=None, cruds=None, dparams=None,
+            self, driver, autocommit=False, ctx=None, cruds=None, dparams=None,
             *args, **kwargs
     ):
         """
         :param Driver driver: data base driver.
-        :param Transaction parent: parent transaction.
         :param bool autocommit: if True (default False), commit as soon a CRUD
             operation is processed by this transaction.
         :param Context ctx: CRUD execution context.
@@ -79,7 +77,6 @@ class Transaction(object):
 
         self.driver = driver
         self.uuid = uuid()
-        self.parent = parent
         self.cruds = [] if cruds is None else cruds
         self.state = State.COMMITTING if autocommit else State.PENDING
         self.autocommit = autocommit
@@ -116,7 +113,7 @@ class Transaction(object):
 
         self.state = State.COMMITTING
 
-        result = self.driver.process(transaction=self, **kwargs)
+        result = self._process(**kwargs)
 
         if not self.autocommit:
             self.state = State.PENDING
@@ -135,13 +132,13 @@ class Transaction(object):
 
         self.state = State.ROLLBACKING
 
-        result = self.driver.process(transaction=self, **kwargs)
+        result = self._process(**kwargs)
 
         self.state = State.COMMITTING if self.autocommit else State.PENDING
 
         return result
 
-    def process(self, cruds=None, **kwargs):
+    def _process(self, **kwargs):
         """Process input cruds with control paremeters.
 
         :param dict kwargs: driver specific kwargs. See Driver.process for more
@@ -149,26 +146,22 @@ class Transaction(object):
         :rtype: Transaction.
         """
 
-        if cruds is not None:
-            self.cruds += cruds
-
         if self.autocommit:
             self.state = State.COMMITTING
 
         result = self.driver.process(transaction=self, **kwargs)
 
-        if self.parent is not None:
-            if self.state is State.COMMITTING:
-                result = self.parent.commit()
-
-            elif self.state is State.ROLLBACKING:
-                result = self.parent.rollback()
+        self.cruds = []
 
         return result
 
-    def open(self, autocommit=None, cruds=None, driver=None, ctx=None):
+    def open(self, ctx=None, cruds=None, autocommit=None, driver=None):
         """Open a transaction.
 
+        :param Context ctx: new execution context. Default is this ctx.
+        :param list cruds: cruds to use. Default is empty.
+        :param bool autocommit: auto commmit flag.
+        :param b3j0f.requester.driver.base.Driver driver: transaction driver.
         :rtype: Transaction.
         """
         if autocommit is None:
@@ -181,11 +174,10 @@ class Transaction(object):
             ctx = self.ctx
 
         return Transaction(
-            driver=driver, parent=self, ctx=ctx,
-            autocommit=autocommit, cruds=cruds
+            driver=driver, ctx=ctx, autocommit=autocommit, cruds=cruds
         )
 
-    def _process(self, cls, **kwargs):
+    def _processcls(self, cls, **kwargs):
         """Custom processing.
 
         :return: self.
@@ -193,7 +185,7 @@ class Transaction(object):
         """
         crud = cls(transaction=self, **kwargs)
 
-        self.process(cruds=[crud])
+        self._process(cruds=[crud])
 
         return self
 
@@ -204,7 +196,7 @@ class Transaction(object):
         :return: self.
         :rtype: Transaction
         """
-        return self._process(cls=Create, **kwargs)
+        return self._processcls(cls=Create, **kwargs)
 
     def read(self, **kwargs):
         """Quick reading.
@@ -213,7 +205,7 @@ class Transaction(object):
         :return: self.
         :rtype: Transaction
         """
-        return self._process(cls=Read, **kwargs)
+        return self._processcls(cls=Read, **kwargs)
 
     def update(self, **kwargs):
         """Quick updating.
@@ -222,7 +214,7 @@ class Transaction(object):
         :return: self.
         :rtype: Transaction
         """
-        return self._process(cls=Update, **kwargs)
+        return self._processcls(cls=Update, **kwargs)
 
     def delete(self, **kwargs):
         """Quick deletion.
@@ -231,4 +223,4 @@ class Transaction(object):
         :return: self.
         :rtype: Transaction
         """
-        return self._process(cls=Delete, **kwargs)
+        return self._processcls(cls=Delete, **kwargs)
